@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Nyaa - Search results</title>
+</head>
+<body>
+<div class="container">
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover table-striped torrent-list">
+            <thead>
+                <tr>
+                    <th class="hdr-category">Category</th>
+                    <th class="hdr-name">Name</th>
+                    <th class="hdr-link">Link</th>
+                    <th class="hdr-size">Size</th>
+                    <th class="hdr-date">Date</th>
+                    <th class="hdr-seeders">S</th>
+                    <th class="hdr-leechers">L</th>
+                    <th class="hdr-downloads">D</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Row 1: Trusted Release (success class) -->
+                <tr class="success">
+                    <td>
+                        <a href="/?c=1_2" title="Anime - English-translated">
+                            <img src="/static/img/icons/1_2.png" alt="Anime - English-translated">
+                        </a>
+                    </td>
+                    <td colspan="1">
+                        <a href="/view/1800001" title="[SubsPlease] Sousou no Frieren - 28 (1080p) [ABCD1234].mkv">[SubsPlease] Sousou no Frieren - 28 (1080p) [ABCD1234].mkv</a>
+                        <a href="/view/1800001#comments" class="comments" title="12 comments"><i class="fa fa-comments"></i> 12</a>
+                    </td>
+                    <td class="text-center">
+                        <a href="/download/1800001.torrent"><i class="fa fa-download"></i></a>
+                        <a href="magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=%5BSubsPlease%5D+Sousou+no+Frieren+-+28+%281080p%29&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce"><i class="fa fa-magnet"></i></a>
+                    </td>
+                    <td class="text-center">1.4 GiB</td>
+                    <td class="text-center" data-timestamp="1711111111" title="2024-03-22 12:38 UTC">2024-03-22 12:38</td>
+                    <td class="text-center" style="color: green;">142</td>
+                    <td class="text-center" style="color: red;">4</td>
+                    <td class="text-center">3520</td>
+                </tr>
+
+                <!-- Row 2: Remake Release (danger class) -->
+                <tr class="danger">
+                    <td>
+                        <a href="/?c=1_2" title="Anime - English-translated">
+                            <img src="/static/img/icons/1_2.png" alt="Anime - English-translated">
+                        </a>
+                    </td>
+                    <td colspan="1">
+                        <a href="/view/1800002" title="[Remaker] Sousou no Frieren - 28 (720p Remake)">[Remaker] Sousou no Frieren - 28 (720p Remake)</a>
+                    </td>
+                    <td class="text-center">
+                        <a href="/download/1800002.torrent"><i class="fa fa-download"></i></a>
+                        <a href="magnet:?xt=urn:btih:abcdefabcdefabcdefabcdefabcdefabcdefabcd&dn=Frieren+Remake"><i class="fa fa-magnet"></i></a>
+                    </td>
+                    <td class="text-center">650.5 MiB</td>
+                    <td class="text-center" data-timestamp="1711112222" title="2024-03-22 13:00 UTC">2024-03-22 13:00</td>
+                    <td class="text-center" style="color: green;">25</td>
+                    <td class="text-center" style="color: red;">2</td>
+                    <td class="text-center">180</td>
+                </tr>
+
+                <!-- Row 3: Normal Release (default class) -->
+                <tr class="default">
+                    <td>
+                        <a href="/?c=1_4" title="Anime - Raw">
+                            <img src="/static/img/icons/1_4.png" alt="Anime - Raw">
+                        </a>
+                    </td>
+                    <td colspan="1">
+                        <a href="/view/1800003" title="[Raw-Provider] Sousou no Frieren Ep28 Raw.mp4">[Raw-Provider] Sousou no Frieren Ep28 Raw.mp4</a>
+                    </td>
+                    <td class="text-center">
+                        <a href="/download/1800003.torrent"><i class="fa fa-download"></i></a>
+                        <a href="magnet:?xt=urn:btih:1111222233334444555566667777888899990000&dn=Raw+Frieren"><i class="fa fa-magnet"></i></a>
+                    </td>
+                    <td class="text-center">850 MiB</td>
+                    <td class="text-center" data-timestamp="1711113333">2024-03-22 14:15</td>
+                    <td class="text-center">15</td>
+                    <td class="text-center">1</td>
+                    <td class="text-center">95</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <ul class="pagination">
+        <li class="active"><a href="#">1</a></li>
+        <li><a href="/?p=2&q=frieren">2</a></li>
+        <li class="next"><a rel="next" href="/?p=2&q=frieren">»</a></li>
+    </ul>
+</div>
+</body>
+</html>

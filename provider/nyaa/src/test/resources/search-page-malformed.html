@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<body>
+<table class="torrent-list">
+    <tbody>
+        <!-- Completely corrupted row missing cells -->
+        <tr><td>broken content without title or link</td></tr>
+        <!-- Row with invalid structure -->
+        <tr><a href="/view/invalid">No table cells</a></tr>
+        <!-- Valid row mixed in to test partial resilience -->
+        <tr>
+            <td><a href="/?c=1_2">Cat</a></td>
+            <td><a href="/view/2000003" title="[SubsPlease] Frieren - 20 (1080p).mkv">[SubsPlease] Frieren - 20 (1080p).mkv</a></td>
+            <td><a href="magnet:?xt=urn:btih:ccccddddaaaabbbb000011112222333344445555">Magnet</a></td>
+            <td>1.3 GiB</td>
+            <td data-timestamp="1703772000">2023-12-28</td>
+            <td>100</td>
+            <td>5</td>
+            <td>1200</td>
+        </tr>
+    </tbody>
+</table>
+</body>
+</html>
