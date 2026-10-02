@@ -1,0 +1,73 @@
+# Third-Party Software Notices and Licenses
+
+AniFlow incorporates open-source software libraries under various permissive licenses.
+The following is an inventory of third-party software and their respective license terms:
+
+---
+
+### 1. AndroidX & Jetpack Compose
+* **Copyright**: The Android Open Source Project
+* **License**: Apache License, Version 2.0
+* **Components**:
+  * `androidx.core:core-ktx`
+  * `androidx.lifecycle:lifecycle-*`
+  * `androidx.activity:activity-compose`
+  * `androidx.compose.*` (Material 3, Foundation, UI, Animation)
+  * `androidx.navigation:navigation-compose`
+  * `androidx.room:room-*`
+  * `androidx.datastore:datastore-preferences`
+  * `androidx.work:work-runtime-ktx`
+  * `androidx.media3:media3-*`
+
+---
+
+### 2. Kotlin Standard Libraries & Coroutines
+* **Copyright**: JetBrains s.r.o. and Kotlin Foundation
+* **License**: Apache License, Version 2.0
+* **Components**:
+  * `org.jetbrains.kotlin:kotlin-stdlib`
+  * `org.jetbrains.kotlinx:kotlinx-coroutines-*`
+  * `org.jetbrains.kotlinx:kotlinx-serialization-json`
+
+---
+
+### 3. Google Dagger Hilt
+* **Copyright**: The Dagger Authors
+* **License**: Apache License, Version 2.0
+* **Components**:
+  * `com.google.dagger:hilt-android`
+  * `com.google.dagger:hilt-compiler`
+  * `androidx.hilt:hilt-navigation-compose`
+
+---
+
+### 4. Square OkHttp
+* **Copyright**: Square, Inc.
+* **License**: Apache License, Version 2.0
+* **Components**:
+  * `com.squareup.okhttp3:okhttp`
+  * `com.squareup.okhttp3:logging-interceptor`
+
+---
+
+### 5. Jsoup HTML Parser
+* **Copyright**: Jonathan Hedley
+* **License**: The MIT License
+* **Components**:
+  * `org.jsoup:jsoup`
+
+---
+
+### 6. Coil Image Loading
+* **Copyright**: Coil Contributors
+* **License**: Apache License, Version 2.0
+* **Components**:
+  * `io.coil-kt:coil-compose`
+
+---
+
+### 7. Testing Frameworks
+* **JUnit 4**: Eclipse Public License 1.0
+* **JUnit Jupiter (JUnit 5)**: Eclipse Public License 2.0
+* **Turbine**: Apache License, Version 2.0 (`app.cash.turbine:turbine`)
+* **MockK**: Apache License, Version 2.0 (`io.mockk:mockk`)
