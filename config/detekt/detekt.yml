@@ -1,0 +1,34 @@
+# Enforces STEP 13 Section 5 (Static Analysis) and Section 6 (Complexity Audit)
+complexity:
+  active: true
+  ComplexCondition:
+    active: true
+    threshold: 4
+  ComplexInterface:
+    active: true
+    threshold: 10
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 15
+  LongMethod:
+    active: true
+    threshold: 60
+  LongParameterList:
+    active: true
+    functionThreshold: 6
+    constructorThreshold: 8
+  TooManyFunctions:
+    active: true
+    threshold: 20
+
+coroutines:
+  active: true
+  GlobalCoroutineUsage:
+    active: true
+
+potential-bugs:
+  active: true
+  UnreachableCode:
+    active: true
+  CastToNullableType:
+    active: true

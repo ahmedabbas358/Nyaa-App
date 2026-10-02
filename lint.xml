@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Enforces STEP 13 Section 5 (Static Analysis) -->
+<lint>
+    <!-- Treat critical issues as fatal errors that break the build -->
+    <issue id="HardcodedText" severity="error" />
+    <issue id="SetJavaScriptEnabled" severity="fatal" />
+    <issue id="TrulyRandom" severity="fatal" />
+    <issue id="ExportedPreferenceActivity" severity="fatal" />
+    <issue id="ProtectedPermissions" severity="fatal" />
+    <issue id="UnusedResources" severity="warning" />
+    <issue id="IconMissingDensityFolder" severity="ignore" />
+    <issue id="TypographyQuotes" severity="warning" />
+    <issue id="RtlHardcoded" severity="error" />
+    <issue id="RtlCompat" severity="error" />
+</lint>
