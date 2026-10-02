@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">AniFlow</string>
+    <string name="search_hint">Search anime or releases…</string>
+    <string name="search_action">Search</string>
+    <string name="filter_title">Filters</string>
+    <string name="sort_title">Sort By</string>
+    <string name="downloads_title">Downloads</string>
+    <string name="library_title">Library</string>
+    <string name="settings_title">Settings</string>
+    <string name="state_idle">Enter a query to discover releases</string>
+    <string name="state_empty">No matching anime releases found</string>
+    <string name="state_loading">Fetching releases from Nyaa…</string>
+    <string name="state_error">Failed to load releases: %1$s</string>
+    <string name="retry_action">Retry</string>
+    <string name="pause_action">Pause</string>
+    <string name="resume_action">Resume</string>
+    <string name="cancel_action">Cancel</string>
+    <string name="download_action">Download</string>
+    <string name="speed_format">%1$s/s</string>
+    <string name="size_format">%1$s</string>
+    <string name="seeds_format">Seeds: %1$d</string>
+    <string name="episodes_count">%1$d Episodes</string>
+    <string name="storage_permission_required">Storage permission is required to access the selected download location</string>
+</resources>

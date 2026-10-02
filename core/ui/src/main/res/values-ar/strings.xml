@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">AniFlow</string>
+    <string name="search_hint">ابحث عن الأنمي أو الإصدارات…</string>
+    <string name="search_action">بحث</string>
+    <string name="filter_title">الفلاتر</string>
+    <string name="sort_title">ترتيب حسب</string>
+    <string name="downloads_title">التنزيلات</string>
+    <string name="library_title">المكتبة</string>
+    <string name="settings_title">الإعدادات</string>
+    <string name="state_idle">أدخل كلمة البحث لاكتشاف الإصدارات</string>
+    <string name="state_empty">لم يتم العثور على أي إصدارات مطابقة</string>
+    <string name="state_loading">جاري جلب الإصدارات من Nyaa…</string>
+    <string name="state_error">فشل في تحميل الإصدارات: %1$s</string>
+    <string name="retry_action">إعادة المحاولة</string>
+    <string name="pause_action">إيقاف مؤقت</string>
+    <string name="resume_action">استئناف</string>
+    <string name="cancel_action">إلغاء</string>
+    <string name="download_action">تنزيل</string>
+    <string name="speed_format">%1$s/ث</string>
+    <string name="size_format">%1$s</string>
+    <string name="seeds_format">الناشرون: %1$d</string>
+    <string name="episodes_count">%1$d حلقة</string>
+    <string name="storage_permission_required">يلزم الحصول على إذن التخزين للوصول إلى مسار التنزيل المحدد</string>
+</resources>
