@@ -29,16 +29,18 @@ class ReleaseGroupingTest {
     private fun createRelease(
         id: String,
         title: String,
+        animeTitle: String? = null,
         uploaderName: String = "SubsPlease",
         groupName: String = "SubsPlease",
         season: Int = 1,
         episode: Int = 1,
         isAmbiguous: Boolean = false
     ): Release {
-        val normalized = ReleaseNormalizationService.normalizeTitle(title)
+        val cleanAnimeTitle = animeTitle ?: (if (title.contains(" - ")) title.substringBefore(" - ").trim() else title)
+        val normalized = ReleaseNormalizationService.normalizeTitle(cleanAnimeTitle)
         val animeIdent = AnimeIdentity(
             normalizedTitle = normalized,
-            rawTitle = title
+            rawTitle = cleanAnimeTitle
         )
         val releaseIdent = ReleaseIdentity(
             providerId = provider.providerId,

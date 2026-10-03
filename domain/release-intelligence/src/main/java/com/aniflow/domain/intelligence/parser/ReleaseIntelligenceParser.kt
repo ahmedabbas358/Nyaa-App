@@ -2,6 +2,7 @@ package com.aniflow.domain.intelligence.parser
 
 import com.aniflow.domain.identity.ProviderId
 import com.aniflow.domain.identity.ReleaseId
+import com.aniflow.domain.valueobject.EpisodeRange
 import com.aniflow.domain.intelligence.detector.AnimeTitleExtractor
 import com.aniflow.domain.intelligence.detector.AudioDetector
 import com.aniflow.domain.intelligence.detector.BatchDetector

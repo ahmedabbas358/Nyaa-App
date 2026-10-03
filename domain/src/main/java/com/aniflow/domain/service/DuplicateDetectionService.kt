@@ -92,8 +92,12 @@ object DuplicateDetectionService {
             }
 
             // Size-only match (Weak / Possible)
-            if (fingerprint is FileFingerprint.SizeOnly && existingFp is FileFingerprint.SizeOnly) {
-                if (fingerprint.size == existingFp.size) {
+            if (fingerprint is FileFingerprint.SizeOnly) {
+                val existingSize = when (existingFp) {
+                    is FileFingerprint.SizeOnly -> existingFp.size
+                    else -> file.size
+                }
+                if (fingerprint.size == existingSize) {
                     return DuplicateMatch(
                         duplicateType = DuplicateType.PossibleDuplicate,
                         confidence = DuplicateConfidence.Possible,

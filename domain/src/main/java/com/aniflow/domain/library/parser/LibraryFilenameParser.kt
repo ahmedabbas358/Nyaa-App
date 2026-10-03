@@ -96,10 +96,17 @@ class LibraryFilenameParser {
         val resolution = resolutionRegex.find(cleanFileName)?.value?.uppercase()
         val codec = codecRegex.find(cleanFileName)?.value?.uppercase()
 
-        // Section 37: Ambiguity detection - If animeCandidate is missing, empty, or generic "Episode"
+        // Section 37: Ambiguity detection - If animeCandidate is missing, empty, generic, or non-meaningful
+        val genericFolderNames = setOf(
+            "downloads", "download", "new folder", "temp", "tmp",
+            "videos", "video", "media", "files", "desktop", "documents",
+            "torrents", "torrent", "incoming", "complete", "completed"
+        )
         val isAmbiguous = animeCandidate.isNullOrBlank() ||
                 animeCandidate.equals("Episode", ignoreCase = true) ||
-                animeCandidate.matches(Regex("""(?i)Episode\s*\d+"""))
+                animeCandidate.matches(Regex("""(?i)Episode\s*\d+""")) ||
+                animeCandidate.matches(Regex("""\d+(\.\d+)?""")) ||
+                animeCandidate.lowercase() in genericFolderNames
 
         return LibraryParseResult(
             animeTitleCandidate = if (isAmbiguous) null else animeCandidate,
