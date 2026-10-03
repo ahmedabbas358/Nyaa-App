@@ -161,15 +161,25 @@ object AppTypography {
     )
 
     // Aliases for legacy component compatibility
+    @get:JvmName("getDisplayLargeAlias")
     val displayLarge = Display
+    @get:JvmName("getHeadlineAlias")
     val headline = LargeTitle
+    @get:JvmName("getTitleAlias")
     val title = Title
+    @get:JvmName("getTitleMediumAlias")
     val titleMedium = SectionTitle
+    @get:JvmName("getSubheadlineAlias")
     val subheadline = Subtitle
+    @get:JvmName("getBodyAlias")
     val body = Body
+    @get:JvmName("getBodySmallAlias")
     val bodySmall = BodySmall
+    @get:JvmName("getBodySecondaryAlias")
     val bodySecondary = BodySmall
+    @get:JvmName("getLabelAlias")
     val label = Subtitle
+    @get:JvmName("getCaptionAlias")
     val caption = Caption
 
     // Dedicated numeric styles for speeds, ETAs, and file sizes (Section 6, 15)
