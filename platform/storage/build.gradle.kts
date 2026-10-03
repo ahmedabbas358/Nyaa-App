@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":core:storage"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.documentfile)
     implementation(libs.kotlinx.coroutines.core)
 
     testImplementation(libs.junit)
