@@ -26,6 +26,30 @@ data class TechnicalMetadata(
     val frameRate: FrameRate? = null,
     val multiAudio: Boolean = false
 ) {
+    constructor(
+        resolution: String? = null,
+        videoCodec: String? = null,
+        audio: List<AudioTrack> = emptyList(),
+        subtitles: List<SubtitleTrack> = emptyList(),
+        bitDepth: Int? = null,
+        source: VideoSource? = null,
+        hdr: HdrFormat? = null,
+        colorDepth: Int? = null,
+        frameRate: FrameRate? = null,
+        multiAudio: Boolean = false
+    ) : this(
+        resolution = resolution?.let { Resolution.fromString(it) },
+        codec = videoCodec?.let { VideoCodec.fromString(it) },
+        bitDepth = bitDepth,
+        source = source,
+        audio = audio.map { AudioTrackDescriptor(codec = it.codec.let { c -> AudioCodec.fromString(c) }, language = it.language) },
+        subtitles = subtitles.map { SubtitleDescriptor(language = it.language, isEmbedded = true) },
+        hdr = hdr,
+        colorDepth = colorDepth,
+        frameRate = frameRate,
+        multiAudio = multiAudio
+    )
+
     val videoCodec: VideoCodec? get() = codec
     val audioTracks: List<com.aniflow.domain.valueobject.AudioTrack>
         get() = audio.map {

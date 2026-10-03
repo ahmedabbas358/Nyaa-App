@@ -17,6 +17,8 @@ import com.aniflow.domain.controlplane.service.CandidateReleaseContext
 import com.aniflow.domain.controlplane.service.RuleTreeEvaluator
 import com.aniflow.domain.identity.AutomationExecutionId
 import com.aniflow.domain.intelligence.model.NormalizedRelease
+import com.aniflow.domain.valueobject.Resolution
+import com.aniflow.domain.valueobject.VideoCodec
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,26 +66,28 @@ class AutomationRuntime(
             for (release in candidateReleases) {
                 val executionId = AutomationExecutionId("exec_${UUID.randomUUID().toString().take(8)}")
                 val explainabilityLog = mutableListOf<String>()
+                val releaseTitle = release.releaseSource?.title ?: release.rawTitle.ifBlank { release.normalizedTitle }
 
                 explainabilityLog.add("Rule '${rule.name}' triggered by ${trigger::class.simpleName}")
 
                 // 1. Evaluate Rule AST conditions (reusing existing Step 11 evaluator)
                 if (rule.conditions != null) {
                     val candidateContext = CandidateReleaseContext(
-                        animeTitle = release.source.title,
-                        resolution = release.technical.resolution,
-                        codec = release.technical.videoCodec
+                        title = releaseTitle,
+                        animeTitle = release.animeCandidate ?: release.normalizedTitle,
+                        resolution = release.technical.resolution ?: Resolution.R1080p,
+                        codec = release.technical.codec ?: VideoCodec.HEVC
                     )
                     val conditionsPassed = ruleTreeEvaluator.evaluateNode(rule.conditions, candidateContext)
                     if (!conditionsPassed) {
-                        explainabilityLog.add("Rule conditions evaluated to false for release '${release.source.title}'")
+                        explainabilityLog.add("Rule conditions evaluated to false for release '$releaseTitle'")
                         continue
                     }
                     explainabilityLog.add("Rule conditions satisfied.")
                 }
 
                 // 2. Cooldown check (Section 37, 38)
-                val targetId = release.source.title
+                val targetId = releaseTitle
                 val executionKey = AutomationExecutionKey(rule.id, trigger.toString(), targetId)
                 if (cooldownManager.isCoolingDown(executionKey, rule.cooldown)) {
                     explainabilityLog.add("Execution skipped due to active cooldown window.")
@@ -140,7 +144,7 @@ class AutomationRuntime(
                         val reviewItem = reviewQueue.createReviewItem(
                             executionId = executionId,
                             issue = "Automation requires user confirmation",
-                            candidateReleaseTitle = release.source.title,
+                            candidateReleaseTitle = releaseTitle,
                             reason = safetyCheck.explanation,
                             recommendedAction = "Approve Download"
                         )
@@ -207,6 +211,7 @@ class AutomationRuntime(
         val actions = mutableListOf<String>()
 
         for (release in candidateReleases) {
+            val releaseTitle = release.releaseSource?.title ?: release.rawTitle.ifBlank { release.normalizedTitle }
             val safetyContext = SafetyEvaluationContext(
                 release = release,
                 availableStorageBytes = availableStorageBytes,
@@ -222,16 +227,16 @@ class AutomationRuntime(
                     wouldDownload++
                     val bytes = release.fileInfo.sizeBytes ?: 1024L * 1024 * 1024
                     totalEstimatedBytes += bytes
-                    actions.add("Would queue download: ${release.source.title} (${bytes / (1024 * 1024)} MB)")
+                    actions.add("Would queue download: $releaseTitle (${bytes / (1024 * 1024)} MB)")
                 }
                 SafetyDecision.RequiresConfirmation -> {
                     wouldSelect++
                     wouldReview++
-                    actions.add("Would require confirmation: ${release.source.title} (${check.explanation})")
+                    actions.add("Would require confirmation: $releaseTitle (${check.explanation})")
                 }
                 SafetyDecision.Blocked -> {
                     wouldSkip++
-                    actions.add("Would block: ${release.source.title} (${check.explanation})")
+                    actions.add("Would block: $releaseTitle (${check.explanation})")
                 }
             }
         }

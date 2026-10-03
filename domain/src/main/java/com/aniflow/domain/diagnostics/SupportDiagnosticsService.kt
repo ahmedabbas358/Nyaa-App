@@ -76,7 +76,7 @@ class SafeRepairService(
         var retriedCount = 0
 
         for (task in allTasks) {
-            if (task.state is DownloadState.Failed) {
+            if (task.state == DownloadState.Failed) {
                 val retried = task.copy(state = DownloadState.Queued)
                 downloadRepository.saveTask(retried)
                 retriedCount++

@@ -51,10 +51,48 @@ data class NormalizedRelease(
     val state: ParserState = ParserState.Parsed,
     val rawMetadata: Map<String, String> = emptyMap(),
     val parserVersion: Int = 1,
-    val legacyReleaseType: ReleaseType = ReleaseType.Unknown
+    val legacyReleaseType: ReleaseType = ReleaseType.Unknown,
+    val stats: ReleaseStats = ReleaseStats(),
+    val links: ReleaseLinks = ReleaseLinks(),
+    val fileInfo: FileInfo = FileInfo(),
+    val releaseSource: ReleaseSource? = null,
+    val episodeMatch: EpisodeMatch? = null
 ) {
+    constructor(
+        releaseId: ReleaseId,
+        providerReleaseId: String? = null,
+        source: ReleaseSource? = null,
+        technical: TechnicalMetadata = TechnicalMetadata(null, null),
+        episodeMatch: EpisodeMatch? = null,
+        stats: ReleaseStats = ReleaseStats(),
+        fileInfo: FileInfo = FileInfo(),
+        links: ReleaseLinks = ReleaseLinks(),
+        isBatch: Boolean = false,
+        animeCandidate: String? = source?.title,
+        confidence: ReleaseConfidence = ReleaseConfidence.fromScores(0.95f, 0.95f, 0.95f, 0.95f)
+    ) : this(
+        releaseId = releaseId,
+        animeIdentity = animeCandidate?.let { AnimeIdentity(it) },
+        season = SeasonReference(1),
+        episodes = if (isBatch) EpisodeCoverage.Range(1, 12) else EpisodeCoverage.Single(episodeMatch?.detectedEpisode?.toInt() ?: 1),
+        technical = technical,
+        uploader = null,
+        releaseGroup = null,
+        batchType = if (isBatch) BatchType.SeasonBatch else BatchType.SingleEpisode,
+        confidence = confidence,
+        rawTitle = source?.title ?: "",
+        normalizedTitle = source?.title ?: "",
+        rawMetadata = if (providerReleaseId != null) mapOf("providerReleaseId" to providerReleaseId, "provider" to (source?.providerName ?: "Nyaa")) else emptyMap(),
+        stats = stats,
+        links = links,
+        fileInfo = fileInfo,
+        releaseSource = source,
+        episodeMatch = episodeMatch
+    )
+
     // Backward compatibility getters
     val id: ReleaseId get() = releaseId
+    val sourceInfo: ReleaseSource? get() = releaseSource
     val providerReleaseId: String? get() = rawMetadata["providerReleaseId"] ?: rawMetadata["releaseId"]
     val animeCandidate: String? get() = animeIdentity?.canonicalTitle
     val seasonCandidate: Int? get() = season?.seasonNumber ?: 1

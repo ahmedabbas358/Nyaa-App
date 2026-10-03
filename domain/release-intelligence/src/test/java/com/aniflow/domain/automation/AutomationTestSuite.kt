@@ -22,9 +22,9 @@ import com.aniflow.domain.automation.review.ReviewQueueManager
 import com.aniflow.domain.automation.safety.AutomationSafetyGate
 import com.aniflow.domain.automation.safety.SafetyEvaluationContext
 import com.aniflow.domain.automation.scheduler.AutomationScheduler
-import com.aniflow.domain.controlplane.models.RuleConditionNode
-import com.aniflow.domain.controlplane.models.RuleField
-import com.aniflow.domain.controlplane.models.RuleOperator
+import com.aniflow.domain.controlplane.models.AdvancedRuleCondition
+import com.aniflow.domain.controlplane.models.ConditionNode
+import com.aniflow.domain.valueobject.Resolution
 import com.aniflow.domain.identity.AutomationRuleId
 import com.aniflow.domain.identity.ReleaseId
 import com.aniflow.domain.identity.SavedSearchId
@@ -385,10 +385,8 @@ class AutomationTestSuite {
         val runtime = AutomationRuntime()
 
         // Rule condition: Resolution == "1080p"
-        val condition = RuleConditionNode(
-            field = RuleField.Resolution,
-            operator = RuleOperator.Equals,
-            value = "1080p"
+        val condition = ConditionNode(
+            AdvancedRuleCondition.ResolutionIs(Resolution.R1080p)
         )
 
         val rule = AutomationRule(

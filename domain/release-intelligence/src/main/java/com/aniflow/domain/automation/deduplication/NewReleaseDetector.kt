@@ -96,7 +96,7 @@ class NewReleaseDetector {
         return if (!infoHash.isNullOrBlank()) {
             "infohash:$infoHash"
         } else {
-            val provider = release.source.providerName
+            val provider = release.releaseSource?.providerName ?: release.rawMetadata["provider"] ?: "Nyaa"
             val id = release.providerReleaseId ?: release.releaseId.value
             "provider:$provider:$id"
         }

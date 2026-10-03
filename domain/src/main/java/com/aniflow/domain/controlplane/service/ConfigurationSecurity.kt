@@ -1,8 +1,11 @@
 package com.aniflow.domain.controlplane.service
 
 import com.aniflow.core.common.sanitization.PathSanitizer
+import com.aniflow.domain.controlplane.models.AndNode
 import com.aniflow.domain.controlplane.models.ConditionNode
-import com.aniflow.domain.controlplane.models.GroupConditionNode
+import com.aniflow.domain.controlplane.models.NotNode
+import com.aniflow.domain.controlplane.models.OrNode
+import com.aniflow.domain.controlplane.models.RuleNode
 
 /**
  * Enforces STEP 13 Section 50 (Export Security) and Section 51 (Import Security).
@@ -57,14 +60,26 @@ object ConfigurationSecurity {
     /**
      * Validates AST rule tree recursion depth to prevent stack overflow attacks.
      */
-    fun validateRuleDepth(node: ConditionNode, currentDepth: Int = 1): ValidationResult {
+    fun validateRuleDepth(node: RuleNode, currentDepth: Int = 1): ValidationResult {
         if (currentDepth > MAX_RULE_AST_DEPTH) {
             return ValidationResult.Invalid("Rule nesting depth exceeded maximum of $MAX_RULE_AST_DEPTH")
         }
-        if (node is GroupConditionNode) {
-            for (child in node.conditions) {
-                val childResult = validateRuleDepth(child, currentDepth + 1)
-                if (childResult is ValidationResult.Invalid) return childResult
+        when (node) {
+            is ConditionNode -> return ValidationResult.Valid
+            is AndNode -> {
+                for (child in node.children) {
+                    val childResult = validateRuleDepth(child, currentDepth + 1)
+                    if (childResult is ValidationResult.Invalid) return childResult
+                }
+            }
+            is OrNode -> {
+                for (child in node.children) {
+                    val childResult = validateRuleDepth(child, currentDepth + 1)
+                    if (childResult is ValidationResult.Invalid) return childResult
+                }
+            }
+            is NotNode -> {
+                return validateRuleDepth(node.child, currentDepth + 1)
             }
         }
         return ValidationResult.Valid
