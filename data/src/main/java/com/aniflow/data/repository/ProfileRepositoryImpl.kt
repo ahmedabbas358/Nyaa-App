@@ -9,6 +9,8 @@ import com.aniflow.domain.profile.validator.ProfileValidator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -21,6 +23,7 @@ class UserProfileRepositoryImpl : ProfileRepository {
 
     private val profiles = ConcurrentHashMap<ProfileId, UserProfile>()
     private val _flow = MutableStateFlow<List<UserProfile>>(emptyList())
+    private val mutex = Mutex()
 
     init {
         // Pre-populate with standard templates upon initial system initialization
@@ -53,11 +56,10 @@ class UserProfileRepositoryImpl : ProfileRepository {
             }
     }
 
-    @Synchronized
-    override suspend fun saveProfile(profile: UserProfile): ProfileValidationResult {
+    override suspend fun saveProfile(profile: UserProfile): ProfileValidationResult = mutex.withLock {
         val validation = ProfileValidator.validate(profile)
         if (!validation.isValid) {
-            return validation
+            return@withLock validation
         }
 
         if (profile.isDefault) {
@@ -71,11 +73,10 @@ class UserProfileRepositoryImpl : ProfileRepository {
 
         profiles[profile.id] = profile
         updateFlow()
-        return validation
+        validation
     }
 
-    @Synchronized
-    override suspend fun setDefaultProfile(id: ProfileId) {
+    override suspend fun setDefaultProfile(id: ProfileId): Unit = mutex.withLock {
         val target = profiles[id] ?: throw IllegalArgumentException("Profile with ID '$id' not found")
 
         for ((pId, existing) in profiles) {
@@ -87,8 +88,7 @@ class UserProfileRepositoryImpl : ProfileRepository {
         updateFlow()
     }
 
-    @Synchronized
-    override suspend fun duplicateProfile(id: ProfileId, newName: String?): UserProfile {
+    override suspend fun duplicateProfile(id: ProfileId, newName: String?): UserProfile = mutex.withLock {
         val source = profiles[id] ?: throw IllegalArgumentException("Cannot duplicate: Profile '$id' does not exist")
         val duplicateId = ProfileId("prof_${UUID.randomUUID()}")
         val nameToUse = newName ?: "${source.name} (Copy)"
@@ -104,12 +104,11 @@ class UserProfileRepositoryImpl : ProfileRepository {
 
         profiles[duplicateId] = duplicated
         updateFlow()
-        return duplicated
+        duplicated
     }
 
-    @Synchronized
-    override suspend fun deleteProfile(id: ProfileId): Boolean {
-        val target = profiles[id] ?: return false
+    override suspend fun deleteProfile(id: ProfileId): Boolean = mutex.withLock {
+        val target = profiles[id] ?: return@withLock false
         require(!target.isDefault) {
             "Cannot delete the default profile '$id'. Designate another profile as default before deleting."
         }
@@ -118,7 +117,7 @@ class UserProfileRepositoryImpl : ProfileRepository {
         if (removed) {
             updateFlow()
         }
-        return removed
+        removed
     }
 
     override suspend fun getActiveProfileCount(): Int = profiles.size

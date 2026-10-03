@@ -209,7 +209,7 @@ fun ReleaseDetailScreen(
                         QualityBadge(text = release.provider.name, color = PrimaryIndigo)
                         release.technical.resolution?.let { QualityBadge(text = it.displayName, color = Badge1080p) }
                         release.technical.videoCodec?.let { QualityBadge(text = it.displayName, color = BadgeHevc) }
-                        if (release.uploader != null) QualityBadge(text = release.uploader.name, color = BadgeTrusted)
+                        release.uploader?.let { QualityBadge(text = it.name, color = BadgeTrusted) }
                     }
 
                     // 2. Swarm & Size Stats Card

@@ -41,15 +41,18 @@ object ProviderReleaseMapper {
             else "rel_${providerId.value}_${providerRelease.providerReleaseId ?: UUID.randomUUID().toString().take(8)}"
         )
 
+        val torrentUrl = providerRelease.torrentUrl
+        val magnetUri = providerRelease.magnetUri
+
         val releaseSource = when {
             infoHash != null -> ReleaseSource.Torrent(
                 infoHash = infoHash,
-                torrentUrl = providerRelease.torrentUrl?.let { UrlValue.TorrentUrl(it.rawValue) },
-                magnetUri = providerRelease.magnetUri?.let { UrlValue.MagnetUri(it) }
+                torrentUrl = torrentUrl?.let { UrlValue.TorrentUrl(it.rawValue) },
+                magnetUri = magnetUri?.let { UrlValue.MagnetUri(it) }
             )
-            providerRelease.torrentUrl != null -> ReleaseSource.Torrent(
+            torrentUrl != null -> ReleaseSource.Torrent(
                 infoHash = InfoHash("0000000000000000000000000000000000000000"),
-                torrentUrl = UrlValue.TorrentUrl(providerRelease.torrentUrl.rawValue),
+                torrentUrl = UrlValue.TorrentUrl(torrentUrl.rawValue),
                 magnetUri = null
             )
             else -> ReleaseSource.Unknown
