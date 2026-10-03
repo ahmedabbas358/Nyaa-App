@@ -24,6 +24,9 @@ jobs:
       - name: Setup Gradle Cache
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Grant Execute Permission to Gradlew
+        run: chmod +x gradlew
+
       - name: Run Parser Fuzz & Regression Suites
         run: |
           ./gradlew :testing:test --tests "com.aniflow.testing.ParserFuzzTests" --stacktrace

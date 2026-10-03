@@ -31,6 +31,9 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
+      - name: Grant Execute Permission to Gradlew
+        run: chmod +x gradlew
+
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v2
 
