@@ -31,6 +31,9 @@ interface LibraryDao {
     @Query("SELECT * FROM library_items ORDER BY display_title ASC")
     fun observeItems(): Flow<List<LibraryItemEntity>>
 
+    @Query("SELECT * FROM library_items ORDER BY display_title ASC")
+    suspend fun getAllItems(): List<LibraryItemEntity>
+
     @Query("DELETE FROM library_items WHERE id = :id")
     suspend fun deleteItem(id: String)
 

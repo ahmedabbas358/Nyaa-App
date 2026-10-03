@@ -120,7 +120,6 @@ class FinalAcceptanceScenarioTest {
         val providerRegistry = DefaultProviderRegistry().apply { register(fakeProvider) }
         val searchCoordinator = ProviderSearchCoordinator(providerRegistry)
         val parser = ReleaseParserImpl()
-        val normalizer = ReleaseNormalizationService()
 
         val searchUseCase = SearchReleasesCoordinatorUseCase(
             coordinator = searchCoordinator,

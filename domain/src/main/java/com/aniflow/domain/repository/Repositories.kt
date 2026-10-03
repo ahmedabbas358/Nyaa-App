@@ -128,6 +128,7 @@ interface CollectionRepository {
 
 interface DownloadRepository {
     suspend fun getTaskById(id: DownloadTaskId): DownloadTask?
+    suspend fun getAllTasks(): List<DownloadTask>
     fun observeTasks(): Flow<List<DownloadTask>>
     fun observeTasksByState(states: Set<DownloadState>): Flow<List<DownloadTask>>
     suspend fun saveTask(task: DownloadTask)
@@ -138,6 +139,7 @@ interface DownloadRepository {
 
 interface LibraryRepository {
     suspend fun getItemById(id: LibraryItemId): LibraryItem?
+    suspend fun getAllItems(): List<LibraryItem>
     fun observeItems(): Flow<List<LibraryItem>>
     suspend fun getFilesForItem(itemId: LibraryItemId): List<LibraryFile>
     suspend fun saveItem(item: LibraryItem)

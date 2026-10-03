@@ -318,6 +318,9 @@ class DownloadRepositoryImpl(
     override suspend fun getTaskById(id: DownloadTaskId): DownloadTask? =
         taskDao.getById(id.value)?.toDomain()
 
+    override suspend fun getAllTasks(): List<DownloadTask> =
+        taskDao.getAllTasks().map { it.toDomain() }
+
     override fun observeTasks(): Flow<List<DownloadTask>> =
         taskDao.observeTasks().map { list -> list.map { it.toDomain() } }
 
@@ -340,6 +343,9 @@ class LibraryRepositoryImpl(
 
     override suspend fun getItemById(id: LibraryItemId): LibraryItem? =
         libraryDao.getItemById(id.value)?.toDomain()
+
+    override suspend fun getAllItems(): List<LibraryItem> =
+        libraryDao.getAllItems().map { it.toDomain() }
 
     override fun observeItems(): Flow<List<LibraryItem>> =
         libraryDao.observeItems().map { list -> list.map { it.toDomain() } }

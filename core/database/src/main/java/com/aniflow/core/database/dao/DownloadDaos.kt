@@ -87,6 +87,9 @@ interface DownloadTaskDao {
     @Query("SELECT * FROM download_tasks WHERE state = 'Queued' ORDER BY priority DESC, created_at ASC LIMIT :limit")
     suspend fun getQueuedTasksForExecution(limit: Int): List<DownloadTaskEntity>
 
+    @Query("SELECT * FROM download_tasks ORDER BY priority DESC, created_at ASC")
+    suspend fun getAllTasks(): List<DownloadTaskEntity>
+
     @Query("DELETE FROM download_tasks WHERE id = :id")
     suspend fun delete(id: String)
 }

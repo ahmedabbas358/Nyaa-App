@@ -77,15 +77,18 @@ class InMemoryReleaseRepository : ReleaseRepository {
 
 class InMemoryDownloadRepository : DownloadRepository {
     private val taskStore = mutableMapOf<DownloadTaskId, DownloadTask>()
+    private val fileStore = mutableMapOf<com.aniflow.domain.identity.DownloadFileId, DownloadFile>()
 
     override suspend fun getTaskById(id: DownloadTaskId): DownloadTask? = taskStore[id]
     override suspend fun getAllTasks(): List<DownloadTask> = taskStore.values.toList()
-    override fun observeAllTasks(): Flow<List<DownloadTask>> = flowOf(taskStore.values.toList())
-    override fun observeActiveTasks(): Flow<List<DownloadTask>> = flowOf(taskStore.values.filter { it.state == DownloadState.Downloading })
+    override fun observeTasks(): Flow<List<DownloadTask>> = flowOf(taskStore.values.toList())
+    override fun observeTasksByState(states: Set<DownloadState>): Flow<List<DownloadTask>> =
+        flowOf(taskStore.values.filter { it.state in states })
     override suspend fun saveTask(task: DownloadTask) { taskStore[task.id] = task }
     override suspend fun deleteTask(id: DownloadTaskId) { taskStore.remove(id) }
-    override suspend fun getFilesByTaskId(taskId: DownloadTaskId): List<DownloadFile> = emptyList()
-    override suspend fun saveFile(file: DownloadFile) {}
+    override suspend fun getFilesForTask(taskId: DownloadTaskId): List<DownloadFile> =
+        fileStore.values.filter { it.taskId == taskId }
+    override suspend fun saveFile(file: DownloadFile) { fileStore[file.id] = file }
 }
 
 class InMemoryLibraryRepository : LibraryRepository {
@@ -93,10 +96,9 @@ class InMemoryLibraryRepository : LibraryRepository {
     private val fileStore = mutableMapOf<LibraryFileId, LibraryFile>()
 
     override suspend fun getItemById(id: LibraryItemId): LibraryItem? = itemStore[id]
-    override suspend fun getItemByAnimeId(animeId: AnimeId): LibraryItem? = null
-    override fun observeAllItems(): Flow<List<LibraryItem>> = flowOf(itemStore.values.toList())
     override suspend fun getAllItems(): List<LibraryItem> = itemStore.values.toList()
-    override suspend fun getFilesByItemId(itemId: LibraryItemId): List<LibraryFile> =
+    override fun observeItems(): Flow<List<LibraryItem>> = flowOf(itemStore.values.toList())
+    override suspend fun getFilesForItem(itemId: LibraryItemId): List<LibraryFile> =
         fileStore.values.filter { it.itemId == itemId }
     override suspend fun saveItem(item: LibraryItem) { itemStore[item.id] = item }
     override suspend fun saveFile(file: LibraryFile) { fileStore[file.id] = file }

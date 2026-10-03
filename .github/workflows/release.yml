@@ -15,6 +15,8 @@ jobs:
     name: Package, Sign & Publish Release
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Source Code
@@ -56,18 +58,20 @@ jobs:
 
       - name: Run Full Pre-Release Verification Suites
         run: |
-          ./gradlew :testing:test --tests "com.aniflow.testing.FinalAcceptanceScenarioTest" --stacktrace
-          ./gradlew :testing:test --tests "com.aniflow.testing.ArchitectureVerificationTests" --stacktrace
-          ./gradlew :testing:test --tests "com.aniflow.testing.CompleteArchitectureAndProductAuditTestSuite" --stacktrace
-          ./gradlew :testing:test --tests "com.aniflow.testing.SecurityAndSanitizationTests" --stacktrace
-          ./gradlew :domain:test --stacktrace
+          ./gradlew :testing:test --tests "com.aniflow.testing.FinalAcceptanceScenarioTest" --stacktrace --info
+          ./gradlew :testing:test --tests "com.aniflow.testing.ArchitectureVerificationTests" --stacktrace --info
+          ./gradlew :testing:test --tests "com.aniflow.testing.CompleteArchitectureAndProductAuditTestSuite" --stacktrace --info
+          ./gradlew :testing:test --tests "com.aniflow.testing.SecurityAndSanitizationTests" --stacktrace --info
+          ./gradlew :domain:test --stacktrace --info
 
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: release-test-results
-          path: '**/build/reports/tests/'
+          path: |
+            **/build/reports/tests/
+            **/build/reports/
 
       - name: Assemble Release APK & Bundle AAB
         run: |
@@ -76,7 +80,13 @@ jobs:
       - name: Organize & Rename Artifacts
         id: organize_artifacts
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          RAW_VERSION="${{ inputs.version_override || github.ref_name }}"
+          VERSION="${RAW_VERSION#v}"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "main" ]; then
+            VERSION="1.0.0"
+          fi
+          echo "RELEASE_VERSION=${VERSION}" >> $GITHUB_ENV
+          
           mkdir -p output/
           
           # Copy and rename APK
@@ -110,6 +120,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: "v${{ env.RELEASE_VERSION }}"
+          name: "AniFlow v${{ env.RELEASE_VERSION }}"
           files: |
             output/AniFlow-*.apk
             output/AniFlow-*.aab

@@ -40,14 +40,14 @@ jobs:
       - name: Run Static Analysis & Architecture Verification
         run: |
           ./gradlew lintDebug --stacktrace
-          ./gradlew :testing:test --tests "com.aniflow.testing.ArchitectureVerificationTests"
+          ./gradlew :testing:test --tests "com.aniflow.testing.ArchitectureVerificationTests" --stacktrace --info
 
       - name: Run Unit & Integration Test Suites
         run: |
-          ./gradlew :testing:test --tests "com.aniflow.testing.FinalAcceptanceScenarioTest" --stacktrace
-          ./gradlew :testing:test --tests "com.aniflow.testing.CompleteArchitectureAndProductAuditTestSuite" --stacktrace
-          ./gradlew :testing:test --tests "com.aniflow.testing.SecurityAndSanitizationTests" --stacktrace
-          ./gradlew :domain:test --stacktrace
+          ./gradlew :testing:test --tests "com.aniflow.testing.FinalAcceptanceScenarioTest" --stacktrace --info
+          ./gradlew :testing:test --tests "com.aniflow.testing.CompleteArchitectureAndProductAuditTestSuite" --stacktrace --info
+          ./gradlew :testing:test --tests "com.aniflow.testing.SecurityAndSanitizationTests" --stacktrace --info
+          ./gradlew :domain:test --stacktrace --info
 
       - name: Build Debug Artifact
         run: ./gradlew assembleDebug --stacktrace
@@ -57,4 +57,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: '**/build/reports/tests/'
+          path: |
+            **/build/reports/tests/
+            **/build/reports/
