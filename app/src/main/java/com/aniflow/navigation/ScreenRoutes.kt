@@ -1,5 +1,6 @@
 package com.aniflow.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
@@ -7,10 +8,11 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.aniflow.core.ui.R
 
 /**
- * Centrally defined Typed Route Model (Sections 159, 160, 192).
- * Prevents hard-coded magic strings throughout the presentation layer.
+ * Centrally defined Typed Route Model (Sections 145, 146, 158).
+ * Supports typed parameterization and deep-linking without hard-coded magic strings.
  */
 sealed class ScreenRoute(val route: String) {
     data object Home : ScreenRoute("home")
@@ -32,11 +34,17 @@ sealed class ScreenRoute(val route: String) {
         fun createRoute(animeId: String, seasonNumber: Int): String = "anime/$animeId/season/$seasonNumber"
     }
 
+    data object EpisodeDetails : ScreenRoute("anime/{animeId}/episode/{episodeId}") {
+        fun createRoute(animeId: String, episodeId: String): String = "anime/$animeId/episode/$episodeId"
+    }
+
     data object SelectionReview : ScreenRoute("selection_review")
     data object DownloadPlan : ScreenRoute("download_plan")
     data object DownloadDetails : ScreenRoute("download_details/{taskId}") {
         fun createRoute(taskId: String): String = "download_details/$taskId"
     }
+    data object DownloadStatistics : ScreenRoute("download_statistics")
+    data object DownloadHistory : ScreenRoute("download_history")
 
     data object Collections : ScreenRoute("collections")
     data object CollectionDetails : ScreenRoute("collection/{collectionId}") {
@@ -64,19 +72,27 @@ sealed class ScreenRoute(val route: String) {
         fun createRoute(mediaId: String): String = "player/$mediaId"
     }
     data object Onboarding : ScreenRoute("onboarding")
+    data object StorageSetup : ScreenRoute("storage_setup")
     data object Diagnostics : ScreenRoute("diagnostics")
+    data object Duplicates : ScreenRoute("duplicates")
+    data object UnidentifiedMedia : ScreenRoute("unidentified_media")
+    data object Upgrades : ScreenRoute("upgrades")
+    data object Notifications : ScreenRoute("notifications")
+    data object SearchHistory : ScreenRoute("search_history")
+    data object RuleHistory : ScreenRoute("rule_history")
 }
 
 data class BottomNavDestination(
     val route: ScreenRoute,
-    val title: String,
+    @StringRes val titleRes: Int,
+    val titleFallback: String,
     val icon: ImageVector
 )
 
 val mainBottomNavDestinations = listOf(
-    BottomNavDestination(ScreenRoute.Home, "Home", Icons.Default.Home),
-    BottomNavDestination(ScreenRoute.Search, "Search", Icons.Default.Search),
-    BottomNavDestination(ScreenRoute.Downloads, "Downloads", Icons.Default.Download),
-    BottomNavDestination(ScreenRoute.Library, "Library", Icons.Default.Folder),
-    BottomNavDestination(ScreenRoute.More, "More", Icons.Default.MoreHoriz)
+    BottomNavDestination(ScreenRoute.Home, R.string.nav_home, "Home", Icons.Default.Home),
+    BottomNavDestination(ScreenRoute.Search, R.string.nav_search, "Search", Icons.Default.Search),
+    BottomNavDestination(ScreenRoute.Downloads, R.string.nav_downloads, "Downloads", Icons.Default.Download),
+    BottomNavDestination(ScreenRoute.Library, R.string.nav_library, "Library", Icons.Default.Folder),
+    BottomNavDestination(ScreenRoute.More, R.string.nav_more, "More", Icons.Default.MoreHoriz)
 )

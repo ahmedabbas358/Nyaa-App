@@ -215,4 +215,9 @@ object DomainModule {
     @Provides
     fun provideSelectBatchUseCase(): com.aniflow.domain.selection.usecase.SelectBatchUseCase =
         com.aniflow.domain.selection.usecase.SelectBatchUseCase()
+
+    @Provides
+    @Singleton
+    fun provideSearchHistoryManager(): com.aniflow.domain.search.usecase.SearchHistoryManager =
+        com.aniflow.domain.search.usecase.SearchHistoryManager()
 }

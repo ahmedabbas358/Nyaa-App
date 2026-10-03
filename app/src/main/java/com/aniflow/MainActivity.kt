@@ -43,12 +43,13 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var resumeDownloadUseCase: ResumeDownloadUseCase
     @Inject lateinit var cancelDownloadUseCase: CancelDownloadUseCase
     @Inject lateinit var getReleaseDetailsUseCase: com.aniflow.domain.usecase.GetReleaseDetailsUseCase
+    @Inject lateinit var watchProgressRepository: com.aniflow.domain.library.repository.WatchProgressRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val homeViewModel = HomeViewModel(releaseRepository, downloadRepository)
+        val homeViewModel = HomeViewModel(releaseRepository, downloadRepository, watchProgressRepository)
         val searchViewModel = SearchViewModel(
             searchReleasesUseCase = searchReleasesUseCase,
             searchCoordinatorUseCase = searchReleasesCoordinatorUseCase,

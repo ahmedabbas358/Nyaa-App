@@ -51,8 +51,12 @@ import com.aniflow.core.ui.theme.TextPrimary
 import com.aniflow.core.ui.theme.TextSecondary
 import com.aniflow.domain.coverage.EpisodeAvailabilityState
 
+import com.aniflow.core.ui.components.AniEmptyState
+import androidx.compose.material.icons.filled.CheckCircle
+
 /**
  * Step 20 — Missing Episodes Screen (Section 47, 48, 51).
+ * Zero hardcoded production data.
  */
 data class MissingEpisodeUiModel(
     val episodeId: String,
@@ -67,7 +71,7 @@ data class MissingEpisodeUiModel(
 
 data class MissingEpisodesUiState(
     val animeId: String = "",
-    val animeTitle: String = "One Piece",
+    val animeTitle: String = "",
     val isSearchingBatch: Boolean = false,
     val currentSearchingLabel: String? = null,
     val missingEpisodes: List<MissingEpisodeUiModel> = emptyList()
@@ -96,11 +100,13 @@ fun MissingEpisodesScreen(
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(
-                            text = "${uiState.animeTitle} • ${uiState.missingEpisodes.size} missing",
-                            color = TextSecondary,
-                            fontSize = 12.sp
-                        )
+                        if (uiState.animeTitle.isNotBlank()) {
+                            Text(
+                                text = "${uiState.animeTitle} • ${uiState.missingEpisodes.size} missing",
+                                color = TextSecondary,
+                                fontSize = 12.sp
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
@@ -113,12 +119,14 @@ fun MissingEpisodesScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onSearchAllMissingClick(uiState.animeId) }) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Find All Missing",
-                            tint = PrimaryIndigo
-                        )
+                    if (uiState.missingEpisodes.isNotEmpty()) {
+                        IconButton(onClick = { onSearchAllMissingClick(uiState.animeId) }) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Find All Missing",
+                                tint = PrimaryIndigo
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkSurface)
@@ -157,13 +165,23 @@ fun MissingEpisodesScreen(
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        if (uiState.missingEpisodes.isEmpty()) {
+            AniEmptyState(
+                title = "No missing episodes",
+                description = "All episodes for this series are available and indexed in your library.",
+                icon = Icons.Default.CheckCircle,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
             // Searching Progress Notice (Section 49)
             if (uiState.isSearchingBatch && uiState.currentSearchingLabel != null) {
                 item {

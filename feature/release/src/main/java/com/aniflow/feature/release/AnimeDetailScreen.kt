@@ -66,14 +66,18 @@ import com.aniflow.domain.anime.MediaType
 import com.aniflow.domain.coverage.AnimeCoverage
 import com.aniflow.domain.coverage.SeasonCoverage
 
+import com.aniflow.core.ui.components.AniEmptyState
+import androidx.compose.material.icons.filled.Movie
+
 /**
  * Step 20 — Anime Detail UI State (Section 31, 32, 82).
+ * Zero hardcoded production data.
  */
 data class AnimeDetailUiState(
     val animeId: String = "",
-    val canonicalTitle: String = "One Piece",
-    val alternativeTitle: String? = "ワンピース / Wan Pīsu",
-    val year: Int? = 1999,
+    val canonicalTitle: String = "",
+    val alternativeTitle: String? = null,
+    val year: Int? = null,
     val mediaType: MediaType = MediaType.Series,
     val status: AnimeStatus = AnimeStatus.Ongoing,
     val isFavorite: Boolean = false,
@@ -112,7 +116,7 @@ fun AnimeDetailScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = uiState.canonicalTitle,
+                        text = if (uiState.canonicalTitle.isNotBlank()) uiState.canonicalTitle else "Anime Details",
                         color = TextPrimary,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
@@ -129,15 +133,44 @@ fun AnimeDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onToggleFavoriteClick) {
-                        Icon(
-                            imageVector = if (uiState.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = if (uiState.isFavorite) "Favorited" else "Favorite",
-                            tint = if (uiState.isFavorite) Color(0xFFEF4444) else TextSecondary
-                        )
+                    if (uiState.canonicalTitle.isNotBlank()) {
+                        IconButton(onClick = onToggleFavoriteClick) {
+                            Icon(
+                                imageVector = if (uiState.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = if (uiState.isFavorite) "Favorited" else "Favorite",
+                                tint = if (uiState.isFavorite) Color(0xFFEF4444) else TextSecondary
+                            )
+                        }
+                        IconButton(onClick = onPreferencesClick) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Preferences",
+                                tint = TextSecondary
+                            )
+                        }
                     }
-                    IconButton(onClick = onPreferencesClick) {
-                        Icon(
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkSurface)
+            )
+        }
+    ) { padding ->
+        if (uiState.canonicalTitle.isBlank() && uiState.seasons.isEmpty()) {
+            AniEmptyState(
+                title = "Anime not found",
+                description = "The requested anime entity could not be found in your library or local index.",
+                icon = Icons.Default.Movie,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Preferences",
                             tint = TextSecondary

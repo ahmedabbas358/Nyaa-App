@@ -1,7 +1,5 @@
 package com.aniflow.feature.downloads.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,9 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,10 +29,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,30 +48,48 @@ import com.aniflow.core.ui.theme.PrimaryIndigo
 import com.aniflow.core.ui.theme.TextMuted
 import com.aniflow.core.ui.theme.TextPrimary
 import com.aniflow.core.ui.theme.TextSecondary
+import com.aniflow.feature.downloads.DownloadsViewModel
+import com.aniflow.feature.downloads.model.DownloadStateUi
+import com.aniflow.feature.downloads.util.ByteSizeFormatter
 
 /**
- * DownloadStatisticsScreen (Section 54, 55, 56, 57, 58, 59).
- * Long-term metrics, bandwidth analysis, transfer averages, and failure taxonomy.
+ * DownloadStatisticsScreen.
+ * Metrics and transfer statistics computed from real observed tasks.
+ * Zero hardcoded numbers or fake anime summaries.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DownloadStatisticsScreen(
+    viewModel: DownloadsViewModel? = null,
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val failureReasons = listOf(
-        "Network Timeout / Disconnected" to 14,
-        "Storage Space Insufficient" to 6,
-        "Provider Torrent Stalled (0 Seeds)" to 3,
-        "Checksum Verification Mismatch" to 1
-    )
+    val uiState = viewModel?.uiState?.collectAsState()?.value
+    val tasks = uiState?.rawTasks ?: emptyList()
 
-    val animeStats = listOf(
-        Triple("One Piece", "42.4 GB", "24 files"),
-        Triple("Jujutsu Kaisen", "18.2 GB", "12 files"),
-        Triple("Bleach: TYBW", "15.6 GB", "9 files"),
-        Triple("Frieren", "8.9 GB", "6 files")
-    )
+    val totalDownloadedBytes = tasks.sumOf { it.downloadedBytes }
+    val completedCount = tasks.count { it.state == DownloadStateUi.Completed }
+    val failedCount = tasks.count { it.state == DownloadStateUi.Failed }
+    val totalCount = tasks.size
+    val completionPercent = if (totalCount > 0) ((completedCount.toFloat() / totalCount) * 100).toInt() else 0
+
+    // Real failure reasons
+    val failureReasons = tasks
+        .filter { it.state == DownloadStateUi.Failed }
+        .groupBy { it.errorMessage ?: "Unknown error" }
+        .map { it.key to it.value.size }
+
+    // Real anime breakdown
+    val animeBreakdown = tasks
+        .groupBy { it.animeTitle }
+        .map { (anime, animeTasks) ->
+            Triple(
+                anime,
+                ByteSizeFormatter.format(animeTasks.sumOf { it.downloadedBytes }),
+                "${animeTasks.size} task${if (animeTasks.size != 1) "s" else ""}"
+            )
+        }
+        .sortedByDescending { it.third }
 
     Scaffold(
         topBar = {
@@ -91,111 +105,132 @@ fun DownloadStatisticsScreen(
         },
         containerColor = DarkBackground
     ) { padding ->
-        LazyColumn(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(AppSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
-        ) {
-            // Volume Cards Grid (Section 54, 55)
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+        if (tasks.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(AppSpacing.xl)
                 ) {
-                    StatMetricCard(modifier = Modifier.weight(1f), label = "Downloaded Today", value = "5.6 GB")
-                    StatMetricCard(modifier = Modifier.weight(1f), label = "This Week", value = "28.4 GB")
+                    Text("No Download Statistics", style = AppTypography.headline.copy(fontSize = 16.sp), color = TextPrimary)
+                    Spacer(Modifier.height(AppSpacing.xs))
+                    Text(
+                        "Complete download tasks to view real metrics, volume usage, and transfer breakdown.",
+                        style = AppTypography.body,
+                        color = TextMuted
+                    )
                 }
             }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
-                ) {
-                    StatMetricCard(modifier = Modifier.weight(1f), label = "All Time Volume", value = "182.0 GB")
-                    StatMetricCard(modifier = Modifier.weight(1f), label = "Average Speed", value = "16.8 MB/s")
-                }
-            }
-
-            // Completion Ratio
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                    shape = RoundedCornerShape(AppShapes.sm),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(AppSpacing.md)) {
-                        Text("Task Completion Breakdown", style = AppTypography.body.copy(fontWeight = FontWeight.Bold), color = TextPrimary)
-                        Spacer(Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Completed: 142 tasks (91%)", style = AppTypography.caption, color = AppSemanticColors.Success)
-                            Text("Failed: 12 tasks (8%)", style = AppTypography.caption, color = AppSemanticColors.Error)
-                            Text("Cancelled: 2", style = AppTypography.caption, color = TextMuted)
-                        }
-                        Spacer(Modifier.height(6.dp))
-                        LinearProgressIndicator(
-                            progress = { 0.91f },
-                            color = AppSemanticColors.Success,
-                            trackColor = AppSemanticColors.Error.copy(alpha = 0.4f),
-                            strokeCap = StrokeCap.Round,
-                            modifier = Modifier.fillMaxWidth().height(8.dp)
+        } else {
+            LazyColumn(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(AppSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
+            ) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+                    ) {
+                        StatMetricCard(
+                            modifier = Modifier.weight(1f),
+                            label = "Total Downloaded",
+                            value = ByteSizeFormatter.format(totalDownloadedBytes)
+                        )
+                        StatMetricCard(
+                            modifier = Modifier.weight(1f),
+                            label = "Current Speed",
+                            value = uiState?.totalDownloadSpeedFormatted ?: "0 B/s"
                         )
                     }
                 }
-            }
 
-            // Top Failure Reasons (Section 59)
-            item {
-                Text("Failure Analytics", style = AppTypography.headline.copy(fontSize = 15.sp), color = TextPrimary)
-            }
-
-            items(failureReasons) { (reason, count) ->
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                    shape = RoundedCornerShape(AppShapes.sm),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(AppSpacing.sm),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                        shape = RoundedCornerShape(AppShapes.sm),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = AppSemanticColors.Error, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(reason, style = AppTypography.body.copy(fontSize = 12.sp), color = TextPrimary)
+                        Column(modifier = Modifier.padding(AppSpacing.md)) {
+                            Text("Task Completion Breakdown", style = AppTypography.body.copy(fontWeight = FontWeight.Bold), color = TextPrimary)
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Completed: $completedCount ($completionPercent%)", style = AppTypography.caption, color = AppSemanticColors.Success)
+                                Text("Failed: $failedCount", style = AppTypography.caption, color = AppSemanticColors.Error)
+                                Text("Total: $totalCount", style = AppTypography.caption, color = TextMuted)
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            LinearProgressIndicator(
+                                progress = { if (totalCount > 0) completedCount.toFloat() / totalCount else 0f },
+                                color = AppSemanticColors.Success,
+                                trackColor = DarkCardBorder,
+                                strokeCap = StrokeCap.Round,
+                                modifier = Modifier.fillMaxWidth().height(8.dp)
+                            )
                         }
-                        Text("$count times", style = AppTypography.caption.copy(fontWeight = FontWeight.Bold), color = TextMuted)
                     }
                 }
-            }
 
-            // Anime Breakdown (Section 56)
-            item {
-                Text("Top Downloaded Anime", style = AppTypography.headline.copy(fontSize = 15.sp), color = TextPrimary)
-            }
+                if (failureReasons.isNotEmpty()) {
+                    item {
+                        Text("Failure Analytics", style = AppTypography.headline.copy(fontSize = 15.sp), color = TextPrimary)
+                    }
 
-            items(animeStats) { (anime, size, count) ->
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                    shape = RoundedCornerShape(AppShapes.sm),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(AppSpacing.sm),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(anime, style = AppTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp), color = TextPrimary)
-                        Text("$size • $count", style = AppTypography.caption, color = PrimaryIndigo)
+                    items(failureReasons) { (reason, count) ->
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                            shape = RoundedCornerShape(AppShapes.sm),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(AppSpacing.sm),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = AppSemanticColors.Error, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(reason, style = AppTypography.body.copy(fontSize = 12.sp), color = TextPrimary)
+                                }
+                                Text("$count times", style = AppTypography.caption.copy(fontWeight = FontWeight.Bold), color = TextMuted)
+                            }
+                        }
+                    }
+                }
+
+                if (animeBreakdown.isNotEmpty()) {
+                    item {
+                        Text("Top Downloaded Anime", style = AppTypography.headline.copy(fontSize = 15.sp), color = TextPrimary)
+                    }
+
+                    items(animeBreakdown) { (anime, size, count) ->
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                            shape = RoundedCornerShape(AppShapes.sm),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(AppSpacing.sm),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(anime, style = AppTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp), color = TextPrimary)
+                                Text("$size • $count", style = AppTypography.caption, color = PrimaryIndigo)
+                            }
+                        }
                     }
                 }
             }

@@ -87,6 +87,8 @@ import com.aniflow.core.ui.theme.TextMuted
 import com.aniflow.core.ui.theme.TextPrimary
 import com.aniflow.core.ui.theme.TextSecondary
 import com.aniflow.domain.identity.AnimeId
+import com.aniflow.core.ui.components.AniEmptyState
+import com.aniflow.core.ui.components.AniLoadingState
 import com.aniflow.domain.identity.EpisodeId
 import com.aniflow.domain.identity.LibraryFileId
 import com.aniflow.domain.identity.LibraryItemId
@@ -95,10 +97,15 @@ import com.aniflow.domain.identity.StorageId
 import com.aniflow.domain.library.model.DuplicateMediaType
 import com.aniflow.domain.library.model.DuplicateResolutionRecommendation
 import com.aniflow.domain.library.model.LibraryItemType
+import com.aniflow.domain.repository.LibraryRepository
 import com.aniflow.domain.storage.model.StorageLocation
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 data class AnimeLibraryCardUiModel(
     val id: String,
@@ -142,69 +149,78 @@ data class DuplicateFileUiModel(
 )
 
 data class LibraryScreenUiState(
-    val animeCards: List<AnimeLibraryCardUiModel> = listOf(
-        AnimeLibraryCardUiModel(
-            id = "anime-1",
-            title = "One Piece",
-            seasonCount = 21,
-            totalEpisodes = 1115,
-            availableEpisodes = 1089,
-            formattedTotalSize = "480.2 GB",
-            lastAddedFormatted = "Yesterday",
-            upgradeAvailableCount = 12
-        ),
-        AnimeLibraryCardUiModel(
-            id = "anime-2",
-            title = "Bleach: Thousand-Year Blood War",
-            seasonCount = 2,
-            totalEpisodes = 26,
-            availableEpisodes = 26,
-            formattedTotalSize = "34.1 GB",
-            lastAddedFormatted = "3 days ago",
-            upgradeAvailableCount = 0
-        ),
-        AnimeLibraryCardUiModel(
-            id = "anime-3",
-            title = "Sousou no Frieren",
-            seasonCount = 1,
-            totalEpisodes = 28,
-            availableEpisodes = 28,
-            formattedTotalSize = "38.6 GB",
-            lastAddedFormatted = "Last week",
-            upgradeAvailableCount = 2
-        )
-    ),
-    val unidentifiedFiles: List<UnidentifiedFileUiModel> = listOf(
-        UnidentifiedFileUiModel(
-            fileId = "unid-1",
-            fileName = "Episode 03.mkv",
-            relativePath = "Downloads/Episode 03.mkv",
-            formattedSize = "1.2 GB"
-        )
-    ),
-    val duplicateFiles: List<DuplicateFileUiModel> = listOf(
-        DuplicateFileUiModel(
-            fileAId = "dup-1a",
-            fileAName = "S01E01 - Pilot [1080p HEVC].mkv",
-            fileBId = "dup-1b",
-            fileBName = "S01E01 - Pilot [1080p H.264].mkv",
-            formattedSize = "1.4 GB",
-            duplicateType = "Technical Alternative (HEVC vs H.264)"
-        )
-    ),
+    val animeCards: List<AnimeLibraryCardUiModel> = emptyList(),
+    val unidentifiedFiles: List<UnidentifiedFileUiModel> = emptyList(),
+    val duplicateFiles: List<DuplicateFileUiModel> = emptyList(),
     val searchQuery: String = "",
-    val isScanning: Boolean = false
+    val isScanning: Boolean = false,
+    val isLoading: Boolean = false,
+    val error: String? = null
 )
 
-class LibraryViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow(LibraryScreenUiState())
+class LibraryViewModel(
+    private val libraryRepository: LibraryRepository? = null
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(LibraryScreenUiState(isLoading = true))
     val uiState: StateFlow<LibraryScreenUiState> = _uiState.asStateFlow()
+
+    init {
+        observeLibraryItems()
+    }
+
+    private fun observeLibraryItems() {
+        if (libraryRepository == null) {
+            _uiState.value = _uiState.value.copy(isLoading = false)
+            return
+        }
+
+        libraryRepository.observeItems()
+            .onEach { items ->
+                val animeItems = items.filter { it.type == LibraryItemType.Anime }
+                val cards = animeItems.map { item ->
+                    AnimeLibraryCardUiModel(
+                        id = item.id.value,
+                        title = item.title ?: "Untitled Anime",
+                        seasonCount = 1,
+                        totalEpisodes = 0,
+                        availableEpisodes = 0,
+                        formattedTotalSize = "0 B",
+                        lastAddedFormatted = "Recently",
+                        upgradeAvailableCount = 0
+                    )
+                }
+                val unidentified = items.filter { it.type == LibraryItemType.Unidentified }.map { item ->
+                    UnidentifiedFileUiModel(
+                        fileId = item.id.value,
+                        fileName = item.title ?: "Unidentified File",
+                        relativePath = "library/${item.title ?: "file"}",
+                        formattedSize = "Unknown"
+                    )
+                }
+                _uiState.value = _uiState.value.copy(
+                    animeCards = cards,
+                    unidentifiedFiles = unidentified,
+                    isLoading = false,
+                    error = null
+                )
+            }
+            .catch { ex ->
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = ex.message ?: "Failed to observe library items"
+                )
+            }
+            .launchIn(viewModelScope)
+    }
 
     fun updateSearchQuery(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
     }
 
-    fun onScanRequested() {}
+    fun onScanRequested() {
+        _uiState.value = _uiState.value.copy(isScanning = true)
+    }
+
     fun onManualMap(fileId: String, animeTitle: String, season: Int, episode: Double) {}
     fun onRename(fileId: String, newName: String) {}
     fun onMove(fileId: String, targetStorageId: String) {}
@@ -382,15 +398,23 @@ fun AnimeLibraryGrid(
     animeCards: List<AnimeLibraryCardUiModel>,
     onAnimeClick: (String) -> Unit
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 280.dp),
-        contentPadding = PaddingValues(AppSpacing.md),
-        horizontalArrangement = Arrangement.spacedBy(AppSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(AppSpacing.md),
-        modifier = Modifier.fillMaxSize()
-    ) {
-        items(animeCards, key = { it.id }) { anime ->
-            AnimeLibraryCard(anime = anime, onClick = { onAnimeClick(anime.id) })
+    if (animeCards.isEmpty()) {
+        AniEmptyState(
+            title = "No anime in library",
+            description = "Downloaded and indexed anime will appear here organized by series and seasons.",
+            icon = Icons.Default.Folder
+        )
+    } else {
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 280.dp),
+            contentPadding = PaddingValues(AppSpacing.md),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.md),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(animeCards, key = { it.id }) { anime ->
+                AnimeLibraryCard(anime = anime, onClick = { onAnimeClick(anime.id) })
+            }
         }
     }
 }
@@ -421,7 +445,7 @@ fun AnimeLibraryCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = anime.title,
-                        style = AppTypography.titleMedium,
+                        style = AppTypography.Title,
                         color = TextPrimary,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -429,7 +453,7 @@ fun AnimeLibraryCard(
                     )
                     Text(
                         text = "${anime.seasonCount} Seasons • ${anime.availableEpisodes}/${anime.totalEpisodes} Episodes",
-                        style = AppTypography.bodySmall,
+                        style = AppTypography.BodySmall,
                         color = TextSecondary
                     )
                 }
@@ -442,7 +466,7 @@ fun AnimeLibraryCard(
                     ) {
                         Text(
                             text = "${anime.upgradeAvailableCount} UPGRADE",
-                            style = AppTypography.labelSmall.copy(fontSize = 9.sp),
+                            style = AppTypography.Caption.copy(fontSize = 9.sp),
                             color = PrimaryIndigo,
                             fontWeight = FontWeight.Bold
                         )
@@ -471,12 +495,12 @@ fun AnimeLibraryCard(
             ) {
                 Text(
                     text = "${anime.coveragePercent.toInt()}% Coverage",
-                    style = AppTypography.labelSmall,
+                    style = AppTypography.Caption,
                     color = if (anime.coveragePercent >= 100f) AppSemanticColors.Success else TextMuted
                 )
                 Text(
                     text = anime.formattedTotalSize,
-                    style = AppTypography.labelSmall,
+                    style = AppTypography.Caption,
                     color = TextSecondary
                 )
             }
@@ -489,32 +513,40 @@ fun UpgradesSection(
     animeCards: List<AnimeLibraryCardUiModel>,
     onAnimeClick: (String) -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(AppSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
-    ) {
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, PrimaryIndigo.copy(alpha = 0.3f), AppShapes.medium),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface)
-            ) {
-                Row(modifier = Modifier.padding(AppSpacing.md), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Upgrade, contentDescription = null, tint = PrimaryIndigo)
-                    Spacer(modifier = Modifier.width(AppSpacing.sm))
-                    Text(
-                        "Higher quality releases available for local episodes adhering to user download profile.",
-                        style = AppTypography.bodySmall,
-                        color = TextSecondary
-                    )
+    if (animeCards.isEmpty()) {
+        AniEmptyState(
+            title = "No upgrades available",
+            description = "All indexed episodes meet or exceed your active download profile quality targets.",
+            icon = Icons.Default.Upgrade
+        )
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(AppSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+        ) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, PrimaryIndigo.copy(alpha = 0.3f), AppShapes.medium),
+                    colors = CardDefaults.cardColors(containerColor = DarkSurface)
+                ) {
+                    Row(modifier = Modifier.padding(AppSpacing.md), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Upgrade, contentDescription = null, tint = PrimaryIndigo)
+                        Spacer(modifier = Modifier.width(AppSpacing.sm))
+                        Text(
+                            "Higher quality releases available for local episodes adhering to user download profile.",
+                            style = AppTypography.BodySmall,
+                            color = TextSecondary
+                        )
+                    }
                 }
             }
-        }
 
-        items(animeCards) { anime ->
-            AnimeLibraryCard(anime = anime, onClick = { onAnimeClick(anime.id) })
+            items(animeCards) { anime ->
+                AnimeLibraryCard(anime = anime, onClick = { onAnimeClick(anime.id) })
+            }
         }
     }
 }
@@ -524,27 +556,35 @@ fun DuplicatesSection(
     duplicates: List<DuplicateFileUiModel>,
     onResolve: (DuplicateFileUiModel) -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(AppSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
-    ) {
-        items(duplicates) { dup ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, DarkCardBorder, AppShapes.medium),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface)
-            ) {
-                Column(modifier = Modifier.padding(AppSpacing.md)) {
-                    Text(dup.duplicateType, style = AppTypography.labelMedium, color = PrimaryIndigo, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(AppSpacing.xs))
-                    Text("File A: ${dup.fileAName}", style = AppTypography.bodySmall, color = TextPrimary)
-                    Text("File B: ${dup.fileBName}", style = AppTypography.bodySmall, color = TextMuted)
-                    Spacer(modifier = Modifier.height(AppSpacing.sm))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        OutlinedButton(onClick = { onResolve(dup) }) {
-                            Text("Compare & Keep")
+    if (duplicates.isEmpty()) {
+        AniEmptyState(
+            title = "No duplicate files found",
+            description = "Your storage roots contain zero duplicate media files or redundant releases.",
+            icon = Icons.Default.Folder
+        )
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(AppSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
+        ) {
+            items(duplicates) { dup ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, DarkCardBorder, AppShapes.medium),
+                    colors = CardDefaults.cardColors(containerColor = DarkSurface)
+                ) {
+                    Column(modifier = Modifier.padding(AppSpacing.md)) {
+                        Text(dup.duplicateType, style = AppTypography.Subtitle, color = PrimaryIndigo, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(AppSpacing.xs))
+                        Text("File A: ${dup.fileAName}", style = AppTypography.BodySmall, color = TextPrimary)
+                        Text("File B: ${dup.fileBName}", style = AppTypography.BodySmall, color = TextMuted)
+                        Spacer(modifier = Modifier.height(AppSpacing.sm))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            OutlinedButton(onClick = { onResolve(dup) }) {
+                                Text("Compare & Keep")
+                            }
                         }
                     }
                 }
@@ -559,63 +599,71 @@ fun UnidentifiedSection(
     onMapClick: (UnidentifiedFileUiModel) -> Unit,
     onDeleteClick: (UnidentifiedFileUiModel) -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(AppSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
-    ) {
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, AppSemanticColors.Warning.copy(alpha = 0.4f), AppShapes.medium),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface)
-            ) {
-                Row(modifier = Modifier.padding(AppSpacing.md), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.HelpOutline, contentDescription = null, tint = AppSemanticColors.Warning)
-                    Spacer(modifier = Modifier.width(AppSpacing.sm))
-                    Text(
-                        "Ambiguous files where anime identity could not be confidently determined. Map them manually to include them in coverage.",
-                        style = AppTypography.bodySmall,
-                        color = TextSecondary
-                    )
-                }
-            }
-        }
-
-        items(files) { file ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, DarkCardBorder, AppShapes.medium),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface)
-            ) {
-                Row(
+    if (files.isEmpty()) {
+        AniEmptyState(
+            title = "No unidentified media",
+            description = "All media files in storage roots have been identified and mapped to library series.",
+            icon = Icons.Default.HelpOutline
+        )
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(AppSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+        ) {
+            item {
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(AppSpacing.md),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .border(1.dp, AppSemanticColors.Warning.copy(alpha = 0.4f), AppShapes.medium),
+                    colors = CardDefaults.cardColors(containerColor = DarkSurface)
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(file.fileName, style = AppTypography.bodyMedium, color = TextPrimary)
-                        Text(file.relativePath, style = AppTypography.bodySmall, color = TextMuted)
+                    Row(modifier = Modifier.padding(AppSpacing.md), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.HelpOutline, contentDescription = null, tint = AppSemanticColors.Warning)
+                        Spacer(modifier = Modifier.width(AppSpacing.sm))
+                        Text(
+                            "Ambiguous files where anime identity could not be confidently determined. Map them manually to include them in coverage.",
+                            style = AppTypography.BodySmall,
+                            color = TextSecondary
+                        )
                     }
+                }
+            }
 
-                    Row {
-                        Button(
-                            onClick = { onMapClick(file) },
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
-                            modifier = Modifier.height(32.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp)
-                        ) {
-                            Text("Map", style = AppTypography.labelMedium)
+            items(files) { file ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, DarkCardBorder, AppShapes.medium),
+                    colors = CardDefaults.cardColors(containerColor = DarkSurface)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(AppSpacing.md),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(file.fileName, style = AppTypography.Body, color = TextPrimary)
+                            Text(file.relativePath, style = AppTypography.BodySmall, color = TextMuted)
                         }
 
-                        Spacer(modifier = Modifier.width(AppSpacing.xs))
+                        Row {
+                            Button(
+                                onClick = { onMapClick(file) },
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
+                                modifier = Modifier.height(32.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) {
+                                Text("Map", style = AppTypography.Subtitle)
+                            }
 
-                        IconButton(onClick = { onDeleteClick(file) }, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = TextMuted)
+                            Spacer(modifier = Modifier.width(AppSpacing.xs))
+
+                            IconButton(onClick = { onDeleteClick(file) }, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = TextMuted)
+                            }
                         }
                     }
                 }

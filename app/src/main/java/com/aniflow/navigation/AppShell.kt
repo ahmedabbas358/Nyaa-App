@@ -22,21 +22,19 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalConfiguration
-import com.aniflow.core.ui.theme.DarkBackground
-import com.aniflow.core.ui.theme.DarkSurface
-import com.aniflow.core.ui.theme.PrimaryIndigo
-import com.aniflow.core.ui.theme.TextSecondary
-import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import com.aniflow.core.ui.R
+import com.aniflow.core.ui.theme.AniFlowTheme
+import com.aniflow.core.ui.theme.AppElevation
 
 enum class WindowWidthSize {
     Compact,   // Phones (< 600dp)
@@ -46,8 +44,12 @@ enum class WindowWidthSize {
 
 /**
  * AppShell (Sections 11, 106, 107, 110, 113, 114).
- * Responsive shell adapting between Bottom Navigation (Phone) and Navigation Rail (Tablet/Expanded),
- * hosting global Snackbars, Ctrl+K search shortcut, and RTL-safe navigation.
+ *
+ * Responsive, localized shell adapting between:
+ * - Bottom Navigation for compact phones (< 600dp)
+ * - Navigation Rail for medium and expanded tablets (>= 600dp)
+ *
+ * Fully themed for Light/Dark modes, RTL-safe, and listening for global Ctrl+K search shortcut.
  */
 @Composable
 fun AppShell(
@@ -65,7 +67,7 @@ fun AppShell(
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    val colors = AniFlowTheme.colors
 
     val isTopLevelRoute = mainBottomNavDestinations.any { it.route.route == currentRoute }
 
@@ -86,19 +88,24 @@ fun AppShell(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             bottomBar = {
                 if (isTopLevelRoute) {
-                    NavigationBar(containerColor = DarkSurface) {
+                    NavigationBar(
+                        containerColor = colors.surface,
+                        tonalElevation = AppElevation.card
+                    ) {
                         mainBottomNavDestinations.forEach { dest ->
                             val selected = currentRoute == dest.route.route
+                            val title = stringResource(dest.titleRes)
+
                             NavigationBarItem(
-                                icon = { Icon(dest.icon, contentDescription = dest.title) },
-                                label = { Text(dest.title) },
+                                icon = { Icon(dest.icon, contentDescription = title) },
+                                label = { Text(title, style = AniFlowTheme.typography.caption) },
                                 selected = selected,
                                 colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = PrimaryIndigo,
-                                    selectedTextColor = PrimaryIndigo,
-                                    indicatorColor = PrimaryIndigo.copy(alpha = 0.2f),
-                                    unselectedIconColor = TextSecondary,
-                                    unselectedTextColor = TextSecondary
+                                    selectedIconColor = colors.primary,
+                                    selectedTextColor = colors.primary,
+                                    indicatorColor = colors.primary.copy(alpha = 0.15f),
+                                    unselectedIconColor = colors.textSecondary,
+                                    unselectedTextColor = colors.textSecondary
                                 ),
                                 onClick = {
                                     navController.navigate(dest.route.route) {
@@ -114,53 +121,63 @@ fun AppShell(
                     }
                 }
             },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .then(keyModifier)
         ) { paddingValues ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(DarkBackground)
+                    .background(colors.background)
             ) {
                 content(Modifier.padding(paddingValues))
             }
         }
     } else {
-        // Tablet / Expanded Layout: Navigation Rail Sidebar (Section 20)
+        // Tablet / Expanded Layout: Navigation Rail Sidebar
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .then(keyModifier)
         ) { paddingValues ->
             Row(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .background(DarkBackground)
+                    .background(colors.background)
             ) {
                 NavigationRail(
-                    containerColor = DarkSurface,
+                    containerColor = colors.surface,
                     header = {
                         FloatingActionButton(
                             onClick = onQuickImportClick,
-                            containerColor = PrimaryIndigo,
+                            containerColor = colors.primary,
+                            contentColor = colors.textPrimary,
                             modifier = Modifier.padding(vertical = 16.dp)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Quick Import")
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = stringResource(R.string.cd_quick_import)
+                            )
                         }
                     },
                     modifier = Modifier.fillMaxHeight()
                 ) {
                     mainBottomNavDestinations.forEach { dest ->
                         val selected = currentRoute == dest.route.route
+                        val title = stringResource(dest.titleRes)
+
                         NavigationRailItem(
-                            icon = { Icon(dest.icon, contentDescription = dest.title) },
-                            label = { Text(dest.title) },
+                            icon = { Icon(dest.icon, contentDescription = title) },
+                            label = { Text(title, style = AniFlowTheme.typography.caption) },
                             selected = selected,
                             colors = NavigationRailItemDefaults.colors(
-                                selectedIconColor = PrimaryIndigo,
-                                selectedTextColor = PrimaryIndigo,
-                                indicatorColor = PrimaryIndigo.copy(alpha = 0.2f),
-                                unselectedIconColor = TextSecondary,
-                                unselectedTextColor = TextSecondary
+                                selectedIconColor = colors.primary,
+                                selectedTextColor = colors.primary,
+                                indicatorColor = colors.primary.copy(alpha = 0.15f),
+                                unselectedIconColor = colors.textSecondary,
+                                unselectedTextColor = colors.textSecondary
                             ),
                             onClick = {
                                 navController.navigate(dest.route.route) {
@@ -175,7 +192,12 @@ fun AppShell(
                     }
                 }
 
-                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .background(colors.background)
+                ) {
                     content(Modifier.fillMaxSize())
                 }
             }

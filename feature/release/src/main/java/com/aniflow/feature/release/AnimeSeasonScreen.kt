@@ -51,11 +51,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
+import com.aniflow.core.ui.components.AniAppBar
+import com.aniflow.core.ui.components.AniEmptyState
 import com.aniflow.core.ui.components.EpisodeRow
 import com.aniflow.core.ui.components.QualityBadge
 import com.aniflow.core.ui.model.EpisodeUiModel
 import com.aniflow.core.ui.model.ReleaseUiModel
-import com.aniflow.core.ui.preview.PreviewFixtures
 import com.aniflow.core.ui.theme.AppSemanticColors
 import com.aniflow.core.ui.theme.AppShapes
 import com.aniflow.core.ui.theme.AppSpacing
@@ -72,25 +73,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 data class AnimeSeasonUiState(
-    val animeTitle: String = "One Piece",
-    val seasons: List<Int> = listOf(1, 2, 3),
+    val animeTitle: String = "",
+    val seasons: List<Int> = emptyList(),
     val currentSeason: Int = 1,
-    val totalEpisodes: Int = 24,
-    val availableEpisodesCount: Int = 24,
-    val downloadedEpisodesCount: Int = 18,
-    val episodes: List<EpisodeUiModel> = (1..6).map {
-        PreviewFixtures.sampleEpisode.copy(
-            id = "ep-$it",
-            episodeNumber = it.toDouble(),
-            title = "Episode $it",
-            isDownloaded = it <= 3,
-            statusText = if (it <= 3) "Downloaded" else "Available",
-            statusColor = if (it <= 3) AppSemanticColors.Success else AppSemanticColors.Info
-        )
-    },
+    val totalEpisodes: Int = 0,
+    val availableEpisodesCount: Int = 0,
+    val downloadedEpisodesCount: Int = 0,
+    val episodes: List<EpisodeUiModel> = emptyList(),
     val selectedEpisodeForDetail: EpisodeUiModel? = null,
-    val hasBatchTorrent: Boolean = true,
-    val batchTorrentSizeFormatted: String = "24.6 GB"
+    val hasBatchTorrent: Boolean = false,
+    val batchTorrentSizeFormatted: String = ""
 )
 
 class AnimeSeasonViewModel : ViewModel() {
@@ -114,6 +106,7 @@ class AnimeSeasonViewModel : ViewModel() {
  * AnimeSeasonScreen (Sections 43-51).
  * Shows Anime series header, season selector tabs, coverage status, episode list,
  * "Why selected?" explanation, and Batch comparison choices.
+ * Zero hardcoded production data.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -127,48 +120,46 @@ fun AnimeSeasonScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(state.animeTitle, style = AppTypography.headline, color = TextPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
+            AniAppBar(
+                title = if (state.animeTitle.isNotBlank()) state.animeTitle else "Season Details",
+                subtitle = if (state.seasons.isNotEmpty()) "Season ${state.currentSeason}" else null,
+                onBack = onBack
             )
         },
         bottomBar = {
-            Surface(
-                color = DarkSurface,
-                border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(AppSpacing.md)
+            if (state.totalEpisodes > 0 && state.downloadedEpisodesCount < state.totalEpisodes) {
+                Surface(
+                    color = DarkSurface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
                 ) {
-                    Column {
-                        Text(
-                            text = "${state.totalEpisodes - state.downloadedEpisodesCount} Missing Episodes",
-                            style = AppTypography.title,
-                            color = TextPrimary
-                        )
-                        Text(
-                            text = "Season ${state.currentSeason} • ~${(state.totalEpisodes - state.downloadedEpisodesCount) * 1.2} GB",
-                            style = AppTypography.caption,
-                            color = TextSecondary
-                        )
-                    }
-                    Button(
-                        onClick = onPlanReviewClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
-                        shape = AppShapes.pill
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(AppSpacing.md)
                     ) {
-                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Download Season", fontWeight = FontWeight.Bold)
+                        Column {
+                            Text(
+                                text = "${state.totalEpisodes - state.downloadedEpisodesCount} Missing Episodes",
+                                style = AppTypography.title,
+                                color = TextPrimary
+                            )
+                            Text(
+                                text = "Season ${state.currentSeason}",
+                                style = AppTypography.caption,
+                                color = TextSecondary
+                            )
+                        }
+                        Button(
+                            onClick = onPlanReviewClick,
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
+                            shape = AppShapes.pill
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Download Season", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -176,18 +167,28 @@ fun AnimeSeasonScreen(
         containerColor = DarkBackground,
         modifier = modifier
     ) { paddingValues ->
-        LazyColumn(
-            contentPadding = PaddingValues(
-                start = AppSpacing.md,
-                end = AppSpacing.md,
-                bottom = AppSpacing.xxxl,
-                top = AppSpacing.sm
-            ),
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.md),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+        if (state.episodes.isEmpty()) {
+            AniEmptyState(
+                title = "No episodes recorded",
+                description = "No episodes are currently indexed for this season. Search providers or scan storage to populate episodes.",
+                icon = Icons.Default.Download,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            )
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(
+                    start = AppSpacing.md,
+                    end = AppSpacing.md,
+                    bottom = AppSpacing.xxxl,
+                    top = AppSpacing.sm
+                ),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.md),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
             // Season Selector Tabs
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)) {

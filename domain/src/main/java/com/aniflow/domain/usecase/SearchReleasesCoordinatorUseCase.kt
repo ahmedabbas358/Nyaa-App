@@ -53,7 +53,11 @@ class SearchReleasesCoordinatorUseCase(
 
         try {
             // Compile AST / Query text
-            val queryText = request.query.toQueryString()
+            val queryText = when (val root = request.query.root) {
+                is com.aniflow.domain.controlplane.models.ComparisonExpression -> root.value
+                is com.aniflow.domain.controlplane.models.AndExpression -> root.children.filterIsInstance<com.aniflow.domain.controlplane.models.ComparisonExpression>().joinToString(" ") { it.value }
+                else -> request.query.toQueryString()
+            }
 
             val providerRequest = ProviderSearchRequest(
                 query = queryText,

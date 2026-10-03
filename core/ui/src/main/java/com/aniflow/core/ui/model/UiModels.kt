@@ -142,3 +142,48 @@ data class UiError(
     val message: String,
     val retryAction: (() -> Unit)? = null
 )
+
+/**
+ * Maps domain Release aggregate to presentation ReleaseUiModel (Section 2, 10).
+ */
+fun com.aniflow.domain.model.aggregate.release.Release.toUiModel(): ReleaseUiModel {
+    val magnet = when (val src = source) {
+        is com.aniflow.domain.model.aggregate.release.ReleaseSource.Torrent -> src.magnetUri?.value
+        else -> null
+    }
+
+    val resTag = technical.resolution?.standardTag ?: "1080p"
+    val codecTag = technical.videoCodec?.standardTag ?: "HEVC"
+    val audioTag = technical.audioTracks.firstOrNull()?.language ?: "Japanese"
+    val subTag = technical.subtitleTracks.firstOrNull()?.language ?: "English"
+
+    val badgesList = mutableListOf<UiBadge>()
+    badgesList.add(UiBadge(resTag, AppSemanticColors.Accent.copy(alpha = 0.15f), AppSemanticColors.Accent))
+    if (codecTag.isNotBlank()) {
+        badgesList.add(UiBadge(codecTag, AppSemanticColors.Secondary.copy(alpha = 0.15f), AppSemanticColors.Secondary))
+    }
+    if (isBatch) {
+        badgesList.add(UiBadge("Batch", AppSemanticColors.Warning.copy(alpha = 0.15f), AppSemanticColors.Warning))
+    }
+
+    return ReleaseUiModel(
+        id = id.value,
+        title = title,
+        animeTitle = animeIdentity?.canonicalTitle ?: title,
+        seasonNumber = seasonHint?.value,
+        episodeNumber = episodeRange?.firstEpisode?.value,
+        uploader = uploader?.name ?: "Unknown",
+        releaseGroup = releaseGroup?.name,
+        resolution = resTag,
+        codec = codecTag,
+        audio = audioTag,
+        subtitles = subTag,
+        sizeFormatted = availability.size?.formatted ?: "Unknown",
+        seeders = availability.seeders ?: 0,
+        leechers = availability.leechers ?: 0,
+        publishedDateFormatted = publishedAt?.toString()?.take(10) ?: "",
+        isTrusted = uploader?.isTrusted ?: false,
+        badges = badgesList,
+        magnetUrl = magnet
+    )
+}

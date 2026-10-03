@@ -1283,3 +1283,389 @@ fun AniDownloadCard(
         }
     }
 }
+
+/**
+ * Standard AniLoadingState (Section 103, 122).
+ * Contextual loading presentation with calm indicator and descriptive text.
+ */
+@Composable
+fun AniLoadingState(
+    message: String = "Loading...",
+    subtext: String? = null,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(AppSpacing.xxl)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            CircularProgressIndicator(
+                color = PrimaryIndigo,
+                strokeWidth = 2.5.dp,
+                modifier = Modifier.size(36.dp)
+            )
+            Spacer(modifier = Modifier.height(AppSpacing.md))
+            Text(
+                text = message,
+                style = AppTypography.Subtitle,
+                color = TextPrimary,
+                textAlign = TextAlign.Center
+            )
+            if (subtext != null) {
+                Spacer(modifier = Modifier.height(AppSpacing.xxs))
+                Text(
+                    text = subtext,
+                    style = AppTypography.Caption,
+                    color = TextMuted,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Standard AniChip (Section 122).
+ * Compact chip for tags, categories, or filters.
+ */
+@Composable
+fun AniChip(
+    label: String,
+    isSelected: Boolean = false,
+    leadingIcon: ImageVector? = null,
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor = if (isSelected) PrimaryIndigo.copy(alpha = 0.2f) else DarkSurface
+    val borderColor = if (isSelected) PrimaryIndigo else DarkCardBorder
+    val contentColor = if (isSelected) PrimaryIndigo else TextSecondary
+
+    Surface(
+        color = backgroundColor,
+        shape = AppShapes.small,
+        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor),
+        modifier = modifier
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            if (leadingIcon != null) {
+                Icon(
+                    imageVector = leadingIcon,
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier
+                        .size(12.dp)
+                        .padding(end = 4.dp)
+                )
+            }
+            Text(
+                text = label,
+                style = AppTypography.Caption.copy(fontWeight = FontWeight.Medium),
+                color = contentColor
+            )
+        }
+    }
+}
+
+/**
+ * Standard AniStat (Section 122).
+ * Compact technical metric card for statistics, dashboards, and diagnostics.
+ */
+@Composable
+fun AniStat(
+    label: String,
+    value: String,
+    subtitle: String? = null,
+    icon: ImageVector? = null,
+    accentColor: Color = PrimaryIndigo,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        shape = AppShapes.medium,
+        border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
+        modifier = modifier
+    ) {
+        Column(modifier = Modifier.padding(AppSpacing.md)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = label,
+                    style = AppTypography.Overline,
+                    color = TextMuted
+                )
+                if (icon != null) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(AppSpacing.xs))
+            Text(
+                text = value,
+                style = AppTypography.Title.copy(fontWeight = FontWeight.Bold),
+                color = TextPrimary
+            )
+            if (subtitle != null) {
+                Spacer(modifier = Modifier.height(AppSpacing.xxs))
+                Text(
+                    text = subtitle,
+                    style = AppTypography.Caption,
+                    color = TextSecondary
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Standard AniMediaCard (Section 122, 123).
+ * Dual-ratio media card supporting poster (2:3) or landscape (16:9) formats.
+ */
+@Composable
+fun AniMediaCard(
+    title: String,
+    subtitle: String? = null,
+    badgeText: String? = null,
+    badgeColor: Color = PrimaryIndigo,
+    isLandscape: Boolean = false,
+    progressFraction: Float? = null,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val aspectRatio = if (isLandscape) 16f / 9f else 2f / 3f
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        shape = AppShapes.medium,
+        border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(aspectRatio)
+                    .background(DarkBackground)
+            ) {
+                if (badgeText != null) {
+                    AniStatusBadge(
+                        label = badgeText,
+                        color = badgeColor,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(AppSpacing.xs)
+                    )
+                }
+                if (progressFraction != null && progressFraction > 0f) {
+                    LinearProgressIndicator(
+                        progress = { progressFraction.coerceIn(0f, 1f) },
+                        color = PrimaryIndigo,
+                        trackColor = Color.Black.copy(alpha = 0.5f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .align(Alignment.BottomCenter)
+                    )
+                }
+            }
+            Column(modifier = Modifier.padding(AppSpacing.sm)) {
+                Text(
+                    text = title,
+                    style = AppTypography.Subtitle.copy(fontWeight = FontWeight.SemiBold),
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (subtitle != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        style = AppTypography.Caption,
+                        color = TextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Standard AniFilterSection (Section 27, 122).
+ * Grouped filter section with collapsible content and optional reset button.
+ */
+@Composable
+fun AniFilterSection(
+    title: String,
+    onReset: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth().padding(vertical = AppSpacing.xs)
+        ) {
+            Text(
+                text = title,
+                style = AppTypography.SectionTitle,
+                color = TextPrimary
+            )
+            if (onReset != null) {
+                TextButton(
+                    onClick = onReset,
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                ) {
+                    Text(
+                        text = "Reset",
+                        style = AppTypography.Caption,
+                        color = PrimaryIndigo
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(AppSpacing.xs))
+        content()
+    }
+}
+
+/**
+ * Standard AniTimeline (Section 49, 122).
+ * Timeline node for execution logs, automation history, or rule audits.
+ */
+@Composable
+fun AniTimelineItem(
+    title: String,
+    timestampFormatted: String,
+    description: String? = null,
+    statusColor: Color = PrimaryIndigo,
+    isLast: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier.fillMaxWidth()) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.width(24.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(statusColor)
+            )
+            if (!isLast) {
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .weight(1f)
+                        .background(DarkCardBorder)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(AppSpacing.sm))
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(bottom = if (isLast) 0.dp else AppSpacing.md)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = title,
+                    style = AppTypography.Subtitle.copy(fontWeight = FontWeight.Medium),
+                    color = TextPrimary
+                )
+                Text(
+                    text = timestampFormatted,
+                    style = AppTypography.Caption,
+                    color = TextMuted
+                )
+            }
+            if (description != null) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = description,
+                    style = AppTypography.BodySmall,
+                    color = TextSecondary
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Standard AniDialog (Section 98, 99, 122).
+ * High-clarity confirmation or informational dialog.
+ */
+@Composable
+fun AniDialog(
+    title: String,
+    message: String,
+    confirmText: String = "Confirm",
+    dismissText: String = "Cancel",
+    isDestructive: Boolean = false,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = title,
+                style = AppTypography.LargeTitle.copy(fontSize = 18.sp),
+                color = TextPrimary
+            )
+        },
+        text = {
+            Text(
+                text = message,
+                style = AppTypography.Body,
+                color = TextSecondary
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isDestructive) AppSemanticColors.Error else PrimaryIndigo
+                ),
+                shape = AppShapes.small
+            ) {
+                Text(text = confirmText)
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                shape = AppShapes.small
+            ) {
+                Text(text = dismissText, color = TextMuted)
+            }
+        },
+        containerColor = DarkSurface,
+        shape = AppShapes.large
+    )
+}
+

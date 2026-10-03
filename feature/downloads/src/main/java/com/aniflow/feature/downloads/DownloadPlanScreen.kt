@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aniflow.core.ui.components.AniEmptyState
 import com.aniflow.core.ui.theme.AppSemanticColors
 import com.aniflow.core.ui.theme.AppShapes
 import com.aniflow.core.ui.theme.AppSpacing
@@ -53,22 +54,22 @@ import com.aniflow.core.ui.theme.TextPrimary
 import com.aniflow.core.ui.theme.TextSecondary
 
 data class DownloadPlanUiModel(
-    val title: String = "One Piece — Season 01",
-    val fileCount: Int = 21,
-    val totalSizeBytes: Long = 88_476_400_000L, // ~82.4 GB
-    val totalSizeFormatted: String = "82.4 GB",
-    val preferredCount: Int = 18,
-    val fallbackCount: Int = 2,
-    val warningCount: Int = 1,
-    val requiredSpaceFormatted: String = "82.4 GB",
-    val reservedSpaceFormatted: String = "2.1 GB",
-    val safetyMarginFormatted: String = "500 MB",
-    val availableSpaceFormatted: String = "127.0 GB",
-    val remainingSpaceAfterFormatted: String = "42.0 GB",
+    val title: String = "",
+    val fileCount: Int = 0,
+    val totalSizeBytes: Long = 0L,
+    val totalSizeFormatted: String = "0 B",
+    val preferredCount: Int = 0,
+    val fallbackCount: Int = 0,
+    val warningCount: Int = 0,
+    val requiredSpaceFormatted: String = "0 B",
+    val reservedSpaceFormatted: String = "0 B",
+    val safetyMarginFormatted: String = "0 B",
+    val availableSpaceFormatted: String = "0 B",
+    val remainingSpaceAfterFormatted: String = "0 B",
     val hasSufficientSpace: Boolean = true,
     val networkConstraint: String = "Wi-Fi Only (Unmetered)",
     val concurrencyLimit: Int = 3,
-    val destinationPath: String = "Anime/One Piece/Season 01"
+    val destinationPath: String = ""
 )
 
 /**
@@ -100,66 +101,68 @@ fun DownloadPlanScreen(
             )
         },
         bottomBar = {
-            Surface(
-                color = DarkSurface,
-                border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(AppSpacing.md)
+            if (plan.fileCount > 0 && plan.title.isNotBlank()) {
+                Surface(
+                    color = DarkSurface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
                 ) {
-                    if (!plan.hasSufficientSpace) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = AppSpacing.sm)
-                        ) {
-                            Icon(Icons.Default.Warning, contentDescription = null, tint = AppSemanticColors.Error, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Insufficient storage on destination volume",
-                                color = AppSemanticColors.Error,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm),
-                        modifier = Modifier.fillMaxWidth()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(AppSpacing.md)
                     ) {
-                        androidx.compose.material3.OutlinedButton(
-                            onClick = onQueueOnlyClick,
-                            shape = AppShapes.pill,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(50.dp)
-                        ) {
-                            Text(
-                                text = "Queue Only",
-                                style = AppTypography.body,
-                                color = TextPrimary
-                            )
+                        if (!plan.hasSufficientSpace) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(bottom = AppSpacing.sm)
+                            ) {
+                                Icon(Icons.Default.Warning, contentDescription = null, tint = AppSemanticColors.Error, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Insufficient storage on destination volume",
+                                    color = AppSemanticColors.Error,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
 
-                        Button(
-                            onClick = onStartDownloadsClick,
-                            enabled = plan.hasSufficientSpace,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = PrimaryIndigo,
-                                disabledContainerColor = DarkCardBorder
-                            ),
-                            shape = AppShapes.pill,
-                            modifier = Modifier
-                                .weight(2f)
-                                .height(50.dp)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = "Start Now (${plan.totalSizeFormatted})",
-                                style = AppTypography.title,
-                                fontWeight = FontWeight.Bold
-                            )
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = onQueueOnlyClick,
+                                shape = AppShapes.pill,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(50.dp)
+                            ) {
+                                Text(
+                                    text = "Queue Only",
+                                    style = AppTypography.body,
+                                    color = TextPrimary
+                                )
+                            }
+
+                            Button(
+                                onClick = onStartDownloadsClick,
+                                enabled = plan.hasSufficientSpace,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = PrimaryIndigo,
+                                    disabledContainerColor = DarkCardBorder
+                                ),
+                                shape = AppShapes.pill,
+                                modifier = Modifier
+                                    .weight(2f)
+                                    .height(50.dp)
+                            ) {
+                                Text(
+                                    text = "Start Now (${plan.totalSizeFormatted})",
+                                    style = AppTypography.title,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -168,14 +171,26 @@ fun DownloadPlanScreen(
         containerColor = DarkBackground,
         modifier = modifier
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(AppSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
-        ) {
+        if (plan.fileCount == 0 || plan.title.isBlank()) {
+            AniEmptyState(
+                title = "No download plan",
+                description = "Select releases or episodes to generate a persistent download plan.",
+                icon = Icons.Default.Folder,
+                actionLabel = "Back",
+                onActionClick = onBack,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(AppSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
+            ) {
             // 1. Plan Summary Card
             Card(
                 colors = CardDefaults.cardColors(containerColor = DarkSurface),
@@ -290,3 +305,5 @@ fun DownloadPlanScreen(
         }
     }
 }
+}
+

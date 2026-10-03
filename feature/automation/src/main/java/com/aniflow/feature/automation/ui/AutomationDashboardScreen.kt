@@ -91,13 +91,21 @@ import com.aniflow.domain.identity.AutomationRuleId
 import com.aniflow.domain.identity.ReviewItemId
 import java.time.Instant
 
+import com.aniflow.core.ui.components.AniAppBar
+import com.aniflow.core.ui.components.AniEmptyState
+import androidx.compose.material.icons.filled.History
+
 /**
  * AutomationDashboardScreen (Sections 106, 107, 108, 110, 111, 112, 149, 150).
  * Displays Active Rules, Upcoming Schedules, Review Queue, Audit Logs, and Global Kill Switch.
+ * Zero hardcoded production data.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutomationDashboardScreen(
+    initialRules: List<AutomationRule> = emptyList(),
+    initialPendingReviews: List<ReviewItem> = emptyList(),
+    initialHistory: List<AutomationExecution> = emptyList(),
     onBack: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenReviewQueue: () -> Unit = {},
@@ -109,146 +117,21 @@ fun AutomationDashboardScreen(
     var simulationResult by remember { mutableStateOf<AutomationDryRunResult?>(null) }
     var showSimulationSheet by remember { mutableStateOf(false) }
 
-    val rules = remember {
-        mutableStateListOf(
-            AutomationRule(
-                id = AutomationRuleId("rule_1"),
-                name = "Auto-Download One Piece (1080p HEVC)",
-                enabled = true,
-                trigger = AutomationTrigger.NewRelease("One Piece"),
-                actions = listOf(AutomationAction.QueueDownload),
-                priority = 100
-            ),
-            AutomationRule(
-                id = AutomationRuleId("rule_2"),
-                name = "Notify on Jujutsu Kaisen Weekly Episodes",
-                enabled = true,
-                trigger = AutomationTrigger.EpisodeAvailable(
-                    animeId = com.aniflow.domain.identity.AnimeId("jjk"),
-                    episodeNumber = 24.0
-                ),
-                actions = listOf(AutomationAction.Notify("New episode ready")),
-                priority = 80
-            ),
-            AutomationRule(
-                id = AutomationRuleId("rule_3"),
-                name = "Auto-Upgrade 720p Library items to 1080p",
-                enabled = false,
-                trigger = AutomationTrigger.LibraryChanged,
-                actions = listOf(AutomationAction.CreateDownloadPlan),
-                priority = 50
-            )
-        )
-    }
-
-    val pendingReviews = remember {
-        listOf(
-            ReviewItem(
-                id = ReviewItemId("rev_1"),
-                executionId = AutomationExecutionId("exec_101"),
-                issue = "Ambiguous Episode Numbering",
-                candidateReleaseTitle = "[SubsPlease] Frieren - S01E28.5 SP (1080p) [ABCD]",
-                reason = "Parser confidence 0.65 is below auto-action threshold",
-                recommendedAction = "Review and map manually to Special episode"
-            ),
-            ReviewItem(
-                id = ReviewItemId("rev_2"),
-                executionId = AutomationExecutionId("exec_102"),
-                issue = "Large Batch Exceeds 10 GB",
-                candidateReleaseTitle = "[Erai-raws] Bleach TYBW Part 2 (01-13) [1080p][HEVC][Multi-Sub]",
-                reason = "Batch size 22.4 GB requires explicit user confirmation",
-                recommendedAction = "Confirm download plan"
-            )
-        )
-    }
-
-    val executionHistory = remember {
-        listOf(
-            AutomationExecution(
-                id = AutomationExecutionId("exec_99"),
-                ruleId = AutomationRuleId("rule_1"),
-                trigger = AutomationTrigger.NewRelease("One Piece #1110"),
-                targetIdentity = "One Piece - Episode 1110",
-                state = AutomationExecutionState.Completed,
-                startedAt = Instant.now().minusSeconds(7200),
-                completedAt = Instant.now().minusSeconds(7180),
-                decision = SafetyDecision.Allowed,
-                result = AutomationExecutionResult.DownloadQueued("plan_99", listOf("task_99")),
-                explainabilityLog = listOf(
-                    "Rule 'Auto-Download One Piece' triggered by NewRelease",
-                    "Conditions verified: 1080p HEVC matched",
-                    "Selection engine picked: [SubsPlease] One Piece - 1110 (1080p)",
-                    "Safety Gate checked: Storage 124GB available (> 1.4GB required + margin)",
-                    "Safety Gate checked: Network WiFi connected",
-                    "Safety Gate checked: Duplicate check clean, no active task",
-                    "Download plan created and enqueued successfully"
-                )
-            ),
-            AutomationExecution(
-                id = AutomationExecutionId("exec_98"),
-                ruleId = AutomationRuleId("rule_1"),
-                trigger = AutomationTrigger.NewRelease("One Piece #1109"),
-                targetIdentity = "One Piece - Episode 1109",
-                state = AutomationExecutionState.Blocked,
-                startedAt = Instant.now().minusSeconds(14400),
-                completedAt = Instant.now().minusSeconds(14390),
-                decision = SafetyDecision.Blocked,
-                result = AutomationExecutionResult.Blocked(
-                    reason = com.aniflow.domain.automation.model.SafetyBlockReason.DuplicateTaskExists,
-                    detail = "An identical episode task is already downloading"
-                ),
-                explainabilityLog = listOf(
-                    "Rule 'Auto-Download One Piece' triggered",
-                    "Duplicate check failed: active task 'task_98' for Episode 1109 already exists",
-                    "Action blocked to prevent redundant bandwidth consumption"
-                )
-            )
-        )
-    }
+    val rules = remember { mutableStateListOf<AutomationRule>().apply { addAll(initialRules) } }
+    val pendingReviews = remember { mutableStateListOf<ReviewItem>().apply { addAll(initialPendingReviews) } }
+    val executionHistory = remember { mutableStateListOf<AutomationExecution>().apply { addAll(initialHistory) } }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Automation Engine", style = AppTypography.headline, color = TextPrimary)
-                        Text(
-                            text = if (globalAutomationEnabled) "Active & Monitoring" else "ALL AUTOMATION PAUSED",
-                            style = AppTypography.caption,
-                            color = if (globalAutomationEnabled) AppSemanticColors.Success else AppSemanticColors.Error
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
-                    }
-                },
+            AniAppBar(
+                title = "Automation Engine",
+                subtitle = if (globalAutomationEnabled) "Active & Monitoring" else "ALL AUTOMATION PAUSED",
+                onBack = onBack,
                 actions = {
-                    IconButton(onClick = {
-                        // Dry-run simulation (Section 66, 67, 68)
-                        simulationResult = AutomationDryRunResult(
-                            matchesCount = 5,
-                            wouldSelectCount = 2,
-                            wouldDownloadCount = 1,
-                            wouldReviewCount = 1,
-                            wouldSkipCount = 3,
-                            estimatedSizeBytes = 3L * 1024 * 1024 * 1024,
-                            actionsPreview = listOf(
-                                "Would queue: One Piece #1111 (1.4 GB)",
-                                "Would send to Review: Bleach Batch (18.2 GB)",
-                                "Would skip: 3 low seed releases"
-                            )
-                        )
-                        showSimulationSheet = true
-                    }) {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = "Dry Run Simulation", tint = PrimaryIndigo)
-                    }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings", tint = TextPrimary)
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
+                }
             )
         },
         containerColor = DarkBackground
@@ -273,12 +156,14 @@ fun AutomationDashboardScreen(
             }
 
             // Stats row (Section 116, 169)
-            AutomationStatsOverviewRow(
-                activeRulesCount = rules.count { it.enabled },
-                todayDownloads = 4,
-                todayStorageGb = 5.6f,
-                maxStorageGb = 50f
-            )
+            if (rules.isNotEmpty() || executionHistory.isNotEmpty()) {
+                AutomationStatsOverviewRow(
+                    activeRulesCount = rules.count { it.enabled },
+                    todayDownloads = executionHistory.count { it.state == AutomationExecutionState.Completed },
+                    todayStorageGb = 0f,
+                    maxStorageGb = 50f
+                )
+            }
 
             // Navigation Tabs
             val tabs = listOf("Rules (${rules.size})", "History (${executionHistory.size})")
@@ -310,37 +195,53 @@ fun AutomationDashboardScreen(
 
             when (selectedTab) {
                 0 -> {
-                    // Active Rules List (Section 107)
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(AppSpacing.md),
-                        verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
-                    ) {
-                        items(rules) { rule ->
-                            AutomationRuleCard(
-                                rule = rule,
-                                onToggle = { enabled ->
-                                    val idx = rules.indexOf(rule)
-                                    if (idx != -1) {
-                                        rules[idx] = rule.copy(enabled = enabled)
+                    if (rules.isEmpty()) {
+                        AniEmptyState(
+                            title = "No automation rules",
+                            description = "Create rules with Rule Builder to automate downloading, tagging, and organizing new releases.",
+                            icon = Icons.Default.AutoAwesome,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(AppSpacing.md),
+                            verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
+                        ) {
+                            items(rules) { rule ->
+                                AutomationRuleCard(
+                                    rule = rule,
+                                    onToggle = { enabled ->
+                                        val idx = rules.indexOf(rule)
+                                        if (idx != -1) {
+                                            rules[idx] = rule.copy(enabled = enabled)
+                                        }
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
                 1 -> {
-                    // History List with explainability triggers (Section 50, 52, 53)
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(AppSpacing.md),
-                        verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
-                    ) {
-                        items(executionHistory) { execution ->
-                            AutomationExecutionCard(
-                                execution = execution,
-                                onClick = { selectedExecutionForDetail = execution }
-                            )
+                    if (executionHistory.isEmpty()) {
+                        AniEmptyState(
+                            title = "No automation runs yet",
+                            description = "Automated execution decisions, safety audit trails, and actions will appear here.",
+                            icon = Icons.Default.History,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(AppSpacing.md),
+                            verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
+                        ) {
+                            items(executionHistory) { execution ->
+                                AutomationExecutionCard(
+                                    execution = execution,
+                                    onClick = { selectedExecutionForDetail = execution }
+                                )
+                            }
                         }
                     }
                 }

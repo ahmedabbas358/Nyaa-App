@@ -70,64 +70,36 @@ import com.aniflow.domain.rules.conflict.RuleConflictDetector
 import com.aniflow.domain.valueobject.Resolution
 import com.aniflow.domain.valueobject.VideoCodec
 
+import androidx.compose.material.icons.filled.Rule
+import com.aniflow.core.ui.components.AniAppBar
+import com.aniflow.core.ui.components.AniEmptyState
+
 /**
  * RuleListScreen (Sections 40, 41, 29).
  * Comprehensive rule dashboard listing rules, precedence levels, conflict detection,
  * and dry-run execution.
+ * Zero hardcoded production data.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RuleListScreen(
+    initialRules: List<AdvancedRule> = emptyList(),
     onBack: () -> Unit = {},
     onCreateNewRule: () -> Unit = {},
     onEditRule: (RuleId) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val sampleRules = remember {
-        mutableStateListOf(
-            AdvancedRule(
-                id = RuleId("rule_one_piece"),
-                name = "One Piece 1080p Auto-Queue",
-                scope = RuleScope.Anime,
-                root = ConditionNode(AdvancedRuleCondition.AnimeIs("One Piece")),
-                actions = listOf(AdvancedRuleAction.QueueDownload),
-                customPriority = 80,
-                enabled = true
-            ),
-            AdvancedRule(
-                id = RuleId("rule_hevc_filter"),
-                name = "Prefer HEVC Encodings",
-                scope = RuleScope.Global,
-                root = ConditionNode(AdvancedRuleCondition.CodecIs(VideoCodec.HEVC)),
-                actions = listOf(AdvancedRuleAction.Prefer(scoreBonus = 20)),
-                customPriority = 50,
-                enabled = true
-            ),
-            AdvancedRule(
-                id = RuleId("rule_reject_low_res"),
-                name = "Reject SD Content (< 720p)",
-                scope = RuleScope.Global,
-                root = ConditionNode(AdvancedRuleCondition.ResolutionIs(Resolution.R480p)),
-                actions = listOf(AdvancedRuleAction.Reject("Resolution below 720p minimum standard")),
-                customPriority = 90,
-                enabled = true
-            )
-        )
-    }
-
+    val rules = remember { mutableStateListOf<AdvancedRule>().apply { addAll(initialRules) } }
     var simulatingRule by remember { mutableStateOf<AdvancedRule?>(null) }
     val conflictDetector = remember { RuleConflictDetector() }
-    val conflicts = remember(sampleRules.toList()) { conflictDetector.detectConflicts(sampleRules) }
+    val conflicts = remember(rules.toList()) { conflictDetector.detectConflicts(rules) }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Automation Rules", style = AppTypography.headline, color = TextPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
-                    }
-                },
+            AniAppBar(
+                title = "Automation Rules",
+                subtitle = "Deterministic priority and conflict resolution",
+                onBack = onBack,
                 actions = {
                     Button(
                         onClick = onCreateNewRule,
@@ -139,47 +111,59 @@ fun RuleListScreen(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Add Rule", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
+                }
             )
         },
         containerColor = DarkBackground,
         modifier = modifier
     ) { padding ->
-        LazyColumn(
-            contentPadding = PaddingValues(AppSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.md),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // Conflict warning banner if semantic conflicts are detected (Section 29)
-            if (conflicts.isNotEmpty()) {
-                item {
-                    ConflictWarningBanner(conflicts)
+        if (rules.isEmpty()) {
+            AniEmptyState(
+                title = "No automation rules",
+                description = "Construct conditional logic rules (WHEN / IF / THEN) to automatically evaluate and queue releases.",
+                icon = Icons.Default.Rule,
+                actionLabel = "Add Rule",
+                onAction = onCreateNewRule,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            )
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(AppSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.md),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                // Conflict warning banner if semantic conflicts are detected (Section 29)
+                if (conflicts.isNotEmpty()) {
+                    item {
+                        ConflictWarningBanner(conflicts)
+                    }
                 }
-            }
 
-            item {
-                Text(
-                    text = "Rules apply conditional logic (WHEN/IF/THEN) on top of profile preferences. Higher priority rules take precedence.",
-                    style = AppTypography.caption,
-                    color = TextMuted
-                )
-            }
+                item {
+                    Text(
+                        text = "Rules apply conditional logic (WHEN/IF/THEN) on top of profile preferences. Higher priority rules take precedence.",
+                        style = AppTypography.caption,
+                        color = TextMuted
+                    )
+                }
 
-            items(sampleRules, key = { it.id.value }) { rule ->
-                RuleCard(
-                    rule = rule,
-                    onToggleEnabled = { enabled ->
-                        val index = sampleRules.indexOfFirst { it.id == rule.id }
-                        if (index != -1) {
-                            sampleRules[index] = rule.copy(enabled = enabled)
-                        }
-                    },
-                    onSimulate = { simulatingRule = rule },
-                    onEdit = { onEditRule(rule.id) }
-                )
+                items(rules, key = { it.id.value }) { rule ->
+                    RuleCard(
+                        rule = rule,
+                        onToggleEnabled = { enabled ->
+                            val index = rules.indexOfFirst { it.id == rule.id }
+                            if (index != -1) {
+                                rules[index] = rule.copy(enabled = enabled)
+                            }
+                        },
+                        onSimulate = { simulatingRule = rule },
+                        onEdit = { onEditRule(rule.id) }
+                    )
+                }
             }
         }
     }

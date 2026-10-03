@@ -1,24 +1,497 @@
 <resources>
-    <string name="app_name">AniFlow</string>
-    <string name="search_hint">ابحث عن الأنمي أو الإصدارات…</string>
+    <string name="app_name">أنيفلو</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">الرئيسية</string>
+    <string name="nav_search">البحث</string>
+    <string name="nav_downloads">التنزيلات</string>
+    <string name="nav_library">المكتبة</string>
+    <string name="nav_more">المزيد</string>
+
+    <!-- Search -->
+    <string name="search_hint">ابحث عن أنمي، حلقات، إصدارات…</string>
     <string name="search_action">بحث</string>
+    <string name="search_shortcut_hint">Ctrl+K</string>
     <string name="filter_title">الفلاتر</string>
     <string name="sort_title">ترتيب حسب</string>
+    <string name="clear_action">مسح</string>
+    <string name="clear_all_action">مسح الكل</string>
+    <string name="search_results_header">النتائج</string>
+    <string name="search_top_matches">أفضل النتائج</string>
+    <string name="search_no_results">لا توجد نتائج</string>
+    <string name="search_no_results_desc">حاول تعديل الفلاتر أو كلمات البحث.</string>
+    <string name="search_recent">عمليات البحث الأخيرة</string>
+    <string name="search_suggestions">اقتراحات</string>
+    <string name="search_scope">النطاق</string>
+    <string name="search_run_again">بحث مجدداً</string>
+    <string name="search_save">حفظ البحث</string>
+    <string name="search_clear_history">مسح السجل</string>
+    <string name="search_history_title">سجل البحث</string>
+    <string name="search_history_today">اليوم</string>
+    <string name="search_history_yesterday">أمس</string>
+    <string name="search_history_earlier">سابقاً</string>
+
+    <!-- Home Sections -->
+    <string name="home_title">أنيفلو</string>
+    <string name="home_subtitle">اكتشف. نظّم. شاهد.</string>
+    <string name="home_continue_watching">متابعة المشاهدة</string>
+    <string name="home_recently_added">أُضيف مؤخراً</string>
+    <string name="home_new_releases">إصدارات جديدة</string>
+    <string name="home_downloads_overview">التنزيلات</string>
+    <string name="home_upgrades_available">تحديثات متاحة</string>
+    <string name="home_see_all">عرض الكل</string>
+
+    <!-- Continue Watching -->
+    <string name="continue_episode_format">م%1$d • ح%2$s</string>
+    <string name="continue_remaining_format">%1$d دقيقة متبقية</string>
+    <string name="continue_resume_action">استئناف</string>
+    <string name="continue_empty_title">لا يوجد شيء قيد المشاهدة</string>
+    <string name="continue_empty_desc">ستظهر الحلقات التي تبدأ مشاهدتها هنا تلقائياً.</string>
+
+    <!-- Downloads Home Widget -->
+    <string name="downloads_active_count">%1$d نشط</string>
+    <string name="downloads_queued_count">%1$d في الانتظار</string>
+    <string name="downloads_failed_count">%1$d فشل</string>
+    <string name="downloads_completed_today">%1$d مكتمل اليوم</string>
+    <string name="downloads_speed_format">%1$s</string>
+    <string name="downloads_empty_title">قائمة التنزيل فارغة</string>
+    <string name="downloads_empty_desc">ابحث عن أنمي أو إصدارات لإضافتها للتنزيل.</string>
+
+    <!-- Downloads Dashboard -->
     <string name="downloads_title">التنزيلات</string>
+    <string name="downloads_tab_active">نشط</string>
+    <string name="downloads_tab_queued">في الانتظار</string>
+    <string name="downloads_tab_paused">متوقف</string>
+    <string name="downloads_tab_completed">مكتمل</string>
+    <string name="downloads_tab_failed">فشل</string>
+    <string name="downloads_statistics">الإحصائيات</string>
+    <string name="downloads_history">السجل</string>
+    <string name="downloads_pause_all">إيقاف الكل</string>
+    <string name="downloads_resume_all">استئناف الكل</string>
+
+    <!-- Download Detail -->
+    <string name="download_overview">نظرة عامة</string>
+    <string name="download_files">الملفات</string>
+    <string name="download_connections">الاتصالات</string>
+    <string name="download_speed">السرعة</string>
+    <string name="download_metadata">البيانات الوصفية</string>
+    <string name="download_logs">السجلات</string>
+    <string name="download_state">الحالة</string>
+    <string name="download_progress">التقدم</string>
+    <string name="download_downloaded">تم تنزيله</string>
+    <string name="download_total">الإجمالي</string>
+    <string name="download_destination">الوجهة</string>
+    <string name="download_source">المصدر</string>
+    <string name="download_created_by">أنشئ بواسطة</string>
+
+    <!-- Upgrades Widget -->
+    <string name="upgrade_review_action">مراجعة</string>
+    <string name="upgrade_apply_action">ترقية</string>
+    <string name="upgrade_ignore_action">تجاهل</string>
+    <string name="upgrade_diff_format">الحالي: %1$s • المتاح: %2$s</string>
+
+    <!-- Anime Detail -->
+    <string name="anime_detail_title">أنمي</string>
+    <string name="anime_seasons">المواسم</string>
+    <string name="anime_episodes">الحلقات</string>
+    <string name="anime_releases">الإصدارات</string>
+    <string name="anime_description">الوصف</string>
+    <string name="anime_year">السنة</string>
+    <string name="anime_status">الحالة</string>
+    <string name="anime_genres">الأنواع</string>
+    <string name="anime_episode_count">عدد الحلقات</string>
+
+    <!-- Episode Detail -->
+    <string name="episode_detail_title">الحلقة</string>
+    <string name="episode_duration">المدة</string>
+    <string name="episode_watch_progress">تقدم المشاهدة</string>
+    <string name="episode_current_file">الملف الحالي</string>
+    <string name="episode_available_releases">الإصدارات المتاحة</string>
+
+    <!-- Release Detail -->
+    <string name="release_detail_title">الإصدار</string>
+    <string name="release_name">اسم الإصدار</string>
+    <string name="release_provider">المزود</string>
+    <string name="release_uploader">الرافع</string>
+    <string name="release_group">مجموعة الإصدار</string>
+    <string name="release_video">الفيديو</string>
+    <string name="release_audio">الصوت</string>
+    <string name="release_subtitles">الترجمة</string>
+    <string name="release_source_type">المصدر</string>
+    <string name="release_size">الحجم</string>
+    <string name="release_resolution">الدقة</string>
+    <string name="release_codec">المُرمِّز</string>
+    <string name="release_availability">التوفر</string>
+    <string name="release_compare">مقارنة الإصدارات</string>
+    <string name="release_copy_magnet">نسخ رابط المغناطيس</string>
+    <string name="release_open_provider">فتح المزود</string>
+
+    <!-- Torrent Details -->
+    <string name="torrent_info_hash">معرّف التورنت</string>
+    <string name="torrent_pieces">القطع</string>
+    <string name="torrent_uploaded">تم الرفع</string>
+    <string name="torrent_ratio">النسبة</string>
+    <string name="torrent_seeding_state">حالة البذر</string>
+
+    <!-- Library -->
     <string name="library_title">المكتبة</string>
+    <string name="library_tab_all">الكل</string>
+    <string name="library_tab_anime">أنمي</string>
+    <string name="library_tab_movies">أفلام</string>
+    <string name="library_tab_specials">خاصة</string>
+    <string name="library_tab_continue">متابعة</string>
+    <string name="library_tab_completed">مكتمل</string>
+    <string name="library_tab_favorites">المفضلة</string>
+    <string name="library_tab_upgrades">تحديثات</string>
+    <string name="library_tab_unidentified">غير معرّف</string>
+    <string name="library_tab_duplicates">مكررات</string>
+    <string name="library_empty_title">مكتبتك فارغة</string>
+    <string name="library_empty_desc">ستظهر الأنمي المحملة هنا.</string>
+    <string name="library_remove">إزالة من المكتبة</string>
+    <string name="library_delete_file">حذف الملف</string>
+    <string name="library_open_folder">فتح المجلد</string>
+    <string name="library_rescan">إعادة فحص</string>
+
+    <!-- Storage -->
+    <string name="storage_title">التخزين</string>
+    <string name="storage_used">مستخدم</string>
+    <string name="storage_free">متاح</string>
+    <string name="storage_reserved">محجوز</string>
+    <string name="storage_scan">فحص</string>
+    <string name="storage_repair">إصلاح</string>
+    <string name="storage_add_location">إضافة موقع</string>
+    <string name="storage_choose_library_location">اختر موقع المكتبة</string>
+    <string name="storage_role_library">المكتبة</string>
+    <string name="storage_role_downloads">التنزيلات</string>
+    <string name="storage_role_both">كلاهما</string>
+    <string name="storage_permission_required">يلزم إذن التخزين للوصول إلى الموقع المحدد</string>
+
+    <!-- Duplicates -->
+    <string name="duplicates_title">المكررات</string>
+    <string name="duplicates_exact">مكررات مطابقة</string>
+    <string name="duplicates_likely">مكررات محتملة</string>
+    <string name="duplicates_possible">بدائل محتملة</string>
+    <string name="duplicates_empty_title">لا توجد مكررات</string>
+    <string name="duplicates_empty_desc">مكتبتك لا تحتوي على ملفات مكررة.</string>
+
+    <!-- Unidentified Media -->
+    <string name="unidentified_title">وسائط غير معرّفة</string>
+    <string name="unidentified_identify">تعريف</string>
+    <string name="unidentified_map_anime">ربط بأنمي</string>
+    <string name="unidentified_ignore">تجاهل</string>
+    <string name="unidentified_empty_title">لا توجد ملفات غير معرّفة</string>
+    <string name="unidentified_empty_desc">مكتبتك معرّفة بالكامل.</string>
+
+    <!-- Upgrades -->
+    <string name="upgrades_title">التحديثات</string>
+    <string name="upgrades_current">الحالي</string>
+    <string name="upgrades_available">المتاح</string>
+    <string name="upgrades_empty_title">لا تحديثات متاحة</string>
+    <string name="upgrades_empty_desc">جميع الوسائط بأفضل جودة متاحة.</string>
+
+    <!-- Player -->
+    <string name="player_audio_tracks">المسارات الصوتية</string>
+    <string name="player_subtitle_tracks">الترجمة</string>
+    <string name="player_speed">سرعة التشغيل</string>
+    <string name="player_aspect_ratio">نسبة العرض</string>
+    <string name="player_pip">صورة داخل صورة</string>
+    <string name="player_next_episode">الحلقة التالية</string>
+    <string name="player_playback_queue">قائمة التشغيل</string>
+
+    <!-- Profiles -->
+    <string name="profiles_title">الملفات الشخصية</string>
+    <string name="profiles_balanced">متوازن</string>
+    <string name="profiles_high_quality">جودة عالية</string>
+    <string name="profiles_small_size">حجم صغير</string>
+    <string name="profiles_archive">أرشيف</string>
+    <string name="profiles_custom">مخصص</string>
+    <string name="profiles_empty_title">لا توجد ملفات شخصية</string>
+    <string name="profiles_empty_desc">أنشئ ملف تنزيل لتحديد تفضيلات الجودة.</string>
+    <string name="profile_edit">تعديل الملف</string>
+    <string name="profile_duplicate">تكرار</string>
+    <string name="profile_delete">حذف الملف</string>
+    <string name="profile_section_quality">الجودة</string>
+    <string name="profile_section_video">الفيديو</string>
+    <string name="profile_section_audio">الصوت</string>
+    <string name="profile_section_subtitles">الترجمة</string>
+    <string name="profile_section_source">المصدر</string>
+    <string name="profile_section_size">الحجم</string>
+    <string name="profile_pref_required">مطلوب</string>
+    <string name="profile_pref_preferred">مفضل</string>
+    <string name="profile_pref_allowed">مسموح</string>
+    <string name="profile_pref_avoid">تجنب</string>
+    <string name="profile_pref_forbidden">ممنوع</string>
+
+    <!-- Automation -->
+    <string name="automation_title">الأتمتة</string>
+    <string name="automation_status">حالة الأتمتة</string>
+    <string name="automation_enabled">مفعّل</string>
+    <string name="automation_active_rules">القواعد النشطة</string>
+    <string name="automation_last_run">آخر تشغيل</string>
+    <string name="automation_queued_actions">الإجراءات المعلقة</string>
+    <string name="automation_pause_all">إيقاف كل الأتمتة</string>
+    <string name="automation_enable_prompt">يمكن للأتمتة إنشاء تنزيلات تلقائياً بناءً على قواعدك.\n\nيمكنك إيقاف الأتمتة في أي وقت.</string>
+    <string name="automation_enable_action">تفعيل الأتمتة</string>
+    <string name="automation_not_now">ليس الآن</string>
+
+    <!-- Rules -->
+    <string name="rules_title">القواعد</string>
+    <string name="rules_empty_title">لا توجد قواعد</string>
+    <string name="rules_empty_desc">أنشئ قواعد أتمتة لتنزيل الإصدارات الجديدة تلقائياً.</string>
+    <string name="rule_builder_title">بناء القاعدة</string>
+    <string name="rule_when">عندما</string>
+    <string name="rule_if">إذا</string>
+    <string name="rule_then">إذاً</string>
+    <string name="rule_add_condition">إضافة شرط</string>
+    <string name="rule_add_action">إضافة إجراء</string>
+    <string name="rule_test">اختبار القاعدة</string>
+    <string name="rule_save">حفظ</string>
+    <string name="rule_simulation_title">محاكاة القاعدة</string>
+    <string name="rule_matched">مطابق</string>
+    <string name="rule_skipped">تخطّي</string>
+    <string name="rule_blocked">محظور</string>
+
+    <!-- Favorites -->
+    <string name="favorites_title">المفضلة</string>
+    <string name="favorites_tab_anime">أنمي</string>
+    <string name="favorites_tab_releases">إصدارات</string>
+    <string name="favorites_tab_groups">مجموعات</string>
+    <string name="favorites_tab_uploaders">الرافعون</string>
+    <string name="favorites_empty_title">لا مفضلات بعد</string>
+    <string name="favorites_empty_desc">أضف أنمي أو إصدارات أو مجموعات إلى المفضلة لتظهر هنا.</string>
+
+    <!-- Collections -->
+    <string name="collections_title">المجموعات</string>
+    <string name="collections_empty_title">لا مجموعات</string>
+    <string name="collections_empty_desc">أنشئ مجموعات لتنظيم أنميك.</string>
+    <string name="collection_detail_title">المجموعة</string>
+    <string name="collection_dynamic">ديناميكية</string>
+    <string name="collection_download_missing">تنزيل المفقود</string>
+
+    <!-- Watchlist -->
+    <string name="watchlist_title">قائمة المشاهدة</string>
+    <string name="watchlist_empty_title">قائمة المشاهدة فارغة</string>
+    <string name="watchlist_empty_desc">أضف أنمي تريد مشاهدته هنا.</string>
+    <string name="watchlist_search_releases">بحث عن إصدارات</string>
+
+    <!-- Saved Searches -->
+    <string name="saved_searches_title">عمليات البحث المحفوظة</string>
+    <string name="saved_searches_empty_title">لا توجد عمليات بحث محفوظة</string>
+    <string name="saved_searches_empty_desc">احفظ استعلامات البحث المتكررة للوصول السريع.</string>
+    <string name="saved_search_run">تشغيل</string>
+    <string name="saved_search_edit">تعديل</string>
+    <string name="saved_search_duplicate">تكرار</string>
+    <string name="saved_search_pause">إيقاف</string>
+
+    <!-- History -->
+    <string name="history_title">السجل</string>
+    <string name="history_tab_watch">المشاهدة</string>
+    <string name="history_tab_search">البحث</string>
+    <string name="history_tab_downloads">التنزيلات</string>
+    <string name="history_tab_automation">الأتمتة</string>
+    <string name="history_tab_organization">التنظيم</string>
+    <string name="history_empty_title">لا سجل</string>
+    <string name="history_empty_desc">سيظهر سجل نشاطك هنا.</string>
+
+    <!-- Notifications -->
+    <string name="notifications_title">الإشعارات</string>
+    <string name="notifications_tab_downloads">التنزيلات</string>
+    <string name="notifications_tab_anime">أنمي</string>
+    <string name="notifications_tab_automation">الأتمتة</string>
+    <string name="notifications_tab_system">النظام</string>
+    <string name="notifications_mark_read">تعليم كمقروء</string>
+
+    <!-- Settings -->
     <string name="settings_title">الإعدادات</string>
-    <string name="state_idle">أدخل كلمة البحث لاكتشاف الإصدارات</string>
-    <string name="state_empty">لم يتم العثور على أي إصدارات مطابقة</string>
-    <string name="state_loading">جاري جلب الإصدارات من Nyaa…</string>
-    <string name="state_error">فشل في تحميل الإصدارات: %1$s</string>
+    <string name="settings_appearance">المظهر</string>
+    <string name="settings_playback">التشغيل</string>
+    <string name="settings_downloads">التنزيلات</string>
+    <string name="settings_network">الشبكة</string>
+    <string name="settings_storage">التخزين</string>
+    <string name="settings_search">البحث</string>
+    <string name="settings_notifications">الإشعارات</string>
+    <string name="settings_profiles">الملفات الشخصية</string>
+    <string name="settings_automation">الأتمتة</string>
+    <string name="settings_privacy">الخصوصية</string>
+    <string name="settings_backup">النسخ الاحتياطي</string>
+    <string name="settings_diagnostics">التشخيصات</string>
+    <string name="settings_about">حول</string>
+    <string name="settings_theme">السمة</string>
+    <string name="settings_theme_light">فاتح</string>
+    <string name="settings_theme_dark">داكن</string>
+    <string name="settings_theme_system">النظام</string>
+    <string name="settings_compact_mode">الوضع المضغوط</string>
+    <string name="settings_animations">الحركات</string>
+
+    <!-- Playback Settings -->
+    <string name="playback_default_speed">سرعة التشغيل الافتراضية</string>
+    <string name="playback_preferred_audio">لغة الصوت المفضلة</string>
+    <string name="playback_preferred_subtitle">لغة الترجمة المفضلة</string>
+    <string name="playback_auto_next">تشغيل تلقائي للتالي</string>
+    <string name="playback_resume">استئناف التشغيل</string>
+
+    <!-- Network Settings -->
+    <string name="network_wifi">واي فاي</string>
+    <string name="network_mobile_data">بيانات الجوال</string>
+    <string name="network_metered">شبكات محدودة</string>
+    <string name="network_roaming">التجوال</string>
+
+    <!-- Bandwidth -->
+    <string name="bandwidth_title">عرض النطاق</string>
+    <string name="bandwidth_unlimited">غير محدود</string>
+    <string name="bandwidth_schedule">الجدول</string>
+    <string name="bandwidth_global_limit">الحد الأقصى العام للسرعة</string>
+    <string name="bandwidth_per_task_limit">الحد الأقصى لكل مهمة</string>
+
+    <!-- Backup -->
+    <string name="backup_title">النسخ الاحتياطي والاستعادة</string>
+    <string name="backup_create">إنشاء نسخة احتياطية</string>
+    <string name="backup_restore">استعادة نسخة احتياطية</string>
+    <string name="backup_export_config">تصدير الإعدادات</string>
+    <string name="backup_import_config">استيراد الإعدادات</string>
+    <string name="backup_last">آخر نسخة احتياطية</string>
+
+    <!-- Privacy -->
+    <string name="privacy_title">الخصوصية</string>
+    <string name="privacy_search_history">سجل البحث</string>
+    <string name="privacy_clear_history">مسح السجل</string>
+    <string name="privacy_logs_retention">مدة الاحتفاظ بالسجلات</string>
+
+    <!-- Diagnostics -->
+    <string name="diagnostics_title">التشخيصات</string>
+    <string name="diagnostics_app">التطبيق</string>
+    <string name="diagnostics_database">قاعدة البيانات</string>
+    <string name="diagnostics_network">الشبكة</string>
+    <string name="diagnostics_providers">المزودون</string>
+    <string name="diagnostics_downloads">التنزيلات</string>
+    <string name="diagnostics_storage">التخزين</string>
+    <string name="diagnostics_player">المشغل</string>
+    <string name="diagnostics_automation">الأتمتة</string>
+    <string name="diagnostics_permissions">الأذونات</string>
+    <string name="diagnostics_healthy">سليم</string>
+    <string name="diagnostics_warning">تحذير</string>
+    <string name="diagnostics_error">خطأ</string>
+    <string name="diagnostics_unknown">غير معروف</string>
+    <string name="diagnostics_export">تصدير التشخيصات</string>
+
+    <!-- About -->
+    <string name="about_title">حول</string>
+    <string name="about_version">الإصدار</string>
+    <string name="about_build">البناء</string>
+    <string name="about_licenses">تراخيص المصدر المفتوح</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title">أنيفلو</string>
+    <string name="onboarding_tagline">اكتشف.\nحمّل.\nنظّم.\nشاهد.</string>
+    <string name="onboarding_page2_title">اكتشاف ذكي للإصدارات</string>
+    <string name="onboarding_page2_desc">ابحث تلقائياً عن أفضل الإصدارات لأنميك مع مطابقة ذكية للجودة وتجميع من مصادر متعددة.</string>
+    <string name="onboarding_page3_title">إدارة تنزيل قوية</string>
+    <string name="onboarding_page3_desc">تنزيلات متعددة البروتوكول مع نقل قابل للاستئناف وإدارة قائمة الانتظار وتتبع التقدم.</string>
+    <string name="onboarding_page4_title">مكتبة أنمي شخصية</string>
+    <string name="onboarding_page4_desc">نظّم مجموعتك بالتعريف التلقائي وإثراء البيانات وإدارة التخزين الذكية.</string>
+    <string name="onboarding_page5_title">الأتمتة والملفات الشخصية</string>
+    <string name="onboarding_page5_desc">أنشئ قواعد وملفات شخصية لأتمتة سير عملك. تُحمّل الإصدارات الجديدة تلقائياً وفق تفضيلاتك.</string>
+    <string name="onboarding_skip">تخطّي</string>
+    <string name="onboarding_continue">متابعة</string>
+    <string name="onboarding_finish">البدء</string>
+    <string name="onboarding_setup_title">إعداد سريع</string>
+    <string name="onboarding_setup_storage">موقع التخزين</string>
+    <string name="onboarding_setup_language">اللغة</string>
+
+    <!-- More Screen Groups -->
+    <string name="more_section_content">المحتوى</string>
+    <string name="more_section_management">الإدارة</string>
+    <string name="more_section_system">النظام</string>
+
+    <!-- Status & Badges -->
+    <string name="status_downloaded">تم التنزيل</string>
+    <string name="status_downloading">جارٍ التنزيل</string>
+    <string name="status_queued">في الانتظار</string>
+    <string name="status_missing">مفقود</string>
+    <string name="status_watched">تمت المشاهدة</string>
+    <string name="status_failed">فشل</string>
+    <string name="status_paused">متوقف</string>
+    <string name="status_available">متاح</string>
+    <string name="status_upgrade_available">تحديث متاح</string>
+    <string name="status_trusted">موثوق</string>
+    <string name="status_completed">مكتمل</string>
+    <string name="status_active">نشط</string>
+    <string name="status_pending">معلق</string>
+    <string name="status_waiting">في الانتظار</string>
+    <string name="status_unknown">غير معروف</string>
+
+    <!-- Actions -->
+    <string name="play_action">تشغيل</string>
     <string name="retry_action">إعادة المحاولة</string>
     <string name="pause_action">إيقاف مؤقت</string>
     <string name="resume_action">استئناف</string>
     <string name="cancel_action">إلغاء</string>
     <string name="download_action">تنزيل</string>
+    <string name="compare_action">مقارنة</string>
+    <string name="details_action">التفاصيل</string>
+    <string name="delete_action">حذف</string>
+    <string name="save_action">حفظ</string>
+    <string name="edit_action">تعديل</string>
+    <string name="duplicate_action">تكرار</string>
+    <string name="remove_action">إزالة</string>
+    <string name="add_action">إضافة</string>
+    <string name="select_all">تحديد الكل</string>
+    <string name="select_none">إلغاء التحديد</string>
+    <string name="invert_selection">عكس التحديد</string>
+    <string name="confirm_action">تأكيد</string>
+    <string name="dismiss_action">تجاهل</string>
+
+    <!-- States -->
+    <string name="state_idle">أدخل استعلاماً لاكتشاف الإصدارات</string>
+    <string name="state_empty">لم يتم العثور على إصدارات مطابقة</string>
+    <string name="state_loading">جارٍ تحميل المحتوى…</string>
+    <string name="state_error">حدث خطأ</string>
+    <string name="state_offline">غير متصل</string>
+    <string name="state_cached">مخزن مؤقتاً</string>
+
+    <!-- Accessibility Descriptions -->
+    <string name="cd_search">فتح البحث</string>
+    <string name="cd_notifications">الإشعارات</string>
+    <string name="cd_profile">اختيار الملف الشخصي</string>
+    <string name="cd_quick_import">استيراد رابط سريع</string>
+    <string name="cd_back">الرجوع</string>
+    <string name="cd_pause_download">إيقاف التنزيل مؤقتاً</string>
+    <string name="cd_resume_download">استئناف التنزيل</string>
+    <string name="cd_cancel_download">إلغاء التنزيل</string>
+    <string name="cd_play">تشغيل</string>
+    <string name="cd_next_episode">الحلقة التالية</string>
+    <string name="cd_previous_episode">الحلقة السابقة</string>
+    <string name="cd_seek_forward">تقديم</string>
+    <string name="cd_seek_backward">ترجيع</string>
+    <string name="cd_more_options">خيارات إضافية</string>
+    <string name="cd_filter">خيارات الفلاتر</string>
+    <string name="cd_sort">خيارات الترتيب</string>
+
+    <!-- Formats -->
     <string name="speed_format">%1$s/ث</string>
     <string name="size_format">%1$s</string>
-    <string name="seeds_format">الناشرون: %1$d</string>
-    <string name="episodes_count">%1$d حلقة</string>
-    <string name="storage_permission_required">يلزم الحصول على إذن التخزين للوصول إلى مسار التنزيل المحدد</string>
+    <string name="seeds_format">بذور: %1$d</string>
+    <string name="peers_format">أقران: %1$d</string>
+    <string name="episodes_count">%1$d حلقات</string>
+    <string name="time_just_now">الآن</string>
+    <string name="time_minutes_ago">قبل %1$d دقيقة</string>
+    <string name="time_today">اليوم</string>
+    <string name="time_yesterday">أمس</string>
+
+    <!-- Confirmation Dialogs -->
+    <string name="confirm_delete_file_title">حذف هذا الملف؟</string>
+    <string name="confirm_delete_file_warning">سيتم حذف الملف نهائياً من التخزين.\nلا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="confirm_cancel_download_title">إلغاء التنزيل؟</string>
+    <string name="confirm_cancel_download_warning">سيتم فقدان تقدم التنزيل.</string>
+    <string name="confirm_clear_history_title">مسح السجل؟</string>
+    <string name="confirm_clear_history_warning">سيتم حذف جميع إدخالات السجل نهائياً.</string>
+
+    <!-- Additional Screen Titles -->
+    <string name="title_storage_setup">إعداد التخزين</string>
+    <string name="title_duplicates">الملفات المكررة</string>
+    <string name="title_unidentified_media">وسائط غير معرّفة</string>
+    <string name="title_quality_upgrades">ترقيات الجودة</string>
+    <string name="title_notifications">التنبيهات</string>
+    <string name="title_rule_history">سجل تنفيذ القواعد</string>
+    <string name="title_activity_history">سجل النشاطات</string>
 </resources>

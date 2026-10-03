@@ -51,12 +51,17 @@ import com.aniflow.core.ui.theme.PrimaryIndigo
 import com.aniflow.core.ui.theme.TextMuted
 import com.aniflow.core.ui.theme.TextPrimary
 
+import androidx.compose.material.icons.filled.FolderCopy
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Upgrade
+
 /**
  * MoreScreen (Section 12, 146).
  * Central hub for secondary destinations, structured into 4 clean editorial groups:
- * 1. Media & Personal (Favorites, Collections, Watchlist, Saved Searches)
- * 2. Intelligence & Automation (Automation, Rules, Profiles, History)
- * 3. Storage & Infrastructure (Storage Manager)
+ * 1. Media & Personal (Favorites, Collections, Watchlist, Saved Searches, Notifications)
+ * 2. Intelligence & Automation (Automation, Rules, Rule History, Profiles, History)
+ * 3. Storage & Infrastructure (Storage Manager, Storage Setup, Duplicates, Unidentified, Upgrades)
  * 4. System & Support (Settings, Diagnostics, About)
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,11 +71,17 @@ fun MoreScreen(
     onNavigateToCollections: () -> Unit = {},
     onNavigateToWatchlist: () -> Unit = {},
     onNavigateToSavedSearches: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     onNavigateToAutomation: () -> Unit = {},
     onNavigateToRules: () -> Unit = {},
+    onNavigateToRuleHistory: () -> Unit = {},
     onNavigateToProfiles: () -> Unit = {},
     onNavigateToHistory: () -> Unit = {},
     onNavigateToStorage: () -> Unit = {},
+    onNavigateToStorageSetup: () -> Unit = {},
+    onNavigateToDuplicates: () -> Unit = {},
+    onNavigateToUnidentifiedMedia: () -> Unit = {},
+    onNavigateToUpgrades: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToDiagnostics: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
@@ -110,7 +121,7 @@ fun MoreScreen(
                 Column {
                     AniSectionHeader(
                         title = "Media & Personal",
-                        subtitle = "Curated collections, watchlist, and bookmarked releases"
+                        subtitle = "Curated collections, watchlist, notifications, and saved searches"
                     )
                     Card(
                         colors = CardDefaults.cardColors(containerColor = DarkSurface),
@@ -119,6 +130,12 @@ fun MoreScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column {
+                            AniSettingRow(
+                                title = "Notifications",
+                                description = "Downloads, anime, and automation alerts",
+                                icon = Icons.Default.Notifications,
+                                onClick = onNavigateToNotifications
+                            )
                             AniSettingRow(
                                 title = "Favorites",
                                 description = "Bookmarked anime, release groups, and uploaders",
@@ -175,6 +192,12 @@ fun MoreScreen(
                                 onClick = onNavigateToRules
                             )
                             AniSettingRow(
+                                title = "Rule Execution History",
+                                description = "Decision audit logs explaining why rules fired or skipped",
+                                icon = Icons.Default.History,
+                                onClick = onNavigateToRuleHistory
+                            )
+                            AniSettingRow(
                                 title = "Quality Profiles",
                                 description = "Resolution, codec, audio, and size preference sets",
                                 icon = Icons.Default.Tune,
@@ -196,7 +219,7 @@ fun MoreScreen(
                 Column {
                     AniSectionHeader(
                         title = "Storage & Infrastructure",
-                        subtitle = "Library disks, download pools, and health reconciliation"
+                        subtitle = "Library disks, download pools, duplicates, and health reconciliation"
                     )
                     Card(
                         colors = CardDefaults.cardColors(containerColor = DarkSurface),
@@ -210,6 +233,30 @@ fun MoreScreen(
                                 description = "Roots, free space thresholds, and SAF permissions",
                                 icon = Icons.Default.Storage,
                                 onClick = onNavigateToStorage
+                            )
+                            AniSettingRow(
+                                title = "Storage Setup",
+                                description = "First-run storage and download location roles",
+                                icon = Icons.Default.Storage,
+                                onClick = onNavigateToStorageSetup
+                            )
+                            AniSettingRow(
+                                title = "Duplicate Media",
+                                description = "Identify redundant downloads and compare qualities",
+                                icon = Icons.Default.FolderCopy,
+                                onClick = onNavigateToDuplicates
+                            )
+                            AniSettingRow(
+                                title = "Unidentified Files",
+                                description = "Ambiguous files requiring manual mapping",
+                                icon = Icons.Default.HelpOutline,
+                                onClick = onNavigateToUnidentifiedMedia
+                            )
+                            AniSettingRow(
+                                title = "Quality Upgrades",
+                                description = "Higher-quality candidates for existing library episodes",
+                                icon = Icons.Default.Upgrade,
+                                onClick = onNavigateToUpgrades
                             )
                         }
                     }

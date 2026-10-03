@@ -51,8 +51,12 @@ import com.aniflow.core.ui.theme.TextMuted
 import com.aniflow.core.ui.theme.TextPrimary
 import com.aniflow.core.ui.theme.TextSecondary
 
+import com.aniflow.core.ui.components.AniEmptyState
+import androidx.compose.material.icons.filled.FolderZip
+
 /**
  * Step 20 — Batch Detail UI State (Section 44, 45).
+ * Zero hardcoded production data.
  */
 data class BatchEpisodeCoverageItem(
     val episodeNumber: Int,
@@ -61,15 +65,15 @@ data class BatchEpisodeCoverageItem(
 
 data class BatchDetailUiState(
     val releaseId: String = "",
-    val batchTitle: String = "[Erai-raws] One Piece - 01~12 [1080p][HEVC]",
-    val size: String = "14.2 GB",
-    val uploader: String? = "Erai-raws",
-    val releaseGroup: String? = "Erai-raws",
-    val seeders: Int = 142,
-    val resolution: String? = "1080p",
-    val videoCodec: String? = "HEVC / x265",
-    val audioCodec: String? = "AAC 2.0",
-    val subtitleSummary: String? = "Multiple (Eng, Ara, Fre, Ger)",
+    val batchTitle: String = "",
+    val size: String = "",
+    val uploader: String? = null,
+    val releaseGroup: String? = null,
+    val seeders: Int = 0,
+    val resolution: String? = null,
+    val videoCodec: String? = null,
+    val audioCodec: String? = null,
+    val subtitleSummary: String? = null,
     val isCoverageInferred: Boolean = false,
     val coveredEpisodes: List<BatchEpisodeCoverageItem> = emptyList()
 )
@@ -108,42 +112,54 @@ fun BatchDetailScreen(
             )
         },
         bottomBar = {
-            Surface(
-                color = DarkSurface,
-                border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            if (uiState.releaseId.isNotBlank()) {
+                Surface(
+                    color = DarkSurface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
                 ) {
-                    Column {
-                        Text(text = "Total Size", color = TextMuted, fontSize = 12.sp)
-                        Text(text = uiState.size, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    Button(
-                        onClick = { onDownloadBatchClick(uiState.releaseId) },
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
-                        shape = RoundedCornerShape(10.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(imageVector = Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Download Batch", fontSize = 14.sp)
+                        Column {
+                            Text(text = "Total Size", color = TextMuted, fontSize = 12.sp)
+                            Text(text = if (uiState.size.isNotBlank()) uiState.size else "—", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = { onDownloadBatchClick(uiState.releaseId) },
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Download Batch", fontSize = 14.sp)
+                        }
                     }
                 }
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+        if (uiState.batchTitle.isBlank() && uiState.releaseId.isBlank()) {
+            AniEmptyState(
+                title = "Batch release not found",
+                description = "The requested batch release metadata is not available.",
+                icon = Icons.Default.FolderZip,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             // Header Info Card
             item {
                 Card(

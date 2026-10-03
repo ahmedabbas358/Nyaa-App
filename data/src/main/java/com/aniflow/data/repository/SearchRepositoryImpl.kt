@@ -39,7 +39,11 @@ class SearchRepositoryImpl @Inject constructor(
     private val cacheTtlMillis = 10 * 60 * 1000L // 10 minutes
 
     override suspend fun search(request: SearchRequest): SearchResult {
-        val queryText = request.query.toQueryString()
+        val queryText = when (val root = request.query.root) {
+            is com.aniflow.domain.controlplane.models.ComparisonExpression -> root.value
+            is com.aniflow.domain.controlplane.models.AndExpression -> root.children.filterIsInstance<com.aniflow.domain.controlplane.models.ComparisonExpression>().joinToString(" ") { it.value }
+            else -> request.query.toQueryString()
+        }
         val cacheKey = buildCacheKey(queryText, request.page, request.filters.trustedOnly)
 
         try {

@@ -1,5 +1,10 @@
 package com.aniflow.core.ui.theme
 
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -10,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Spacing design tokens (Section 11, 16).
+ * Spacing design tokens (Section 7, Section 11, Section 16).
  * Standardized 4dp base grid tokens.
  */
 object AppSpacing {
@@ -40,13 +45,13 @@ object AppSpacing {
 
 /**
  * Shape tokens (Section 8).
- * Cohesive radius scale.
+ * Cohesive radius scale. Restrained radii for technical layouts, rounded for media.
  */
 object AppShapes {
     val small = RoundedCornerShape(6.dp)
     val medium = RoundedCornerShape(10.dp)
-    val large = RoundedCornerShape(16.dp)
-    val extraLarge = RoundedCornerShape(24.dp)
+    val large = RoundedCornerShape(14.dp)
+    val extraLarge = RoundedCornerShape(20.dp)
     val pill = RoundedCornerShape(999.dp)
 }
 
@@ -61,16 +66,16 @@ object AppElevation {
 }
 
 /**
- * Semantic status colors (Section 5, 124).
+ * Semantic status colors (Section 5, Section 124).
  */
 object AppSemanticColors {
-    val Success = Color(0xFF10B981)   // Completed / downloaded
-    val Warning = Color(0xFFF59E0B)   // Low storage / fallback / warning
-    val Error = Color(0xFFF43F5E)     // Failed / critical error
-    val Info = Color(0xFF38BDF8)      // Active download / stream
+    val Success = SuccessGreen
+    val Warning = WarningAmber
+    val Error = ErrorRose
+    val Info = InfoBlue
     val Neutral = Color(0xFF64748B)   // Queued / idle / paused
-    val Accent = Color(0xFF6366F1)    // Primary interactive
-    val Secondary = Color(0xFF14B8A6) // Auxiliary interactive
+    val Accent = AccentBlueViolet     // Primary interactive
+    val Secondary = SecondaryTeal    // Auxiliary interactive
 }
 
 /**
@@ -88,39 +93,38 @@ object AppSemanticColors {
  * - Overline
  */
 object AppTypography {
-    // Official hierarchy (Section 6)
     val Display = TextStyle(
         fontWeight = FontWeight.Bold,
-        fontSize = 32.sp,
-        lineHeight = 38.sp,
+        fontSize = 30.sp,
+        lineHeight = 36.sp,
         letterSpacing = (-0.75).sp
     )
 
     val LargeTitle = TextStyle(
         fontWeight = FontWeight.Bold,
-        fontSize = 24.sp,
-        lineHeight = 30.sp,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
         letterSpacing = (-0.4).sp
     )
 
     val Title = TextStyle(
         fontWeight = FontWeight.SemiBold,
-        fontSize = 18.sp,
-        lineHeight = 24.sp,
+        fontSize = 17.sp,
+        lineHeight = 22.sp,
         letterSpacing = (-0.2).sp
     )
 
     val SectionTitle = TextStyle(
-        fontWeight = FontWeight.Bold,
-        fontSize = 16.sp,
-        lineHeight = 22.sp,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 15.sp,
+        lineHeight = 20.sp,
         letterSpacing = (-0.1).sp
     )
 
     val Subtitle = TextStyle(
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
-        lineHeight = 20.sp
+        lineHeight = 19.sp
     )
 
     val Body = TextStyle(
@@ -132,15 +136,13 @@ object AppTypography {
     val BodySmall = TextStyle(
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
-        lineHeight = 16.sp,
-        color = TextSecondary
+        lineHeight = 16.sp
     )
 
     val Caption = TextStyle(
         fontWeight = FontWeight.Normal,
         fontSize = 11.sp,
-        lineHeight = 14.sp,
-        color = TextMuted
+        lineHeight = 14.sp
     )
 
     val Metadata = TextStyle(
@@ -148,17 +150,17 @@ object AppTypography {
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 14.sp,
-        letterSpacing = 0.3.sp
+        letterSpacing = 0.2.sp
     )
 
     val Overline = TextStyle(
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 10.sp,
         lineHeight = 12.sp,
-        letterSpacing = 1.0.sp
+        letterSpacing = 0.8.sp
     )
 
-    // Aliases and components compatibility
+    // Aliases for legacy component compatibility
     val displayLarge = Display
     val headline = LargeTitle
     val title = Title
@@ -173,21 +175,53 @@ object AppTypography {
     // Dedicated numeric styles for speeds, ETAs, and file sizes (Section 6, 15)
     val numericSpeed = TextStyle(
         fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        fontSize = 13.sp,
-        letterSpacing = 0.5.sp
-    )
-
-    val numericEta = TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 12.sp,
         letterSpacing = 0.3.sp
     )
 
+    val numericEta = TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Normal,
+        fontSize = 11.sp,
+        letterSpacing = 0.2.sp
+    )
+
     val numericSize = TextStyle(
         fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 12.sp
+    )
+}
+
+/**
+ * Motion & Animation Tokens (Section 115).
+ * Centralized motion specifications to ensure calm, predictable transitions without bouncing.
+ */
+object AppMotion {
+    const val DurationShort = 150
+    const val DurationStandard = 250
+    const val DurationEmphasized = 400
+
+    val EasingStandard: Easing = FastOutSlowInEasing
+    val EasingEmphasized: Easing = CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.0f)
+    val EasingDecelerate: Easing = LinearOutSlowInEasing
+
+    fun <T> shortTween(delayMillis: Int = 0) = tween<T>(
+        durationMillis = DurationShort,
+        delayMillis = delayMillis,
+        easing = EasingStandard
+    )
+
+    fun <T> standardTween(delayMillis: Int = 0) = tween<T>(
+        durationMillis = DurationStandard,
+        delayMillis = delayMillis,
+        easing = EasingStandard
+    )
+
+    fun <T> emphasizedTween(delayMillis: Int = 0) = tween<T>(
+        durationMillis = DurationEmphasized,
+        delayMillis = delayMillis,
+        easing = EasingEmphasized
     )
 }

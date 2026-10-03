@@ -35,33 +35,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.SdCard
+import com.aniflow.core.ui.components.AniAppBar
+import com.aniflow.core.ui.components.AniEmptyState
 import com.aniflow.core.ui.model.StorageUiModel
-import com.aniflow.core.ui.preview.PreviewFixtures
-import com.aniflow.core.ui.theme.AppSemanticColors
-import com.aniflow.core.ui.theme.AppShapes
-import com.aniflow.core.ui.theme.AppSpacing
-import com.aniflow.core.ui.theme.AppTypography
-import com.aniflow.core.ui.theme.DarkBackground
-import com.aniflow.core.ui.theme.DarkCardBorder
-import com.aniflow.core.ui.theme.DarkSurface
-import com.aniflow.core.ui.theme.PrimaryIndigo
-import com.aniflow.core.ui.theme.TextMuted
-import com.aniflow.core.ui.theme.TextPrimary
-import com.aniflow.core.ui.theme.TextSecondary
 
 /**
  * StorageScreen (Sections 87, 88).
  * Manages storage volumes (Internal, SD Card, USB), live health bars, permissions, and directory migration.
+ * Zero hardcoded production data.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StorageScreen(
-    storages: List<StorageUiModel> = listOf(
-        PreviewFixtures.sampleStorageInternal,
-        PreviewFixtures.sampleStorageSd
-    ),
+    storages: List<StorageUiModel> = emptyList(),
     onBack: () -> Unit = {},
     onAddLocationClick: () -> Unit = {},
     onRescanClick: (String) -> Unit = {},
@@ -69,36 +56,44 @@ fun StorageScreen(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Storage Management", style = AppTypography.headline, color = TextPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
-                    }
-                },
+            AniAppBar(
+                title = "Storage Management",
+                subtitle = "Storage roots, usage breakdown, and volume health",
+                onBack = onBack,
                 actions = {
                     IconButton(onClick = onAddLocationClick) {
                         Icon(Icons.Default.Add, contentDescription = "Add Storage Location", tint = PrimaryIndigo)
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
+                }
             )
         },
         containerColor = DarkBackground,
         modifier = modifier
     ) { paddingValues ->
-        LazyColumn(
-            contentPadding = PaddingValues(
-                start = AppSpacing.md,
-                end = AppSpacing.md,
-                bottom = AppSpacing.xxxl,
-                top = AppSpacing.sm
-            ),
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.md),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+        if (storages.isEmpty()) {
+            AniEmptyState(
+                title = "No storage locations configured",
+                description = "Configure an internal directory or external storage location to save downloads and index media.",
+                icon = Icons.Default.SdCard,
+                actionLabel = "Add Storage Location",
+                onAction = onAddLocationClick,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            )
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(
+                    start = AppSpacing.md,
+                    end = AppSpacing.md,
+                    bottom = AppSpacing.xxxl,
+                    top = AppSpacing.sm
+                ),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.md),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
             items(storages, key = { it.locationId }) { storage ->
                 Card(
                     colors = CardDefaults.cardColors(containerColor = DarkSurface),

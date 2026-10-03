@@ -263,23 +263,29 @@ private fun OverviewTab(
 
 @Composable
 private fun FilesTab(task: DownloadTaskUiModel) {
-    val sampleFiles = remember {
-        if (task.files.isNotEmpty()) {
-            mutableStateListOf(*task.files.toTypedArray())
-        } else {
-            mutableStateListOf(
-                DownloadFileUiModel("f1", "Episode 01.mkv", 1400L * 1024 * 1024, 1400L * 1024 * 1024, 100, "Completed"),
-                DownloadFileUiModel("f2", "Episode 02.mkv", 1400L * 1024 * 1024, 1400L * 1024 * 1024, 100, "Completed"),
-                DownloadFileUiModel("f3", "Episode 03.mkv", 1400L * 1024 * 1024, 950L * 1024 * 1024, 68, "Downloading"),
-                DownloadFileUiModel("f4", "Episode 04.mkv", 1400L * 1024 * 1024, 0L, 0, "Pending"),
-                DownloadFileUiModel("f5", "Subtitles_en.ass", 2L * 1024 * 1024, 2L * 1024 * 1024, 100, "Completed"),
-                DownloadFileUiModel("f6", "Fonts.zip", 15L * 1024 * 1024, 0L, 0, "Skipped", isSelected = false)
-            )
-        }
+    val files = remember(task.files) {
+        mutableStateListOf(*task.files.toTypedArray())
     }
 
-    val selectedCount = sampleFiles.count { it.isSelected }
-    val selectedBytes = sampleFiles.filter { it.isSelected }.sumOf { it.totalSizeBytes }
+    if (files.isEmpty()) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(AppSpacing.xl),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(Icons.Default.Folder, contentDescription = null, tint = TextMuted, modifier = Modifier.size(48.dp))
+            Spacer(Modifier.height(AppSpacing.sm))
+            Text("Single File Task", style = AppTypography.headline.copy(fontSize = 16.sp), color = TextPrimary)
+            Spacer(Modifier.height(AppSpacing.xs))
+            Text(task.title, style = AppTypography.body, color = TextSecondary)
+            Spacer(Modifier.height(AppSpacing.xs))
+            Text("${task.downloadedBytesFormatted} / ${task.totalBytesFormatted}", style = AppTypography.caption, color = TextMuted)
+        }
+        return
+    }
+
+    val selectedCount = files.count { it.isSelected }
+    val selectedBytes = files.filter { it.isSelected }.sumOf { it.totalSizeBytes }
 
     Column(modifier = Modifier.fillMaxSize().padding(AppSpacing.md)) {
         // Selection Summary Row (Section 17)
@@ -296,7 +302,7 @@ private fun FilesTab(task: DownloadTaskUiModel) {
             Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)) {
                 OutlinedButton(
                     onClick = {
-                        sampleFiles.indices.forEach { sampleFiles[it] = sampleFiles[it].copy(isSelected = true) }
+                        files.indices.forEach { files[it] = files[it].copy(isSelected = true) }
                     },
                     shape = RoundedCornerShape(AppShapes.sm)
                 ) {
@@ -304,7 +310,7 @@ private fun FilesTab(task: DownloadTaskUiModel) {
                 }
                 OutlinedButton(
                     onClick = {
-                        sampleFiles.indices.forEach { sampleFiles[it] = sampleFiles[it].copy(isSelected = false) }
+                        files.indices.forEach { files[it] = files[it].copy(isSelected = false) }
                     },
                     shape = RoundedCornerShape(AppShapes.sm)
                 ) {
@@ -320,7 +326,7 @@ private fun FilesTab(task: DownloadTaskUiModel) {
             verticalArrangement = Arrangement.spacedBy(AppSpacing.xs),
             modifier = Modifier.fillMaxSize()
         ) {
-            items(sampleFiles, key = { it.id }) { file ->
+            items(files, key = { it.id }) { file ->
                 Card(
                     colors = CardDefaults.cardColors(containerColor = DarkSurface),
                     shape = RoundedCornerShape(AppShapes.sm),
@@ -336,9 +342,9 @@ private fun FilesTab(task: DownloadTaskUiModel) {
                             Checkbox(
                                 checked = file.isSelected,
                                 onCheckedChange = { checked ->
-                                    val idx = sampleFiles.indexOf(file)
+                                    val idx = files.indexOf(file)
                                     if (idx != -1) {
-                                        sampleFiles[idx] = file.copy(isSelected = checked)
+                                        files[idx] = file.copy(isSelected = checked)
                                     }
                                 },
                                 colors = CheckboxDefaults.colors(checkedColor = PrimaryIndigo)
@@ -568,14 +574,28 @@ private fun MetadataTab(
 
 @Composable
 private fun DiagnosticsLogsTab(task: DownloadTaskUiModel) {
-    val sampleLogs = listOf(
-        "[10:14:00] DownloadTask state changed -> Starting",
-        "[10:14:01] Storage reservation checked: 2.1 GB verified",
-        "[10:14:02] Engine initialized (8 parallel sockets)",
-        "[10:14:03] Byte-range HTTP 206 Partial Content verified",
-        "[10:14:04] Speed stabilized at 18.4 MB/s",
-        "[10:14:15] Segments #1, #2 completed checksum verification"
-    )
+    val logs = remember(task) {
+        val list = mutableListOf<String>()
+        list.add("[Created] ${task.createdAt}")
+        list.add("[Engine] ${task.engineBadge.displayName} initialized")
+        list.add("[State] Current state -> ${task.state.name}")
+        list.add("[Progress] ${task.downloadedBytesFormatted} of ${task.totalBytesFormatted} (${task.progressPercent}%)")
+        list.add("[Destination] ${task.destinationPath}")
+        list.add("[Intent] ${task.whyCreatedReason}")
+        task.waitingReason?.let {
+            list.add("[Waiting] ${it.displayName}: ${it.description}")
+        }
+        task.errorMessage?.let {
+            list.add("[Error] $it")
+        }
+        if (task.segments.isNotEmpty()) {
+            list.add("[Segments] ${task.segments.size} HTTP worker segments active")
+        }
+        task.swarm?.let { swarm ->
+            list.add("[Swarm] Peers: ${swarm.peersConnected}/${swarm.peersTotal}, Seeds: ${swarm.seedsConnected}/${swarm.seedsTotal}")
+        }
+        list
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(AppSpacing.md)
@@ -605,7 +625,7 @@ private fun DiagnosticsLogsTab(task: DownloadTaskUiModel) {
             modifier = Modifier.fillMaxWidth().weight(1f)
         ) {
             LazyColumn(modifier = Modifier.padding(AppSpacing.sm)) {
-                items(sampleLogs) { log ->
+                items(logs) { log ->
                     Text(log, style = AppTypography.caption.copy(fontFamily = FontFamily.Monospace, fontSize = 11.sp), color = TextSecondary)
                     Spacer(Modifier.height(4.dp))
                 }

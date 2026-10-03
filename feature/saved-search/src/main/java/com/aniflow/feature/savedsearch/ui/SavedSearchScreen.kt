@@ -76,124 +76,68 @@ import com.aniflow.domain.savedsearch.model.SearchRunStatus
 import com.aniflow.domain.savedsearch.model.SearchSort
 import java.time.Instant
 
+import com.aniflow.core.ui.components.AniAppBar
+import com.aniflow.core.ui.components.AniEmptyState
+
 /**
  * SavedSearchScreen (Sections 3, 4, 5, 6, 70, 108, 151).
  * Displays saved searches, execution actions (Run Now, Schedule, Automate), and run histories.
+ * Zero hardcoded production data.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SavedSearchScreen(
+    initialSearches: List<SavedSearch> = emptyList(),
+    initialRuns: List<SavedSearchRun> = emptyList(),
     onBack: () -> Unit = {},
     onAutomate: (SavedSearch) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedSearchForHistory by remember { mutableStateOf<SavedSearch?>(null) }
-
-    val savedSearches = remember {
-        mutableStateListOf(
-            SavedSearch(
-                id = SavedSearchId("ss_1"),
-                name = "One Piece 1080p HEVC Erai",
-                query = SearchExpression.Structured(
-                    animeTitle = "One Piece",
-                    resolution = "1080p",
-                    codec = "HEVC",
-                    releaseGroup = "Erai-raws"
-                ),
-                providerScope = ProviderScope.NyaaOnly,
-                filters = SearchFilters(minSeeds = 5),
-                sort = SearchSort.DateDesc,
-                enabled = true,
-                createdAt = Instant.now().minusSeconds(86400 * 7),
-                updatedAt = Instant.now()
-            ),
-            SavedSearch(
-                id = SavedSearchId("ss_2"),
-                name = "Jujutsu Kaisen Season 2 SubsPlease",
-                query = SearchExpression.Structured(
-                    animeTitle = "Jujutsu Kaisen",
-                    season = 2,
-                    releaseGroup = "SubsPlease"
-                ),
-                providerScope = ProviderScope.Global,
-                filters = SearchFilters(trustedOnly = true),
-                sort = SearchSort.DateDesc,
-                enabled = true,
-                createdAt = Instant.now().minusSeconds(86400 * 14),
-                updatedAt = Instant.now()
-            ),
-            SavedSearch(
-                id = SavedSearchId("ss_3"),
-                name = "Bleach TYBW BDRip Batches",
-                query = SearchExpression.Raw("Bleach Thousand-Year Blood War BDRip 1080p"),
-                providerScope = ProviderScope.NyaaOnly,
-                filters = SearchFilters(minSeeds = 2),
-                sort = SearchSort.SeedersDesc,
-                enabled = false,
-                createdAt = Instant.now().minusSeconds(86400 * 30),
-                updatedAt = Instant.now()
-            )
-        )
-    }
-
-    val sampleRuns = remember {
-        listOf(
-            SavedSearchRun(
-                id = SavedSearchRunId("run_1"),
-                savedSearchId = SavedSearchId("ss_1"),
-                startedAt = Instant.now().minusSeconds(3600),
-                completedAt = Instant.now().minusSeconds(3580),
-                resultCount = 18,
-                newReleaseCount = 1,
-                status = SearchRunStatus.Success
-            ),
-            SavedSearchRun(
-                id = SavedSearchRunId("run_2"),
-                savedSearchId = SavedSearchId("ss_1"),
-                startedAt = Instant.now().minusSeconds(86400),
-                completedAt = Instant.now().minusSeconds(86382),
-                resultCount = 17,
-                newReleaseCount = 0,
-                status = SearchRunStatus.Success
-            )
-        )
-    }
+    val savedSearches = remember { mutableStateListOf<SavedSearch>().apply { addAll(initialSearches) } }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Saved Searches", style = AppTypography.headline, color = TextPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
+            AniAppBar(
+                title = "Saved Searches",
+                subtitle = "Monitored search queries and automation targets",
+                onBack = onBack
             )
         },
         containerColor = DarkBackground
     ) { padding ->
-        LazyColumn(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(AppSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
-        ) {
-            items(savedSearches, key = { it.id.value }) { search ->
-                SavedSearchCard(
-                    savedSearch = search,
-                    onToggleEnabled = { enabled ->
-                        val idx = savedSearches.indexOf(search)
-                        if (idx != -1) {
-                            savedSearches[idx] = search.copy(enabled = enabled)
-                        }
-                    },
-                    onRunNow = { /* Triggers instant search */ },
-                    onAutomate = { onAutomate(search) },
-                    onViewHistory = { selectedSearchForHistory = search },
-                    onDelete = { savedSearches.remove(search) }
-                )
+        if (savedSearches.isEmpty()) {
+            AniEmptyState(
+                title = "No saved searches",
+                description = "Save search queries with complex filters from Universal Search to re-run or automate anytime.",
+                icon = Icons.Default.Search,
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            )
+        } else {
+            LazyColumn(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(AppSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
+            ) {
+                items(savedSearches, key = { it.id.value }) { search ->
+                    SavedSearchCard(
+                        savedSearch = search,
+                        onToggleEnabled = { enabled ->
+                            val idx = savedSearches.indexOf(search)
+                            if (idx != -1) {
+                                savedSearches[idx] = search.copy(enabled = enabled)
+                            }
+                        },
+                        onRunNow = { /* Triggers instant search */ },
+                        onAutomate = { onAutomate(search) },
+                        onViewHistory = { selectedSearchForHistory = search },
+                        onDelete = { savedSearches.remove(search) }
+                    )
+                }
             }
         }
     }
@@ -201,7 +145,7 @@ fun SavedSearchScreen(
     selectedSearchForHistory?.let { search ->
         SavedSearchHistoryBottomSheet(
             search = search,
-            runs = sampleRuns,
+            runs = initialRuns.filter { it.savedSearchId == search.id },
             onDismiss = { selectedSearchForHistory = null }
         )
     }

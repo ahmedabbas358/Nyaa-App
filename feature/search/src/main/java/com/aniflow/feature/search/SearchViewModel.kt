@@ -2,8 +2,18 @@ package com.aniflow.feature.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aniflow.core.common.result.AniFlowResult
+import com.aniflow.core.ui.util.UiFormatters
+import com.aniflow.domain.controlplane.models.ComparisonOperator
+import com.aniflow.domain.controlplane.models.ComparisonExpression
+import com.aniflow.domain.controlplane.models.SearchExpression
+import com.aniflow.domain.controlplane.models.SearchField
 import com.aniflow.domain.identity.ReleaseId
 import com.aniflow.domain.identity.SearchHistoryId
+import com.aniflow.domain.model.SearchRequest
+import com.aniflow.domain.model.aggregate.release.Release
+import com.aniflow.domain.model.aggregate.release.ReleaseSource
+import com.aniflow.domain.model.aggregate.release.ReleaseType
 import com.aniflow.domain.search.comparison.ReleaseComparisonEngine
 import com.aniflow.domain.search.coordinator.SearchCoordinator
 import com.aniflow.domain.search.model.ReleaseComparisonItem
@@ -13,6 +23,10 @@ import com.aniflow.domain.search.model.SearchResultItem
 import com.aniflow.domain.search.model.SearchSuggestion
 import com.aniflow.domain.search.model.SearchSuggestionType
 import com.aniflow.domain.search.usecase.SearchHistoryManager
+import com.aniflow.domain.usecase.PrepareDownloadPlanUseCase
+import com.aniflow.domain.usecase.SearchReleasesCoordinatorUseCase
+import com.aniflow.domain.usecase.SearchReleasesUseCase
+import com.aniflow.domain.valueobject.SearchFilters
 import com.aniflow.feature.search.components.AdvancedFilterSelection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -26,14 +40,17 @@ import java.util.UUID
 import javax.inject.Inject
 
 /**
- * Universal SearchViewModel (Sections 36, 46, 47, 49).
- * Orchestrates query debouncing, live suggestions, local and provider queries,
- * release comparison, and search history.
+ * Universal SearchViewModel.
+ * Connected directly to real SearchUseCases, ProviderSearchCoordinator, and SearchHistoryManager.
+ * Zero hardcoded mock results, zero fake suggestions, and zero fake history.
  */
 @HiltViewModel
 class SearchViewModel @Inject constructor(
+    private val searchReleasesUseCase: SearchReleasesUseCase? = null,
+    private val searchCoordinatorUseCase: SearchReleasesCoordinatorUseCase? = null,
     private val coordinator: SearchCoordinator? = null,
-    private val historyManager: SearchHistoryManager? = null
+    private val historyManager: SearchHistoryManager? = null,
+    private val preparePlanUseCase: PrepareDownloadPlanUseCase? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -43,42 +60,24 @@ class SearchViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
-        // Initial sample history & suggestions
-        loadInitialHistory()
-    }
-
-    private fun loadInitialHistory() {
-        val initialHistory = listOf(
-            SearchHistoryEntry(
-                id = SearchHistoryId("h1"),
-                query = "One Piece 1080p HEVC",
-                timestamp = Instant.now().minusSeconds(1800),
-                resultCount = 24
-            ),
-            SearchHistoryEntry(
-                id = SearchHistoryId("h2"),
-                query = "Jujutsu Kaisen Season 2",
-                timestamp = Instant.now().minusSeconds(86400),
-                resultCount = 47
-            ),
-            SearchHistoryEntry(
-                id = SearchHistoryId("h3"),
-                query = "uploader:SubsPlease Bleach",
-                timestamp = Instant.now().minusSeconds(172800),
-                resultCount = 12
-            )
-        )
-        _uiState.value = _uiState.value.copy(history = initialHistory)
+        // Observe real persisted search history
+        if (historyManager != null) {
+            viewModelScope.launch {
+                historyManager.observeHistory().collect { historyList ->
+                    _uiState.value = _uiState.value.copy(history = historyList)
+                }
+            }
+        }
     }
 
     fun onEvent(event: SearchUiEvent) {
         when (event) {
             is SearchUiEvent.QueryChanged -> onQueryChanged(event.newQuery)
             is SearchUiEvent.ScopeChanged -> onScopeChanged(event.newScope)
-            SearchUiEvent.SubmitSearch -> executeSearch()
+            SearchUiEvent.SubmitSearch -> executeSearch(page = 1)
             SearchUiEvent.ClearQuery -> onClearQuery()
-            SearchUiEvent.Refresh -> executeSearch()
-            SearchUiEvent.Retry -> executeSearch()
+            SearchUiEvent.Refresh -> executeSearch(page = 1)
+            SearchUiEvent.Retry -> executeSearch(page = _uiState.value.currentPage)
             is SearchUiEvent.ApplyFilters -> onApplyFilters(event.filters)
             is SearchUiEvent.SetFilterSheetVisible -> _uiState.value = _uiState.value.copy(showFilterSheet = event.visible)
             is SearchUiEvent.ToggleCompareSelection -> onToggleCompare(event.releaseId)
@@ -92,7 +91,7 @@ class SearchViewModel @Inject constructor(
             SearchUiEvent.LoadMore -> onLoadMore()
             is SearchUiEvent.SelectSuggestion -> {
                 _uiState.value = _uiState.value.copy(query = event.text)
-                executeSearch()
+                executeSearch(page = 1)
             }
         }
     }
@@ -109,10 +108,10 @@ class SearchViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(status = SearchStatus.Suggesting)
 
         debounceJob = viewModelScope.launch {
-            delay(350L) // Debounce typing (Section 7)
+            delay(350L)
             generateSuggestions(newQuery)
             if (newQuery.trim().length >= 3) {
-                executeSearch()
+                executeSearch(page = 1)
             }
         }
     }
@@ -120,82 +119,147 @@ class SearchViewModel @Inject constructor(
     private fun onScopeChanged(newScope: SearchScope) {
         _uiState.value = _uiState.value.copy(scope = newScope)
         if (_uiState.value.query.isNotBlank()) {
-            executeSearch()
+            executeSearch(page = 1)
         }
     }
 
     private fun onClearQuery() {
-        _uiState.value = _uiState.value.copy(query = "", status = SearchStatus.Idle, suggestions = emptyList(), results = emptyList())
+        _uiState.value = _uiState.value.copy(
+            query = "",
+            status = SearchStatus.Idle,
+            suggestions = emptyList(),
+            results = emptyList(),
+            currentPage = 1,
+            hasNextPage = false
+        )
     }
 
     private fun onApplyFilters(filters: AdvancedFilterSelection) {
         _uiState.value = _uiState.value.copy(filterSelection = filters)
         if (_uiState.value.query.isNotBlank()) {
-            executeSearch()
+            executeSearch(page = 1)
         }
     }
 
-    private fun executeSearch() {
+    private fun executeSearch(page: Int = 1) {
         val q = _uiState.value.query.trim()
         if (q.isBlank()) return
 
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(status = SearchStatus.SearchingLocal)
+            _uiState.value = _uiState.value.copy(
+                status = SearchStatus.SearchingProvider,
+                currentPage = page
+            )
 
-            // Save to recent search history (Section 10)
+            // Save to real search history
             val newEntry = SearchHistoryEntry(
-                id = SearchHistoryId("hist_${UUID.randomUUID().toString().take(6)}"),
+                id = SearchHistoryId("hist_${UUID.randomUUID().toString().take(8)}"),
                 query = q,
                 scope = _uiState.value.scope,
                 timestamp = Instant.now()
             )
             historyManager?.saveEntry(newEntry)
-            val updatedHistory = listOf(newEntry) + _uiState.value.history.filter { it.query != q }
-            _uiState.value = _uiState.value.copy(history = updatedHistory.take(10))
 
-            // Coordinator search or default realistic mock results
-            if (coordinator != null) {
+            val searchExpr = SearchExpression(
+                root = ComparisonExpression(
+                    field = SearchField.Anime,
+                    operator = ComparisonOperator.Contains,
+                    value = q
+                )
+            )
+            val filters = SearchFilters(
+                trustedOnly = _uiState.value.filterSelection.isTrustedOnly,
+                excludeRemakes = _uiState.value.filterSelection.excludeRemakes
+            )
+            val searchReq = SearchRequest(
+                query = searchExpr,
+                page = page,
+                filters = filters
+            )
+
+            if (searchCoordinatorUseCase != null) {
+                searchCoordinatorUseCase(searchReq).collect { result ->
+                    when (result) {
+                        is AniFlowResult.Loading -> {
+                            _uiState.value = _uiState.value.copy(status = SearchStatus.SearchingProvider)
+                        }
+                        is AniFlowResult.Success -> {
+                            val newItems = result.data.items.map { it.toSearchResultItem() }
+                            val combinedItems = if (page > 1) _uiState.value.results + newItems else newItems
+                            _uiState.value = _uiState.value.copy(
+                                results = combinedItems,
+                                hasNextPage = result.data.hasNextPage,
+                                currentPage = page,
+                                status = if (combinedItems.isEmpty()) SearchStatus.Empty(q) else SearchStatus.Success
+                            )
+                        }
+                        is AniFlowResult.Error -> {
+                            _uiState.value = _uiState.value.copy(
+                                status = SearchStatus.Failed(result.message)
+                            )
+                        }
+                    }
+                }
+            } else if (searchReleasesUseCase != null) {
                 try {
-                    val resp = coordinator.search(q, page = 1, isOffline = _uiState.value.isOffline)
+                    val res = searchReleasesUseCase(searchReq)
+                    val newItems = res.items.map { it.toSearchResultItem() }
+                    val combinedItems = if (page > 1) _uiState.value.results + newItems else newItems
                     _uiState.value = _uiState.value.copy(
-                        results = resp.results,
-                        sourceStates = resp.sourceStates,
-                        status = if (resp.results.isEmpty()) SearchStatus.Empty(q) else SearchStatus.Success
+                        results = combinedItems,
+                        hasNextPage = res.hasNextPage,
+                        isFromCache = res.isFromCache,
+                        currentPage = page,
+                        status = if (combinedItems.isEmpty()) SearchStatus.Empty(q) else SearchStatus.Success
                     )
                 } catch (e: Exception) {
-                    _uiState.value = _uiState.value.copy(status = SearchStatus.Failed(e.message ?: "Search failed"))
+                    _uiState.value = _uiState.value.copy(
+                        status = SearchStatus.Failed(e.message ?: "Search failed")
+                    )
+                }
+            } else if (coordinator != null) {
+                try {
+                    val resp = coordinator.search(q, page = page, isOffline = _uiState.value.isOffline)
+                    val newItems = resp.results
+                    val combinedItems = if (page > 1) _uiState.value.results + newItems else newItems
+                    _uiState.value = _uiState.value.copy(
+                        results = combinedItems,
+                        sourceStates = resp.sourceStates,
+                        currentPage = page,
+                        status = if (combinedItems.isEmpty()) SearchStatus.Empty(q) else SearchStatus.Success
+                    )
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(
+                        status = SearchStatus.Failed(e.message ?: "Search failed")
+                    )
                 }
             } else {
-                delay(300L) // Simulate search
-                val sampleResults = createMockResults(q, _uiState.value.filterSelection)
-                _uiState.value = _uiState.value.copy(
-                    results = sampleResults,
-                    status = if (sampleResults.isEmpty()) SearchStatus.Empty(q) else SearchStatus.Success
-                )
+                _uiState.value = _uiState.value.copy(status = SearchStatus.Empty(q))
             }
         }
     }
 
     private fun generateSuggestions(prefix: String) {
-        val suggestions = mutableListOf<SearchSuggestion>()
         val p = prefix.trim().lowercase()
+        if (p.isBlank()) {
+            _uiState.value = _uiState.value.copy(suggestions = emptyList())
+            return
+        }
 
-        // Entity / Anime suggestions
-        if ("one piece".contains(p)) {
-            suggestions.add(SearchSuggestion("s1", "One Piece", SearchSuggestionType.AnimeTitle, "Anime • 1110 episodes", 95))
-            suggestions.add(SearchSuggestion("s2", "One Piece 1080p HEVC", SearchSuggestionType.FilterSuggestion, "High Quality Batch", 90))
-        }
-        if ("jujutsu kaisen".contains(p)) {
-            suggestions.add(SearchSuggestion("s3", "Jujutsu Kaisen", SearchSuggestionType.AnimeTitle, "Anime • 47 episodes", 95))
-            suggestions.add(SearchSuggestion("s4", "Jujutsu Kaisen Season 2", SearchSuggestionType.AnimeTitle, "Season 2 • Complete", 92))
-        }
-        if ("subsplease".contains(p)) {
-            suggestions.add(SearchSuggestion("s5", "uploader:SubsPlease", SearchSuggestionType.Uploader, "Trusted Release Group", 88))
-        }
-        if ("erai-raws".contains(p)) {
-            suggestions.add(SearchSuggestion("s6", "uploader:Erai-raws", SearchSuggestionType.Uploader, "Multi-sub Release Group", 88))
-        }
+        // Suggestions strictly from real user search history
+        val suggestions = _uiState.value.history
+            .filter { it.query.lowercase().contains(p) }
+            .take(5)
+            .map { entry ->
+                SearchSuggestion(
+                    id = entry.id.value,
+                    displayText = entry.query,
+                    type = SearchSuggestionType.History,
+                    subtitle = "Recent search",
+                    score = 90
+                )
+            }
 
         _uiState.value = _uiState.value.copy(suggestions = suggestions)
     }
@@ -221,10 +285,10 @@ class SearchViewModel @Inject constructor(
                     animeTitle = rel.animeTitle ?: rel.title,
                     resolution = rel.resolution,
                     codec = rel.codec,
-                    audio = "Japanese (AAC)",
-                    subtitles = "English, Arabic",
-                    source = "WEB-DL",
-                    sizeBytes = 1_400_000_000L,
+                    audio = "Unknown",
+                    subtitles = "Unknown",
+                    source = if (rel.magnetUri != null) "Torrent" else "Unknown",
+                    sizeBytes = 0L,
                     sizeFormatted = rel.sizeFormatted,
                     seeds = rel.seeders,
                     peers = rel.leechers,
@@ -254,80 +318,30 @@ class SearchViewModel @Inject constructor(
     }
 
     private fun onLoadMore() {
-        // Section 27: Pagination
+        if (_uiState.value.hasNextPage && _uiState.value.status !is SearchStatus.SearchingProvider) {
+            executeSearch(page = _uiState.value.currentPage + 1)
+        }
     }
 
-    private fun createMockResults(query: String, filter: AdvancedFilterSelection): List<SearchResultItem> {
-        val q = query.lowercase()
-        val list = mutableListOf<SearchResultItem>()
-
-        if (q.contains("one") || q.contains("piece")) {
-            list.add(
-                SearchResultItem.AnimeResult(
-                    id = "anime_op",
-                    title = "One Piece",
-                    totalEpisodes = 1110,
-                    coveredEpisodes = 1109,
-                    matchedReasons = listOf("Exact anime title match")
-                )
-            )
-            list.add(
-                SearchResultItem.ReleaseResult(
-                    id = "rel_op_1",
-                    title = "[SubsPlease] One Piece - 1110 (1080p) [ABCD1234]",
-                    animeTitle = "One Piece",
-                    resolution = "1080p",
-                    codec = "HEVC",
-                    uploader = "SubsPlease",
-                    sizeFormatted = "1.4 GB",
-                    seeders = 240,
-                    leechers = 18,
-                    matchedReasons = listOf("Title match", "1080p matched", "High seed count")
-                )
-            )
-            list.add(
-                SearchResultItem.ReleaseResult(
-                    id = "rel_op_2",
-                    title = "[Erai-raws] One Piece - 1110 [720p][HEVC][Multi-Sub]",
-                    animeTitle = "One Piece",
-                    resolution = "720p",
-                    codec = "HEVC",
-                    uploader = "Erai-raws",
-                    sizeFormatted = "850 MB",
-                    seeders = 115,
-                    leechers = 8,
-                    matchedReasons = listOf("Title match", "Multi-Sub matched")
-                )
-            )
-            list.add(
-                SearchResultItem.LibraryResult(
-                    id = "lib_op",
-                    title = "One Piece Episode 1109.mkv",
-                    filePath = "Anime/One Piece/Season 01/One Piece - 1109.mkv",
-                    sizeFormatted = "1.4 GB",
-                    matchedReasons = listOf("Local library file")
-                )
-            )
-        } else {
-            list.add(
-                SearchResultItem.ReleaseResult(
-                    id = "rel_gen_1",
-                    title = "[SubsPlease] $query - 01 (1080p)",
-                    resolution = "1080p",
-                    codec = "HEVC",
-                    uploader = "SubsPlease",
-                    sizeFormatted = "1.2 GB",
-                    seeders = 84,
-                    matchedReasons = listOf("Keyword match")
-                )
-            )
-        }
-
-        // Apply Resolution filter if specified
-        return if (filter.resolution != null) {
-            list.filter { item ->
-                if (item is SearchResultItem.ReleaseResult) item.resolution.contains(filter.resolution) else true
-            }
-        } else list
+    private fun Release.toSearchResultItem(): SearchResultItem.ReleaseResult {
+        val magnet = (source as? ReleaseSource.Torrent)?.magnetUri?.value
+        val sizeBytes = availability.size?.bytes ?: 0L
+        val sizeStr = if (sizeBytes > 0) UiFormatters.formatBytes(sizeBytes) else "—"
+        return SearchResultItem.ReleaseResult(
+            id = id.value,
+            title = rawTitle,
+            animeTitle = parsedInfo.animeTitle,
+            resolution = technicalMetadata.resolution.label.ifBlank { "Unknown" },
+            codec = technicalMetadata.videoCodec.name.ifBlank { "Unknown" },
+            uploader = uploader.name.value,
+            releaseGroup = releaseGroup?.name,
+            sizeFormatted = sizeStr,
+            seeders = availability.seeders ?: 0,
+            leechers = availability.leechers ?: 0,
+            magnetUri = magnet,
+            isBatch = type == ReleaseType.Batch,
+            isDownloaded = false,
+            isDownloading = false
+        )
     }
 }

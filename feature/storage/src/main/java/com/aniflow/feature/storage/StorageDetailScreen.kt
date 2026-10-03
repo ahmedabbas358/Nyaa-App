@@ -71,40 +71,18 @@ import com.aniflow.domain.storage.model.StorageLocationRoot
 import com.aniflow.domain.storage.model.StorageRoot
 import com.aniflow.domain.storage.model.StorageType
 
+import com.aniflow.core.ui.components.AniAppBar
+import com.aniflow.core.ui.components.AniEmptyState
+import androidx.compose.material.icons.filled.SdCard
+
 data class StorageDetailUiState(
-    val root: StorageRoot = StorageRoot(
-        id = StorageId("internal_anime"),
-        name = "Internal Anime Library",
-        type = StorageType.AppPrivate,
-        state = StorageAvailability.Available,
-        location = StorageLocationRoot("/storage/emulated/0/AniFlow/Anime"),
-        totalSpaceBytes = 128L * 1024 * 1024 * 1024,
-        freeSpaceBytes = 42L * 1024 * 1024 * 1024,
-        isDefault = true
-    ),
-    val libraryUsedBytes: Long = 76L * 1024 * 1024 * 1024,
-    val downloadTempBytes: Long = 4L * 1024 * 1024 * 1024,
-    val orphanedTempBytes: Long = 512L * 1024 * 1024,
-    val unidentifiedFilesCount: Int = 3,
-    val largestFiles: List<StorageFileSummary> = listOf(
-        StorageFileSummary(
-            fileId = LibraryFileId("f1"),
-            fileName = "One Piece - 1089 [1080p HEVC].mkv",
-            animeTitle = "One Piece",
-            episodeNumber = 1089.0,
-            sizeBytes = 1420L * 1024 * 1024,
-            location = StorageLocation(StorageId("internal_anime"), "One Piece/One Piece - 1089 [1080p HEVC].mkv")
-        ),
-        StorageFileSummary(
-            fileId = LibraryFileId("f2"),
-            fileName = "Bleach TYBW - 26 [1080p HEVC].mkv",
-            animeTitle = "Bleach: Thousand-Year Blood War",
-            episodeNumber = 26.0,
-            sizeBytes = 1350L * 1024 * 1024,
-            location = StorageLocation(StorageId("internal_anime"), "Bleach/Bleach TYBW - 26 [1080p HEVC].mkv")
-        )
-    ),
-    val issuesCount: Int = 1
+    val root: StorageRoot? = null,
+    val libraryUsedBytes: Long = 0L,
+    val downloadTempBytes: Long = 0L,
+    val orphanedTempBytes: Long = 0L,
+    val unidentifiedFilesCount: Int = 0,
+    val largestFiles: List<StorageFileSummary> = emptyList(),
+    val issuesCount: Int = 0
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -121,63 +99,67 @@ fun StorageDetailScreen(
     Scaffold(
         containerColor = DarkBackground,
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(text = state.root.name, style = AppTypography.titleMedium, color = TextPrimary)
-                        Text(text = state.root.location.rawUriOrPath, style = AppTypography.bodySmall, color = TextMuted)
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
-                    }
-                },
+            AniAppBar(
+                title = state.root?.name ?: "Storage Details",
+                subtitle = state.root?.location?.rawUriOrPath,
+                onBack = onNavigateBack,
                 actions = {
-                    IconButton(onClick = onScan) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Scan", tint = PrimaryIndigo)
+                    if (state.root != null) {
+                        IconButton(onClick = onScan) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Scan", tint = PrimaryIndigo)
+                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
+                }
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            TabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = DarkSurface,
-                contentColor = PrimaryIndigo,
-                indicator = { tabPositions ->
-                    TabRowDefaults.SecondaryIndicator(
-                        Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = PrimaryIndigo
-                    )
-                }
+        if (state.root == null) {
+            AniEmptyState(
+                title = "Storage root not found",
+                description = "The requested storage volume is not configured or has been unmounted.",
+                icon = Icons.Default.SdCard,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = {
-                            Text(
-                                text = title,
-                                style = AppTypography.labelLarge,
-                                color = if (selectedTab == index) PrimaryIndigo else TextSecondary
-                            )
-                        }
-                    )
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = DarkSurface,
+                    contentColor = PrimaryIndigo,
+                    indicator = { tabPositions ->
+                        TabRowDefaults.SecondaryIndicator(
+                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                            color = PrimaryIndigo
+                        )
+                    }
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = {
+                                Text(
+                                    text = title,
+                                    style = AppTypography.labelLarge,
+                                    color = if (selectedTab == index) PrimaryIndigo else TextSecondary
+                                )
+                            }
+                        )
+                    }
                 }
-            }
 
-            when (selectedTab) {
-                0 -> StorageOverviewTab(state = state, onScan = onScan, onRepair = onRepair)
-                1 -> StorageUsageBreakdownTab(state = state)
-                2 -> StorageLargeFilesTab(files = state.largestFiles)
-                3 -> StorageIssuesTab(state = state, onRepair = onRepair)
+                when (selectedTab) {
+                    0 -> StorageOverviewTab(state = state, onScan = onScan, onRepair = onRepair)
+                    1 -> StorageUsageBreakdownTab(state = state)
+                    2 -> StorageLargeFilesTab(files = state.largestFiles)
+                    3 -> StorageIssuesTab(state = state, onRepair = onRepair)
+                }
             }
         }
     }
@@ -296,21 +278,31 @@ fun UsageRow(label: String, bytes: Long, color: androidx.compose.ui.graphics.Col
     }
 }
 
+import androidx.compose.material.icons.filled.Movie
+
 @Composable
 fun StorageLargeFilesTab(files: List<StorageFileSummary>) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(AppSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
-    ) {
-        items(files, key = { it.fileId.value }) { file ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, DarkCardBorder, AppShapes.medium),
-                shape = AppShapes.medium,
-                colors = CardDefaults.cardColors(containerColor = DarkSurface)
-            ) {
+    if (files.isEmpty()) {
+        AniEmptyState(
+            title = "No large media files",
+            description = "No indexed media files currently located in this storage location.",
+            icon = Icons.Default.Movie,
+            modifier = Modifier.fillMaxSize()
+        )
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(AppSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+        ) {
+            items(files, key = { it.fileId.value }) { file ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, DarkCardBorder, AppShapes.medium),
+                    shape = AppShapes.medium,
+                    colors = CardDefaults.cardColors(containerColor = DarkSurface)
+                ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

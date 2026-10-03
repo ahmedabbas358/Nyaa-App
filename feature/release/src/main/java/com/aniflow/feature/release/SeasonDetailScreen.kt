@@ -55,15 +55,19 @@ import com.aniflow.core.ui.theme.TextSecondary
 import com.aniflow.domain.coverage.EpisodeAvailabilityState
 import com.aniflow.domain.coverage.SeasonCoverage
 
+import com.aniflow.core.ui.components.AniEmptyState
+import androidx.compose.material.icons.filled.Folder
+
 /**
  * Step 20 — Season Detail UI State (Section 35, 36, 37).
+ * Zero hardcoded production data.
  */
 data class SeasonDetailUiState(
     val animeId: String = "",
-    val animeTitle: String = "One Piece",
+    val animeTitle: String = "",
     val seasonId: String = "",
-    val seasonTitle: String = "Season 1",
-    val seasonNumber: Int? = 1,
+    val seasonTitle: String = "",
+    val seasonNumber: Int? = null,
     val coverage: SeasonCoverage? = null,
     val episodes: List<EpisodeRowUiModel> = emptyList(),
     val availableBatches: List<BatchSummaryUiModel> = emptyList()
@@ -106,16 +110,18 @@ fun SeasonDetailScreen(
                 title = {
                     Column {
                         Text(
-                            text = uiState.seasonTitle,
+                            text = if (uiState.seasonTitle.isNotBlank()) uiState.seasonTitle else "Season Details",
                             color = TextPrimary,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(
-                            text = uiState.animeTitle,
-                            color = TextSecondary,
-                            fontSize = 12.sp
-                        )
+                        if (uiState.animeTitle.isNotBlank()) {
+                            Text(
+                                text = uiState.animeTitle,
+                                color = TextSecondary,
+                                fontSize = 12.sp
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
@@ -128,25 +134,37 @@ fun SeasonDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onDownloadMissingClick(uiState.seasonId) }) {
-                        Icon(
-                            imageVector = Icons.Default.Download,
-                            contentDescription = "Download Missing",
-                            tint = PrimaryIndigo
-                        )
+                    if (uiState.seasonId.isNotBlank()) {
+                        IconButton(onClick = { onDownloadMissingClick(uiState.seasonId) }) {
+                            Icon(
+                                imageVector = Icons.Default.Download,
+                                contentDescription = "Download Missing",
+                                tint = PrimaryIndigo
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkSurface)
             )
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+        if (uiState.seasonTitle.isBlank() && uiState.episodes.isEmpty()) {
+            AniEmptyState(
+                title = "Season not found",
+                description = "The requested season could not be found or has not been indexed yet.",
+                icon = Icons.Default.Folder,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             // 1. Season Coverage Summary Card
             item {
                 SeasonCoverageCard(

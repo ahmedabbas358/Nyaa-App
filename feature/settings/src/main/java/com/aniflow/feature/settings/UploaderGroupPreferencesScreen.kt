@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aniflow.core.ui.components.AniEmptyState
 import com.aniflow.core.ui.theme.AppSemanticColors
 import com.aniflow.core.ui.theme.AppShapes
 import com.aniflow.core.ui.theme.AppSpacing
@@ -86,28 +87,20 @@ data class ReleaseGroupUiItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UploaderGroupPreferencesScreen(
+    initialUploaders: List<UploaderUiItem> = emptyList(),
+    initialGroups: List<ReleaseGroupUiItem> = emptyList(),
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Uploaders", "Release Groups")
 
-    val uploaders = remember {
-        mutableStateListOf(
-            UploaderUiItem("Erai-raws", 420, 1400, "1080p HEVC", PreferenceAttitude.Preferred),
-            UploaderUiItem("SubsPlease", 380, 1350, "1080p AVC", PreferenceAttitude.Preferred),
-            UploaderUiItem("Judas", 150, 450, "720p HEVC", PreferenceAttitude.Neutral),
-            UploaderUiItem("SpamUploader", 12, 8500, "Fake 4K", PreferenceAttitude.Blocked)
-        )
+    val uploaders = remember(initialUploaders) {
+        mutableStateListOf<UploaderUiItem>().apply { addAll(initialUploaders) }
     }
 
-    val groups = remember {
-        mutableStateListOf(
-            ReleaseGroupUiItem("Erai-raws", 420, "Global", PreferenceAttitude.Preferred),
-            ReleaseGroupUiItem("SubsPlease", 380, "Global", PreferenceAttitude.Preferred),
-            ReleaseGroupUiItem("Commie", 85, "Anime: Monogatari", PreferenceAttitude.Preferred),
-            ReleaseGroupUiItem("HorribleSubs (Archive)", 900, "Global", PreferenceAttitude.Neutral)
-        )
+    val groups = remember(initialGroups) {
+        mutableStateListOf<ReleaseGroupUiItem>().apply { addAll(initialGroups) }
     }
 
     Scaffold(
@@ -150,38 +143,54 @@ fun UploaderGroupPreferencesScreen(
                 }
             }
 
-            LazyColumn(
-                contentPadding = PaddingValues(
-                    start = AppSpacing.md,
-                    end = AppSpacing.md,
-                    bottom = AppSpacing.xxxl,
-                    top = AppSpacing.md
-                ),
-                verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
-            ) {
-                if (selectedTab == 0) {
-                    items(uploaders) { uploader ->
-                        UploaderPreferenceCard(
-                            uploader = uploader,
-                            onAttitudeChange = { newAttitude ->
-                                val index = uploaders.indexOf(uploader)
-                                if (index != -1) {
-                                    uploaders[index] = uploader.copy(attitude = newAttitude)
+            if (selectedTab == 0 && uploaders.isEmpty()) {
+                AniEmptyState(
+                    title = "No Uploader Preferences",
+                    description = "Search or inspect release details to prefer or block specific uploaders.",
+                    icon = Icons.Default.Person,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else if (selectedTab == 1 && groups.isEmpty()) {
+                AniEmptyState(
+                    title = "No Release Group Preferences",
+                    description = "Define preferences for release groups from release intelligence or search.",
+                    icon = Icons.Default.Group,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(
+                        start = AppSpacing.md,
+                        end = AppSpacing.md,
+                        bottom = AppSpacing.xxxl,
+                        top = AppSpacing.md
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+                ) {
+                    if (selectedTab == 0) {
+                        items(uploaders) { uploader ->
+                            UploaderPreferenceCard(
+                                uploader = uploader,
+                                onAttitudeChange = { newAttitude ->
+                                    val index = uploaders.indexOf(uploader)
+                                    if (index != -1) {
+                                        uploaders[index] = uploader.copy(attitude = newAttitude)
+                                    }
                                 }
-                            }
-                        )
-                    }
-                } else {
-                    items(groups) { group ->
-                        ReleaseGroupPreferenceCard(
-                            group = group,
-                            onAttitudeChange = { newAttitude ->
-                                val index = groups.indexOf(group)
-                                if (index != -1) {
-                                    groups[index] = group.copy(attitude = newAttitude)
+                            )
+                        }
+                    } else {
+                        items(groups) { group ->
+                            ReleaseGroupPreferenceCard(
+                                group = group,
+                                onAttitudeChange = { newAttitude ->
+                                    val index = groups.indexOf(group)
+                                    if (index != -1) {
+                                        groups[index] = group.copy(attitude = newAttitude)
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }

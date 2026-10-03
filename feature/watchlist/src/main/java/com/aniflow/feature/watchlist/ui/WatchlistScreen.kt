@@ -66,85 +66,32 @@ import com.aniflow.domain.watchlist.model.WatchlistItem
 import com.aniflow.domain.watchlist.model.WatchlistPolicy
 import com.aniflow.domain.watchlist.model.WatchlistState
 import com.aniflow.domain.watchlist.model.WatchlistTargetType
+import com.aniflow.core.ui.components.AniAppBar
+import com.aniflow.core.ui.components.AniEmptyState
 import com.aniflow.domain.identity.WatchlistItemId
 
 /**
  * WatchlistScreen (Section 7, 8, 9, 10, 11, 12, 71, 72, 73, 109, 152).
  * Distinct from Saved Searches: Watchlist tracks "Watch this entity" (Anime, Season, Episode).
+ * Zero hardcoded production data.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WatchlistScreen(
+    initialItems: List<WatchlistItem> = emptyList(),
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-
-    val watchlistItems = remember {
-        mutableStateListOf(
-            WatchlistItem(
-                id = WatchlistItemId("item_1"),
-                targetId = "anime_one_piece",
-                targetType = WatchlistTargetType.Anime,
-                title = "One Piece",
-                state = WatchlistState.Watching,
-                policy = WatchlistPolicy(followMode = FollowMode.NotifyOnly),
-                knownEpisodesCount = 1110,
-                coveredEpisodesCount = 1109,
-                lastSearchedAt = java.time.Instant.now().minusSeconds(3600),
-                newReleasesCount = 2
-            ),
-            WatchlistItem(
-                id = WatchlistItemId("item_2"),
-                targetId = "anime_jujutsu_kaisen",
-                targetType = WatchlistTargetType.Anime,
-                title = "Jujutsu Kaisen",
-                state = WatchlistState.Watching,
-                policy = WatchlistPolicy(followMode = FollowMode.AutoSelect),
-                knownEpisodesCount = 47,
-                coveredEpisodesCount = 47,
-                lastSearchedAt = java.time.Instant.now().minusSeconds(86400),
-                newReleasesCount = 0
-            ),
-            WatchlistItem(
-                id = WatchlistItemId("item_3"),
-                targetId = "ep_bleach_tybw_26",
-                targetType = WatchlistTargetType.Episode,
-                title = "Bleach: TYBW — Episode 26",
-                state = WatchlistState.Watching,
-                policy = WatchlistPolicy(followMode = FollowMode.AutoDownload),
-                knownEpisodesCount = 1,
-                coveredEpisodesCount = 0,
-                lastSearchedAt = java.time.Instant.now().minusSeconds(1800),
-                newReleasesCount = 1
-            ),
-            WatchlistItem(
-                id = WatchlistItemId("item_4"),
-                targetId = "anime_demon_slayer",
-                targetType = WatchlistTargetType.Anime,
-                title = "Demon Slayer: Kimetsu no Yaiba",
-                state = WatchlistState.Paused,
-                policy = WatchlistPolicy(followMode = FollowMode.NotifyOnly),
-                knownEpisodesCount = 55,
-                coveredEpisodesCount = 55,
-                lastSearchedAt = java.time.Instant.now().minusSeconds(172800),
-                newReleasesCount = 0
-            )
-        )
-    }
-
+    val watchlistItems = remember { mutableStateListOf<WatchlistItem>().apply { addAll(initialItems) } }
     val tabs = listOf("All (${watchlistItems.size})", "Watching", "Paused")
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Release Watchlists", style = AppTypography.headline, color = TextPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
+            AniAppBar(
+                title = "Release Watchlists",
+                subtitle = "Monitored entities and automatic release tracking",
+                onBack = onBack
             )
         },
         containerColor = DarkBackground
@@ -186,22 +133,35 @@ fun WatchlistScreen(
                 else -> watchlistItems
             }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(AppSpacing.md),
-                verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
-            ) {
-                items(filteredItems, key = { it.id.value }) { item ->
-                    WatchlistCard(
-                        item = item,
-                        onToggleState = {
-                            val idx = watchlistItems.indexOf(item)
-                            if (idx != -1) {
-                                val newState = if (item.state == WatchlistState.Watching) WatchlistState.Paused else WatchlistState.Watching
-                                watchlistItems[idx] = item.copy(state = newState)
+            if (filteredItems.isEmpty()) {
+                AniEmptyState(
+                    title = if (watchlistItems.isEmpty()) "No watchlist items" else "No items in this category",
+                    description = if (watchlistItems.isEmpty()) {
+                        "Track anime or episodes from Anime Details to automatically monitor new releases and follow updates."
+                    } else {
+                        "No watchlisted items match the selected state filter."
+                    },
+                    icon = Icons.Default.Bookmark,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(AppSpacing.md),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
+                ) {
+                    items(filteredItems, key = { it.id.value }) { item ->
+                        WatchlistCard(
+                            item = item,
+                            onToggleState = {
+                                val idx = watchlistItems.indexOf(item)
+                                if (idx != -1) {
+                                    val newState = if (item.state == WatchlistState.Watching) WatchlistState.Paused else WatchlistState.Watching
+                                    watchlistItems[idx] = item.copy(state = newState)
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }

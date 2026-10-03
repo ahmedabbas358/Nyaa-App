@@ -59,36 +59,12 @@ import com.aniflow.domain.identity.ReviewItemId
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReviewQueueScreen(
+    items: List<ReviewItem> = emptyList(),
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val reviewItems = remember {
-        mutableStateListOf(
-            ReviewItem(
-                id = ReviewItemId("rev_1"),
-                executionId = AutomationExecutionId("exec_101"),
-                issue = "Ambiguous Episode Numbering",
-                candidateReleaseTitle = "[SubsPlease] Frieren - S01E28.5 SP (1080p) [ABCD]",
-                reason = "Parser confidence 0.65 is below auto-action threshold",
-                recommendedAction = "Review and map manually to Special episode"
-            ),
-            ReviewItem(
-                id = ReviewItemId("rev_2"),
-                executionId = AutomationExecutionId("exec_102"),
-                issue = "Large Batch Exceeds 10 GB Threshold",
-                candidateReleaseTitle = "[Erai-raws] Bleach TYBW Part 2 (01-13) [1080p][HEVC][Multi-Sub]",
-                reason = "Batch size 22.4 GB requires explicit user confirmation",
-                recommendedAction = "Confirm download plan"
-            ),
-            ReviewItem(
-                id = ReviewItemId("rev_3"),
-                executionId = AutomationExecutionId("exec_103"),
-                issue = "Potential Quality Upgrade Found",
-                candidateReleaseTitle = "[Kametsu] Steins;Gate 0 (1080p BDRip x265 FLAC)",
-                reason = "Library contains 720p WEB-DL. BDRip x265 available.",
-                recommendedAction = "Approve replacement and preserve existing file"
-            )
-        )
+    val reviewItems = remember(items) {
+        mutableStateListOf<ReviewItem>().apply { addAll(items) }
     }
 
     Scaffold(

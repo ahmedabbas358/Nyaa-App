@@ -137,4 +137,9 @@ object RepositoryModule {
     @Singleton
     fun provideReviewQueueRepository(): com.aniflow.domain.repository.ReviewQueueRepository =
         com.aniflow.data.repository.ReviewQueueRepositoryImpl()
+
+    @Provides
+    @Singleton
+    fun provideWatchProgressRepository(): com.aniflow.domain.library.repository.WatchProgressRepository =
+        com.aniflow.data.repository.WatchProgressRepositoryImpl()
 }

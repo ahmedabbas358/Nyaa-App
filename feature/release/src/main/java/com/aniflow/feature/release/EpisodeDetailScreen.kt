@@ -98,6 +98,9 @@ data class CandidateReleaseUiModel(
     val recommendationLabel: String? = null
 )
 
+import com.aniflow.core.ui.components.AniEmptyState
+import androidx.compose.material.icons.filled.Movie
+
 data class BatchMembershipUiModel(
     val batchReleaseId: String,
     val batchTitle: String,
@@ -106,11 +109,11 @@ data class BatchMembershipUiModel(
 
 data class EpisodeDetailUiState(
     val episodeId: String = "",
-    val animeTitle: String = "One Piece",
-    val seasonNumber: Int? = 1,
-    val episodeNumber: String = "3",
+    val animeTitle: String = "",
+    val seasonNumber: Int? = null,
+    val episodeNumber: String = "",
     val episodeTitle: String? = null,
-    val state: EpisodeAvailabilityState = EpisodeAvailabilityState.Available,
+    val state: EpisodeAvailabilityState = EpisodeAvailabilityState.NotSearched,
     val localFiles: List<LocalFileUiModel> = emptyList(),
     val candidateReleases: List<CandidateReleaseUiModel> = emptyList(),
     val batchCoverages: List<BatchMembershipUiModel> = emptyList(),
@@ -139,16 +142,18 @@ fun EpisodeDetailScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Episode ${uiState.episodeNumber}",
+                            text = if (uiState.episodeNumber.isNotBlank()) "Episode ${uiState.episodeNumber}" else "Episode Details",
                             color = TextPrimary,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(
-                            text = "${uiState.animeTitle} • Season ${uiState.seasonNumber ?: "?"}",
-                            color = TextSecondary,
-                            fontSize = 12.sp
-                        )
+                        if (uiState.animeTitle.isNotBlank()) {
+                            Text(
+                                text = "${uiState.animeTitle} • Season ${uiState.seasonNumber ?: "?"}",
+                                color = TextSecondary,
+                                fontSize = 12.sp
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
@@ -161,12 +166,14 @@ fun EpisodeDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onSearchAgainClick(uiState.episodeId) }) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Search Again",
-                            tint = TextSecondary
-                        )
+                    if (uiState.episodeId.isNotBlank()) {
+                        IconButton(onClick = { onSearchAgainClick(uiState.episodeId) }) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Search Again",
+                                tint = TextSecondary
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkSurface)
@@ -207,13 +214,23 @@ fun EpisodeDetailScreen(
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+        if (uiState.episodeId.isBlank() && uiState.episodeNumber.isBlank()) {
+            AniEmptyState(
+                title = "Episode not found",
+                description = "The requested episode could not be located in the release index.",
+                icon = Icons.Default.Movie,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             // 1. Episode Summary Card
             item {
                 EpisodeHeaderCard(uiState = uiState)

@@ -86,17 +86,15 @@ fun SearchBuilderScreen(
     onSaveSearch: (SearchExpression, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
-    var searchName by remember { mutableStateOf("One Piece 1080p HEVC") }
+    var searchName by remember { mutableStateOf("") }
     var selectedProvider by remember { mutableStateOf("Nyaa.si") }
 
     val criteria = remember {
         mutableStateListOf(
-            UiSearchCriterion(SearchField.Anime, ComparisonOperator.Equals, "One Piece"),
-            UiSearchCriterion(SearchField.Resolution, ComparisonOperator.GreaterThanOrEqual, "1080p"),
-            UiSearchCriterion(SearchField.Codec, ComparisonOperator.Equals, "HEVC"),
-            UiSearchCriterion(SearchField.Seeders, ComparisonOperator.GreaterThanOrEqual, "5")
+            UiSearchCriterion(SearchField.Anime, ComparisonOperator.Equals, "")
         )
     }
+
 
     // Build the compiled AST expression
     val compiledExpression = remember(criteria.size, criteria.map { it.value }) {
@@ -228,7 +226,7 @@ fun SearchBuilderScreen(
                                         UiSearchCriterion(
                                             field = SearchField.Uploader,
                                             operator = ComparisonOperator.Equals,
-                                            value = "Erai-raws"
+                                            value = ""
                                         )
                                     )
                                 },

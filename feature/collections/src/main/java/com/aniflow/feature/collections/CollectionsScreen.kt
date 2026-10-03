@@ -32,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import com.aniflow.core.ui.model.CollectionUiModel
-import com.aniflow.core.ui.preview.PreviewFixtures
 import com.aniflow.core.ui.theme.AppSemanticColors
 import com.aniflow.core.ui.theme.AppShapes
 import com.aniflow.core.ui.theme.AppSpacing
@@ -42,23 +41,15 @@ import com.aniflow.core.ui.theme.DarkCardBorder
 import com.aniflow.core.ui.theme.DarkSurface
 import com.aniflow.core.ui.theme.PrimaryIndigo
 import com.aniflow.core.ui.theme.TextPrimary
-import com.aniflow.core.ui.theme.TextSecondary
+import com.aniflow.core.ui.components.AniAppBar
+import com.aniflow.core.ui.components.AniEmptyState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 data class CollectionsUiState(
-    val collections: List<CollectionUiModel> = listOf(
-        PreviewFixtures.sampleCollection,
-        CollectionUiModel(
-            id = "col-2",
-            name = "Completed Masterpieces",
-            description = "All downloaded series with 100% complete episodes",
-            itemCount = 12,
-            downloadedCount = 12,
-            isSmartCollection = false
-        )
-    )
+    val collections: List<CollectionUiModel> = emptyList(),
+    val isLoading: Boolean = false
 )
 
 class CollectionsViewModel : ViewModel() {
@@ -67,7 +58,7 @@ class CollectionsViewModel : ViewModel() {
 }
 
 /**
- * CollectionsScreen (Sections 76, 77, 78).
+ * CollectionsScreen (Sections 54, 76, 77, 78).
  * Manages user manual collections and automated Smart Collections.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,32 +66,44 @@ class CollectionsViewModel : ViewModel() {
 fun CollectionsScreen(
     viewModel: CollectionsViewModel = CollectionsViewModel(),
     onCollectionClick: (String) -> Unit = {},
+    onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Collections", style = AppTypography.headline, color = TextPrimary) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
+            AniAppBar(
+                title = "Collections",
+                subtitle = "Curated anime lists",
+                onBack = onBack
             )
         },
         containerColor = DarkBackground,
         modifier = modifier
     ) { paddingValues ->
-        LazyColumn(
-            contentPadding = PaddingValues(
-                start = AppSpacing.md,
-                end = AppSpacing.md,
-                bottom = AppSpacing.xxxl,
-                top = AppSpacing.sm
-            ),
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.sm),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+        if (state.collections.isEmpty()) {
+            AniEmptyState(
+                title = "No collections created",
+                description = "Create collections from Anime Details to group favorite franchises, sagas, or themes together.",
+                icon = Icons.Default.FolderSpecial,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            )
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(
+                    start = AppSpacing.md,
+                    end = AppSpacing.md,
+                    bottom = AppSpacing.xxxl,
+                    top = AppSpacing.sm
+                ),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.sm),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
             items(state.collections, key = { it.id }) { item ->
                 Card(
                     colors = CardDefaults.cardColors(containerColor = DarkSurface),
@@ -144,3 +147,4 @@ fun CollectionsScreen(
         }
     }
 }
+

@@ -66,46 +66,13 @@ import com.aniflow.core.ui.theme.TextMuted
 import com.aniflow.core.ui.theme.TextPrimary
 import com.aniflow.core.ui.theme.TextSecondary
 
+import com.aniflow.core.ui.components.AniAppBar
+import com.aniflow.core.ui.components.AniEmptyState
+import androidx.compose.material.icons.filled.Movie
+
 data class AnimeDetailUiState(
-    val animeTitle: String = "One Piece",
-    val seasons: List<SeasonUiModel> = listOf(
-        SeasonUiModel(
-            seasonNumber = 1,
-            title = "East Blue Saga",
-            availableCount = 61,
-            totalCount = 61,
-            episodes = listOf(
-                EpisodeLibraryCardUiModel(
-                    episodeId = "ep-1",
-                    episodeNumber = "01",
-                    title = "I'm Luffy! The Man Who Will Become the Pirate King!",
-                    resolution = "1080p",
-                    codec = "HEVC",
-                    formattedSize = "1.2 GB",
-                    isLocalAvailable = true
-                ),
-                EpisodeLibraryCardUiModel(
-                    episodeId = "ep-2",
-                    episodeNumber = "02",
-                    title = "Enter the Great Swordsman! Pirate Hunter Roronoa Zoro!",
-                    resolution = "720p",
-                    codec = "H.264",
-                    formattedSize = "820 MB",
-                    isLocalAvailable = true,
-                    upgradeCandidateTitle = "[SubsPlease] One Piece - 02 (1080p HEVC)"
-                ),
-                EpisodeLibraryCardUiModel(
-                    episodeId = "ep-3",
-                    episodeNumber = "03",
-                    title = "Morgan versus Luffy! Who's the Mysterious Pretty Girl?",
-                    resolution = "—",
-                    codec = "—",
-                    formattedSize = "Missing",
-                    isLocalAvailable = false
-                )
-            )
-        )
-    )
+    val animeTitle: String = "",
+    val seasons: List<SeasonUiModel> = emptyList()
 )
 
 data class SeasonUiModel(
@@ -120,6 +87,7 @@ data class SeasonUiModel(
  * AnimeLibraryDetailScreen (Section 148, 149, 150, 151, 152).
  * Displays seasons, episode coverage indicators (✓ available, ↑ upgrade, — missing),
  * and contextual actions (Play, Info, Rename, Move, Replace).
+ * Zero hardcoded production data.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,24 +104,30 @@ fun AnimeLibraryDetailScreen(
     Scaffold(
         containerColor = DarkBackground,
         topBar = {
-            TopAppBar(
-                title = { Text(state.animeTitle, style = AppTypography.headlineMedium, color = TextPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
+            AniAppBar(
+                title = if (state.animeTitle.isNotBlank()) state.animeTitle else "Library Series",
+                subtitle = if (state.seasons.isNotEmpty()) "${state.seasons.size} Seasons" else null,
+                onBack = onNavigateBack
             )
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(AppSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
-        ) {
+        if (state.animeTitle.isBlank() && state.seasons.isEmpty()) {
+            AniEmptyState(
+                title = "No anime seasons found",
+                description = "No indexed media files or episodes are available for this series in your library.",
+                icon = Icons.Default.Movie,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(AppSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.md)
+            ) {
             state.seasons.forEach { season ->
                 item {
                     // Season Header (Section 149)

@@ -76,20 +76,16 @@ fun RuleBuilderScreen(
     onSaveRule: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var ruleName by remember { mutableStateOf("Auto-Download One Piece 1080p") }
+    var ruleName by remember { mutableStateOf("") }
     var selectedScope by remember { mutableStateOf(RuleScope.Anime) }
-    var priority by remember { mutableIntStateOf(70) }
+    var priority by remember { mutableIntStateOf(50) }
 
     val conditions = remember {
-        mutableStateListOf(
-            VisualConditionItem("Anime", "is", "One Piece"),
-            VisualConditionItem("Resolution", "is", "1080p"),
-            VisualConditionItem("Codec", "is", "HEVC")
-        )
+        mutableStateListOf<VisualConditionItem>()
     }
 
     val actions = remember {
-        mutableStateListOf("Queue Download", "Apply Profile: Anime 1080p")
+        mutableStateListOf<String>("Queue Download")
     }
 
     Scaffold(
@@ -182,9 +178,15 @@ fun RuleBuilderScreen(
                             color = PrimaryIndigo,
                             fontWeight = FontWeight.Bold
                         )
-                        Spacer(modifier = Modifier.height(AppSpacing.sm))
-
-                        conditions.forEachIndexed { index, cond ->
+                        if (conditions.isEmpty()) {
+                            Text(
+                                text = "No conditions defined. Click 'Add Condition' to define trigger criteria.",
+                                style = AppTypography.caption,
+                                color = TextMuted,
+                                modifier = Modifier.padding(vertical = AppSpacing.xs)
+                            )
+                        } else {
+                            conditions.forEachIndexed { index, cond ->
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -219,6 +221,7 @@ fun RuleBuilderScreen(
                                     Icon(Icons.Default.Delete, contentDescription = "Remove", tint = AppSemanticColors.Error, modifier = Modifier.size(16.dp))
                                 }
                             }
+                        }
                         }
 
                         Spacer(modifier = Modifier.height(AppSpacing.sm))

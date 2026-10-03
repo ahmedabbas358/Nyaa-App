@@ -30,6 +30,15 @@ import com.aniflow.feature.settings.AboutScreen
 import com.aniflow.feature.settings.SettingsScreen
 import com.aniflow.feature.settings.SettingsViewModel
 import com.aniflow.feature.settings.StorageScreen
+import com.aniflow.feature.collections.CollectionDetailScreen
+import com.aniflow.feature.storage.StorageSetupScreen
+import com.aniflow.feature.library.DuplicatesScreen
+import com.aniflow.feature.library.UnidentifiedMediaScreen
+import com.aniflow.feature.library.UpgradesScreen
+import com.aniflow.feature.settings.NotificationsScreen
+import com.aniflow.feature.settings.HistoryScreen
+import com.aniflow.feature.settings.RuleHistoryScreen
+import com.aniflow.feature.search.SearchHistoryScreen
 
 @Composable
 fun AniFlowApp(
@@ -62,6 +71,9 @@ fun AniFlowApp(
                     onNavigateToDownloads = { navController.navigate(ScreenRoute.Downloads.route) },
                     onReleaseClick = { releaseId ->
                         navController.navigate(ScreenRoute.ReleaseDetails.createRoute(releaseId))
+                    },
+                    onMediaPlayClick = { mediaId ->
+                        navController.navigate(ScreenRoute.Player.createRoute(mediaId))
                     }
                 )
             }
@@ -81,8 +93,14 @@ fun AniFlowApp(
             composable(ScreenRoute.Downloads.route) {
                 DownloadsScreen(
                     viewModel = downloadsViewModel,
-                    onDownloadClick = { taskId ->
+                    onOpenTaskDetails = { taskId ->
                         navController.navigate(ScreenRoute.DownloadDetails.createRoute(taskId))
+                    },
+                    onOpenStatistics = {
+                        navController.navigate(ScreenRoute.DownloadStatistics.route)
+                    },
+                    onOpenHistory = {
+                        navController.navigate(ScreenRoute.DownloadHistory.route)
                     }
                 )
             }
@@ -102,11 +120,17 @@ fun AniFlowApp(
                     onNavigateToCollections = { navController.navigate(ScreenRoute.Collections.route) },
                     onNavigateToWatchlist = { navController.navigate(ScreenRoute.Watchlist.route) },
                     onNavigateToSavedSearches = { navController.navigate(ScreenRoute.SavedSearches.route) },
+                    onNavigateToNotifications = { navController.navigate(ScreenRoute.Notifications.route) },
                     onNavigateToAutomation = { navController.navigate(ScreenRoute.Automation.route) },
                     onNavigateToRules = { navController.navigate(ScreenRoute.Rules.route) },
+                    onNavigateToRuleHistory = { navController.navigate(ScreenRoute.RuleHistory.route) },
                     onNavigateToProfiles = { navController.navigate(ScreenRoute.Profiles.route) },
-                    onNavigateToHistory = { navController.navigate(ScreenRoute.DeveloperMode.route) },
+                    onNavigateToHistory = { navController.navigate(ScreenRoute.History.route) },
                     onNavigateToStorage = { navController.navigate(ScreenRoute.Storage.route) },
+                    onNavigateToStorageSetup = { navController.navigate(ScreenRoute.StorageSetup.route) },
+                    onNavigateToDuplicates = { navController.navigate(ScreenRoute.Duplicates.route) },
+                    onNavigateToUnidentifiedMedia = { navController.navigate(ScreenRoute.UnidentifiedMedia.route) },
+                    onNavigateToUpgrades = { navController.navigate(ScreenRoute.Upgrades.route) },
                     onNavigateToSettings = { navController.navigate(ScreenRoute.Settings.route) },
                     onNavigateToDiagnostics = { navController.navigate(ScreenRoute.Diagnostics.route) },
                     onNavigateToAbout = { navController.navigate(ScreenRoute.About.route) }
@@ -142,21 +166,30 @@ fun AniFlowApp(
                 )
             }
 
-            composable(ScreenRoute.DownloadDetails.route) {
+            composable(ScreenRoute.DownloadDetails.route) { backStackEntry ->
+                val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
                 DownloadDetailScreen(
+                    taskId = taskId,
+                    viewModel = downloadsViewModel,
                     onBack = { navController.popBackStack() }
                 )
             }
 
             composable(ScreenRoute.Collections.route) {
                 CollectionsScreen(
-                    onCollectionClick = { /* Navigate to collection details */ }
+                    onCollectionClick = { collectionId ->
+                        navController.navigate(ScreenRoute.CollectionDetails.createRoute(collectionId))
+                    },
+                    onBack = { navController.popBackStack() }
                 )
             }
 
             composable(ScreenRoute.Favorites.route) {
                 FavoritesScreen(
-                    onItemClick = { /* Navigate to item */ }
+                    onItemClick = { animeId ->
+                        navController.navigate(ScreenRoute.AnimeDetails.createRoute(animeId))
+                    },
+                    onBack = { navController.popBackStack() }
                 )
             }
 
@@ -281,6 +314,76 @@ fun AniFlowApp(
                     onBack = { navController.popBackStack() }
                 )
             }
+
+            composable(ScreenRoute.StorageSetup.route) {
+                StorageSetupScreen(
+                    onContinue = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(ScreenRoute.Duplicates.route) {
+                DuplicatesScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(ScreenRoute.UnidentifiedMedia.route) {
+                UnidentifiedMediaScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(ScreenRoute.Upgrades.route) {
+                UpgradesScreen(
+                    onBack = { navController.popBackStack() },
+                    onReviewRelease = { releaseId ->
+                        navController.navigate(ScreenRoute.ReleaseDetails.createRoute(releaseId))
+                    }
+                )
+            }
+
+            composable(ScreenRoute.Notifications.route) {
+                NotificationsScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigateRoute = { route -> navController.navigate(route) }
+                )
+            }
+
+            composable(ScreenRoute.History.route) {
+                HistoryScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigateDestination = { route -> navController.navigate(route) }
+                )
+            }
+
+            composable(ScreenRoute.SearchHistory.route) {
+                SearchHistoryScreen(
+                    onBack = { navController.popBackStack() },
+                    onSearchAgain = { query ->
+                        searchViewModel.onQueryChanged(query)
+                        navController.navigate(ScreenRoute.Search.route)
+                    }
+                )
+            }
+
+            composable(ScreenRoute.RuleHistory.route) {
+                RuleHistoryScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(ScreenRoute.CollectionDetails.route) { backStackEntry ->
+                val collectionId = backStackEntry.arguments?.getString("collectionId") ?: ""
+                CollectionDetailScreen(
+                    collectionId = collectionId,
+                    onBack = { navController.popBackStack() },
+                    onAnimeClick = { animeId ->
+                        navController.navigate(ScreenRoute.AnimeDetails.createRoute(animeId))
+                    }
+                )
+            }
         }
     }
 }
+
