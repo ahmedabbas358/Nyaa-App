@@ -7,23 +7,17 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-sourceSets {
-    test {
-        java.srcDirs("src/main/java")
-    }
-}
-
 dependencies {
-    implementation(project(":domain"))
-    implementation(project(":core:common"))
-    implementation(project(":core:logging"))
-    implementation(project(":core:network"))
-    implementation(project(":provider:core"))
-    implementation(project(":download:core"))
+    testImplementation(project(":domain"))
+    testImplementation(project(":core:common"))
+    testImplementation(project(":core:logging"))
+    testImplementation(project(":core:network"))
+    testImplementation(project(":provider:core"))
+    testImplementation(project(":download:core"))
 
-    implementation(libs.junit)
-    implementation(libs.kotlinx.coroutines.test)
-    implementation(libs.turbine)
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
 }
 
 tasks.withType<Test> {
@@ -34,4 +28,3 @@ tasks.withType<Test> {
         events("passed", "skipped", "failed")
     }
 }
-
