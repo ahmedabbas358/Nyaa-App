@@ -171,25 +171,6 @@ fun AnimeDetailScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Preferences",
-                            tint = TextSecondary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DarkSurface
-                )
-            )
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
             // 1. Anime Header (Section 32)
             item {
                 AnimeHeaderSection(
@@ -234,6 +215,7 @@ fun AnimeDetailScreen(
             }
         }
     }
+}
 }
 
 @Composable
@@ -431,9 +413,10 @@ private fun AnimeCoverageOverviewSection(uiState: AnimeDetailUiState) {
             )
 
             val cov = uiState.coverage
+            val totalExp = cov?.totalExpected
             val summaryText = when {
-                cov != null && cov.totalExpected != null ->
-                    "${cov.totalAvailable} / ${cov.totalExpected} Available (${(cov.totalAvailable.toFloat() / cov.totalExpected * 100).toInt()}%)"
+                cov != null && totalExp != null ->
+                    "${cov.totalAvailable} / $totalExp Available (${(cov.totalAvailable.toFloat() / totalExp * 100).toInt()}%)"
                 cov != null ->
                     "${cov.totalAvailable} Episodes Found"
                 else -> "Coverage Calculating..."
@@ -447,9 +430,9 @@ private fun AnimeCoverageOverviewSection(uiState: AnimeDetailUiState) {
             )
 
             // Accessible linear bar if expected count is known (Section 81, 83)
-            if (cov?.totalExpected != null && cov.totalExpected > 0) {
+            if (cov != null && totalExp != null && totalExp > 0) {
                 LinearProgressIndicator(
-                    progress = { (cov.totalAvailable.toFloat() / cov.totalExpected).coerceIn(0f, 1f) },
+                    progress = { (cov.totalAvailable.toFloat() / totalExp).coerceIn(0f, 1f) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp),

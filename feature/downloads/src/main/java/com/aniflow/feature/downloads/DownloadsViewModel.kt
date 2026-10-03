@@ -109,27 +109,19 @@ class DownloadsViewModel(
         // Group
         val grouped = DownloadDashboardAggregator.groupTasks(sorted, current.groupingMode)
 
-        // Metrics from aggregator
-        val activeCount = uiTasks.count { it.state.isActive }
-        val queuedCount = uiTasks.count { it.state == DownloadStateUi.Queued }
-        val pausedCount = uiTasks.count { it.state == DownloadStateUi.Paused }
-        val completedCount = uiTasks.count { it.state == DownloadStateUi.Completed }
-        val failedCount = uiTasks.count { it.state == DownloadStateUi.Failed }
-
-        val totalSpeed = DownloadDashboardAggregator.calculateTotalDownloadSpeed(uiTasks)
-        val overallProgress = DownloadDashboardAggregator.calculateOverallProgress(uiTasks)
+        val summary = DownloadDashboardAggregator.computeSummary(uiTasks)
 
         _uiState.value = current.copy(
             rawTasks = uiTasks,
             filteredTasks = sorted,
             groupedTasks = grouped,
-            totalDownloadSpeedFormatted = totalSpeed,
-            overallProgressPercent = overallProgress,
-            activeTasksCount = activeCount,
-            queuedTasksCount = queuedCount,
-            pausedTasksCount = pausedCount,
-            completedTasksCount = completedCount,
-            failedTasksCount = failedCount
+            totalDownloadSpeedFormatted = summary.totalActiveSpeedFormatted,
+            overallProgressPercent = summary.overallProgressPercent,
+            activeTasksCount = summary.activeCount,
+            queuedTasksCount = summary.queuedCount,
+            pausedTasksCount = summary.pausedCount,
+            completedTasksCount = summary.completedCount,
+            failedTasksCount = summary.failedCount
         )
     }
 
@@ -229,7 +221,7 @@ class DownloadsViewModel(
             state = stateUi,
             engineBadge = engineBadge,
             priority = priorityUi,
-            destinationPath = destination.path,
+            destinationPath = destination.identifier,
             createdAt = createdAt,
             errorMessage = errorMessage
         )

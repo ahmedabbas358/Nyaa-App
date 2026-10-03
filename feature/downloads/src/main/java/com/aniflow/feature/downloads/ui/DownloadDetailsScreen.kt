@@ -583,7 +583,7 @@ private fun DiagnosticsLogsTab(task: DownloadTaskUiModel) {
         list.add("[Destination] ${task.destinationPath}")
         list.add("[Intent] ${task.whyCreatedReason}")
         task.waitingReason?.let {
-            list.add("[Waiting] ${it.displayName}: ${it.description}")
+            list.add("[Waiting] ${it.displayName}")
         }
         task.errorMessage?.let {
             list.add("[Error] $it")
@@ -592,7 +592,7 @@ private fun DiagnosticsLogsTab(task: DownloadTaskUiModel) {
             list.add("[Segments] ${task.segments.size} HTTP worker segments active")
         }
         task.swarm?.let { swarm ->
-            list.add("[Swarm] Peers: ${swarm.peersConnected}/${swarm.peersTotal}, Seeds: ${swarm.seedsConnected}/${swarm.seedsTotal}")
+            list.add("[Swarm] Peers: ${swarm.connectedPeers}, Seeds: ${swarm.seeders}, Leechers: ${swarm.leechers}")
         }
         list
     }

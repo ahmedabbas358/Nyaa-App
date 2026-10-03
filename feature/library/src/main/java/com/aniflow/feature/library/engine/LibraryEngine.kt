@@ -1,8 +1,14 @@
 package com.aniflow.feature.library.engine
 
-import com.aniflow.core.database.dao.LibraryDao
-import com.aniflow.core.database.entity.LibraryFileEntity
-import com.aniflow.core.database.entity.LibraryItemEntity
+import com.aniflow.domain.identity.LibraryFileId
+import com.aniflow.domain.identity.LibraryItemId
+import com.aniflow.domain.identity.MediaIdentity
+import com.aniflow.domain.model.aggregate.library.LibraryFile
+import com.aniflow.domain.model.aggregate.library.LibraryItem
+import com.aniflow.domain.repository.LibraryRepository
+import com.aniflow.domain.state.LibraryItemState
+import com.aniflow.domain.valueobject.ByteSize
+import com.aniflow.domain.valueobject.StorageTarget
 import com.aniflow.feature.library.analytics.LibraryHealthReport
 import com.aniflow.feature.library.analytics.StorageAnalyticsEngine
 import com.aniflow.feature.library.analytics.StorageCategoryBreakdown
@@ -45,7 +51,7 @@ import java.util.UUID
  * Room DB acts purely as the Index; physical storage remains the true source of truth.
  */
 class LibraryEngine(
-    private val libraryDao: LibraryDao,
+    private val libraryRepository: LibraryRepository? = null,
     private val mediaProbe: MediaProbe = DefaultMediaProbe(),
     private val scanner: LibraryScanner = LibraryScanner(mediaProbe),
     private val resolver: LibraryIdentityResolver = LibraryIdentityResolver(MediaFilenameParser()),
@@ -73,44 +79,38 @@ class LibraryEngine(
 
         val resolved = customMapping ?: resolver.resolve(scanned)
 
-        val itemId = "item-${resolved.animeTitle.hashCode()}-${resolved.seasonNumber}"
-        val existingItem = libraryDao.getItemById(itemId)
+        val itemId = LibraryItemId("item-${resolved.animeTitle.hashCode()}-${resolved.seasonNumber}")
+        if (libraryRepository != null) {
+            val existingItem = libraryRepository.getItemById(itemId)
 
-        if (existingItem == null) {
-            val newItem = LibraryItemEntity(
-                id = itemId,
-                animeId = null,
-                seasonId = null,
-                episodeId = null,
-                itemType = "Anime",
-                displayTitle = resolved.animeTitle,
-                state = "Indexed",
-                rootStorageId = rootStorageId,
-                relativePath = file.relativePath.substringBeforeLast('/', ""),
-                indexedAt = System.currentTimeMillis(),
-                updatedAt = System.currentTimeMillis()
+            if (existingItem == null) {
+                val newItem = LibraryItem(
+                    id = itemId,
+                    mediaIdentity = MediaIdentity(
+                        animeId = null,
+                        seasonNumber = null,
+                        episodeRange = null,
+                        canonicalTitle = resolved.animeTitle
+                    ),
+                    state = LibraryItemState.Indexed,
+                    location = StorageTarget(rootStorageId)
+                )
+                libraryRepository.saveItem(newItem)
+            }
+
+            // Run non-blocking probe
+            val probeResult: MediaProbeResult = mediaProbe.probe(file)
+
+            val fileRecord = LibraryFile(
+                id = LibraryFileId(UUID.randomUUID().toString()),
+                libraryItemId = itemId,
+                path = file.relativePath,
+                fileName = file.name,
+                size = ByteSize(file.sizeBytes)
             )
-            libraryDao.insertItem(newItem)
+
+            libraryRepository.saveFile(fileRecord)
         }
-
-        // Run non-blocking probe
-        val probeResult: MediaProbeResult = mediaProbe.probe(file)
-
-        val fileEntity = LibraryFileEntity(
-            id = UUID.randomUUID().toString(),
-            libraryItemId = itemId,
-            path = file.relativePath,
-            fileName = file.name,
-            sizeBytes = file.sizeBytes,
-            modifiedAt = file.lastModified.toEpochMilli(),
-            fingerprintType = "cheap_size_time",
-            fingerprintValue = scanned.cheapFingerprint,
-            mediaMetadataJson = if (probeResult.isSuccess) "{\"codec\":\"${probeResult.videoTrack?.codec}\",\"duration\":${probeResult.durationSeconds}}" else null,
-            createdAt = System.currentTimeMillis(),
-            updatedAt = System.currentTimeMillis()
-        )
-
-        libraryDao.insertFile(fileEntity)
         true
     }
 

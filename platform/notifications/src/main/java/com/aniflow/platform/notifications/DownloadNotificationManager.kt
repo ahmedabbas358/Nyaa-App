@@ -74,6 +74,10 @@ class DownloadNotificationManager(private val context: Context) {
         notificationManager.notify(title.hashCode(), notification)
     }
 
+    fun showNotification(id: Int, notification: Notification) {
+        notificationManager.notify(id, notification)
+    }
+
     companion object {
         const val CHANNEL_PROGRESS = "aniflow_channel_progress"
         const val CHANNEL_ALERTS = "aniflow_channel_alerts"

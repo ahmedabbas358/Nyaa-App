@@ -358,3 +358,4 @@ fun AnimeSeasonScreen(
         }
     }
 }
+}

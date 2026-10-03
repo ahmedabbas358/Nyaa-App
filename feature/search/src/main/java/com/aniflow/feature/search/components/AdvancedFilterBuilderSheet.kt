@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -60,7 +61,8 @@ data class AdvancedFilterSelection(
     val isBatchOnly: Boolean = false,
     val isTrustedOnly: Boolean = false,
     val minSeeds: Int? = null,
-    val source: String? = null
+    val source: String? = null,
+    val excludeRemakes: Boolean = false
 )
 
 /**

@@ -176,11 +176,11 @@ class LibraryViewModel(
 
         libraryRepository.observeItems()
             .onEach { items ->
-                val animeItems = items.filter { it.type == LibraryItemType.Anime }
+                val animeItems = items.filter { it.mediaIdentity.animeId != null }
                 val cards = animeItems.map { item ->
                     AnimeLibraryCardUiModel(
                         id = item.id.value,
-                        title = item.title ?: "Untitled Anime",
+                        title = item.mediaIdentity.canonicalTitle.ifBlank { "Untitled Anime" },
                         seasonCount = 1,
                         totalEpisodes = 0,
                         availableEpisodes = 0,
@@ -189,11 +189,11 @@ class LibraryViewModel(
                         upgradeAvailableCount = 0
                     )
                 }
-                val unidentified = items.filter { it.type == LibraryItemType.Unidentified }.map { item ->
+                val unidentified = items.filter { it.mediaIdentity.animeId == null }.map { item ->
                     UnidentifiedFileUiModel(
                         fileId = item.id.value,
-                        fileName = item.title ?: "Unidentified File",
-                        relativePath = "library/${item.title ?: "file"}",
+                        fileName = item.mediaIdentity.canonicalTitle.ifBlank { "Unidentified File" },
+                        relativePath = "library/${item.mediaIdentity.canonicalTitle.ifBlank { "file" }}",
                         formattedSize = "Unknown"
                     )
                 }

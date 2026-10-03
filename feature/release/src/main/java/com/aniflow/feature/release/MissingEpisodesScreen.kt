@@ -221,6 +221,8 @@ fun MissingEpisodesScreen(
         }
     }
 }
+}
+
 
 @Composable
 private fun MissingEpisodeCardItem(

@@ -53,6 +53,12 @@ object AppShapes {
     val large = RoundedCornerShape(14.dp)
     val extraLarge = RoundedCornerShape(20.dp)
     val pill = RoundedCornerShape(999.dp)
+    val card = medium
+    val badge = small
+    val roundedMedium = medium
+    val sm: Dp = 8.dp
+    val md: Dp = 12.dp
+    val lg: Dp = 16.dp
 }
 
 /**
@@ -76,6 +82,15 @@ object AppSemanticColors {
     val Neutral = Color(0xFF64748B)   // Queued / idle / paused
     val Accent = AccentBlueViolet     // Primary interactive
     val Secondary = SecondaryTeal    // Auxiliary interactive
+
+    // Lower-case aliases for component compatibility
+    val success = Success
+    val warning = Warning
+    val error = Error
+    val info = Info
+    val neutral = Neutral
+    val accent = Accent
+    val secondary = Secondary
 }
 
 /**
@@ -181,6 +196,18 @@ object AppTypography {
     val label = Subtitle
     @get:JvmName("getCaptionAlias")
     val caption = Caption
+    @get:JvmName("getHeadingMediumAlias")
+    val headingMedium = LargeTitle
+    @get:JvmName("getHeadlineMediumAlias")
+    val headlineMedium = LargeTitle
+    @get:JvmName("getBodyMediumAlias")
+    val bodyMedium = Body
+    @get:JvmName("getLabelLargeAlias")
+    val labelLarge = SectionTitle
+    @get:JvmName("getLabelSmallAlias")
+    val labelSmall = Caption
+    @get:JvmName("getSubtitleAlias")
+    val subtitle = Subtitle
 
     // Dedicated numeric styles for speeds, ETAs, and file sizes (Section 6, 15)
     val numericSpeed = TextStyle(
@@ -202,6 +229,8 @@ object AppTypography {
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp
     )
+
+    val numericProgress = numericSpeed
 }
 
 /**

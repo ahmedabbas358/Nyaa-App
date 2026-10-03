@@ -82,6 +82,7 @@ import com.aniflow.core.ui.theme.DarkSurfaceVariant
 import com.aniflow.core.ui.theme.PrimaryIndigo
 import com.aniflow.core.ui.theme.TextMuted
 import com.aniflow.core.ui.theme.TextPrimary
+import com.aniflow.core.ui.model.ReleaseUiModel
 import com.aniflow.core.ui.theme.TextSecondary
 
 /**
@@ -471,12 +472,19 @@ fun AniSectionHeader(
 @Composable
 fun AniEmptyState(
     title: String,
-    message: String,
+    message: String = "",
     icon: ImageVector = Icons.Default.Info,
     actionText: String? = null,
     onActionClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    description: String? = null,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null
 ) {
+    val actualMessage = if (message.isNotBlank()) message else description.orEmpty()
+    val actualActionText = actionText ?: actionLabel
+    val actualOnAction = onActionClick ?: onAction
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -508,20 +516,20 @@ fun AniEmptyState(
         )
         Spacer(modifier = Modifier.height(AppSpacing.xs))
         Text(
-            text = message,
+            text = actualMessage,
             style = AppTypography.bodySmall,
             color = TextMuted,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = AppSpacing.md)
         )
-        if (actionText != null && onActionClick != null) {
+        if (actualActionText != null && actualOnAction != null) {
             Spacer(modifier = Modifier.height(AppSpacing.md))
             Button(
-                onClick = onActionClick,
+                onClick = actualOnAction,
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
                 shape = AppShapes.pill
             ) {
-                Text(text = actionText, fontWeight = FontWeight.SemiBold, color = Color.White)
+                Text(text = actualActionText, fontWeight = FontWeight.SemiBold, color = Color.White)
             }
         }
     }
@@ -534,13 +542,16 @@ fun AniEmptyState(
 @Composable
 fun AniErrorState(
     title: String,
-    reason: String,
-    onRetry: () -> Unit,
+    reason: String = "",
+    onRetry: () -> Unit = {},
     retryText: String = "Retry Operation",
     secondaryActionText: String? = null,
     onSecondaryAction: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    message: String? = null
 ) {
+    val actualReason = if (reason.isNotBlank()) reason else message.orEmpty()
+
     Card(
         colors = CardDefaults.cardColors(containerColor = AppSemanticColors.Error.copy(alpha = 0.1f)),
         shape = AppShapes.medium,
@@ -567,7 +578,7 @@ fun AniErrorState(
             }
             Spacer(modifier = Modifier.height(AppSpacing.xs))
             Text(
-                text = reason,
+                text = actualReason,
                 style = AppTypography.bodySmall,
                 color = TextSecondary
             )
@@ -986,27 +997,38 @@ fun AniDataRow(
  */
 @Composable
 fun AniReleaseRow(
-    title: String,
-    resolution: String,
-    codec: String,
-    source: String,
-    sizeFormatted: String,
-    seeds: Int,
-    peers: Int,
-    uploader: String,
+    title: String = "",
+    resolution: String = "",
+    codec: String = "",
+    source: String = "",
+    sizeFormatted: String = "",
+    seeds: Int = 0,
+    peers: Int = 0,
+    uploader: String = "",
     isPreferred: Boolean = false,
-    onClick: () -> Unit,
-    onDownloadClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit = {},
+    onDownloadClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+    release: ReleaseUiModel? = null
 ) {
+    val actualTitle = release?.title ?: title
+    val actualResolution = release?.resolution ?: resolution
+    val actualCodec = release?.codec ?: codec
+    val actualSource = release?.releaseGroup ?: source
+    val actualSizeFormatted = release?.sizeFormatted ?: sizeFormatted
+    val actualSeeds = release?.seeders ?: seeds
+    val actualPeers = release?.leechers ?: peers
+    val actualUploader = release?.uploader ?: uploader
+    val actualIsPreferred = release?.isPreferred ?: isPreferred
+
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (isPreferred) PrimaryIndigo.copy(alpha = 0.08f) else DarkSurface
+            containerColor = if (actualIsPreferred) PrimaryIndigo.copy(alpha = 0.08f) else DarkSurface
         ),
         shape = AppShapes.medium,
         border = androidx.compose.foundation.BorderStroke(
-            if (isPreferred) 1.5.dp else 1.dp,
-            if (isPreferred) PrimaryIndigo else DarkCardBorder
+            if (actualIsPreferred) 1.5.dp else 1.dp,
+            if (actualIsPreferred) PrimaryIndigo else DarkCardBorder
         ),
         modifier = modifier
             .fillMaxWidth()
@@ -1019,7 +1041,7 @@ fun AniReleaseRow(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    if (isPreferred) {
+                    if (actualIsPreferred) {
                         AniStatusBadge(
                             label = "SMART PREFERRED",
                             color = AppSemanticColors.Warning,
@@ -1027,7 +1049,7 @@ fun AniReleaseRow(
                         )
                     }
                     Text(
-                        text = title,
+                        text = actualTitle,
                         style = AppTypography.Title.copy(fontSize = 15.sp),
                         color = TextPrimary,
                         maxLines = 2,
@@ -1049,11 +1071,11 @@ fun AniReleaseRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)
             ) {
-                AniStatusBadge(label = resolution, color = PrimaryIndigo)
-                AniStatusBadge(label = codec, color = AppSemanticColors.Success)
-                AniStatusBadge(label = source, color = AppSemanticColors.Info)
+                AniStatusBadge(label = actualResolution, color = PrimaryIndigo)
+                AniStatusBadge(label = actualCodec, color = AppSemanticColors.Success)
+                AniStatusBadge(label = actualSource, color = AppSemanticColors.Info)
                 Text(
-                    text = "• $uploader",
+                    text = "• $actualUploader",
                     style = AppTypography.caption,
                     color = TextSecondary,
                     maxLines = 1,
@@ -1069,7 +1091,7 @@ fun AniReleaseRow(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = sizeFormatted,
+                    text = actualSizeFormatted,
                     style = AppTypography.numericSize,
                     color = TextPrimary
                 )
@@ -1086,7 +1108,7 @@ fun AniReleaseRow(
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
-                            text = "$seeds",
+                            text = "$actualSeeds",
                             style = AppTypography.numericSpeed,
                             color = AppSemanticColors.Success
                         )
@@ -1100,7 +1122,7 @@ fun AniReleaseRow(
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
-                            text = "$peers",
+                            text = "$actualPeers",
                             style = AppTypography.numericSpeed,
                             color = AppSemanticColors.Info
                         )

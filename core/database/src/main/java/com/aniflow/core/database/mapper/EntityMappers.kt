@@ -46,7 +46,7 @@ import com.aniflow.domain.model.aggregate.release.Release
 import com.aniflow.domain.model.aggregate.release.ReleaseAvailability
 import com.aniflow.domain.model.aggregate.release.ReleaseGroup
 import com.aniflow.domain.model.aggregate.release.ReleaseSource
-import com.aniflow.domain.model.aggregate.release.ReleaseTechnicalMetadata
+import com.aniflow.domain.valueobject.ReleaseTechnicalMetadata
 import com.aniflow.domain.model.aggregate.release.ReleaseType
 import com.aniflow.domain.model.aggregate.release.Uploader
 import com.aniflow.domain.state.DownloadState

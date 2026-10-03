@@ -35,7 +35,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.material.icons.filled.SdCard
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.unit.dp
+import com.aniflow.core.ui.theme.AppShapes
+import com.aniflow.core.ui.theme.AppSpacing
+import com.aniflow.core.ui.theme.AppTypography
+import com.aniflow.core.ui.theme.DarkBackground
+import com.aniflow.core.ui.theme.DarkCardBorder
+import com.aniflow.core.ui.theme.DarkSurface
+import com.aniflow.core.ui.theme.PrimaryIndigo
+import com.aniflow.core.ui.theme.TextMuted
+import com.aniflow.core.ui.theme.TextPrimary
+import com.aniflow.core.ui.theme.TextSecondary
 import com.aniflow.core.ui.components.AniAppBar
 import com.aniflow.core.ui.components.AniEmptyState
 import com.aniflow.core.ui.model.StorageUiModel
@@ -153,3 +164,5 @@ fun StorageScreen(
         }
     }
 }
+}
+

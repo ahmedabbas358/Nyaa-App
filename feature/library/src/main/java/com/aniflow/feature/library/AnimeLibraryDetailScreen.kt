@@ -193,6 +193,8 @@ fun AnimeLibraryDetailScreen(
         )
     }
 }
+}
+
 
 /**
  * EpisodeLibraryCard (Section 150).

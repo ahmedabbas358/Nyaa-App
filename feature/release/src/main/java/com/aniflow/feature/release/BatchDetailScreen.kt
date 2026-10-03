@@ -300,6 +300,8 @@ fun BatchDetailScreen(
         }
     }
 }
+}
+
 
 @Composable
 private fun TechnicalRow(label: String, value: String) {

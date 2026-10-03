@@ -251,8 +251,8 @@ class SearchViewModel(
             .map { entry ->
                 SearchSuggestion(
                     id = entry.id.value,
-                    displayText = entry.query,
-                    type = SearchSuggestionType.History,
+                    text = entry.query,
+                    type = SearchSuggestionType.RecentSearch,
                     subtitle = "Recent search",
                     score = 90
                 )
@@ -321,22 +321,22 @@ class SearchViewModel(
     }
 
     private fun Release.toSearchResultItem(): SearchResultItem.ReleaseResult {
-        val magnet = (source as? ReleaseSource.Torrent)?.magnetUri?.value
+        val magnet = (source as? ReleaseSource.Torrent)?.magnetUri?.rawValue
         val sizeBytes = availability.size?.bytes ?: 0L
         val sizeStr = if (sizeBytes > 0) UiFormatters.formatBytes(sizeBytes) else "—"
         return SearchResultItem.ReleaseResult(
             id = id.value,
-            title = rawTitle,
-            animeTitle = parsedInfo.animeTitle,
-            resolution = technicalMetadata.resolution.label.ifBlank { "Unknown" },
-            codec = technicalMetadata.videoCodec.name.ifBlank { "Unknown" },
-            uploader = uploader.name.value,
+            title = title,
+            animeTitle = animeIdentity?.rawTitle ?: title,
+            resolution = technical.resolution?.displayName ?: "Unknown",
+            codec = technical.videoCodec?.displayName ?: "Unknown",
+            uploader = uploader?.name ?: "Unknown",
             releaseGroup = releaseGroup?.name,
             sizeFormatted = sizeStr,
             seeders = availability.seeders ?: 0,
             leechers = availability.leechers ?: 0,
             magnetUri = magnet,
-            isBatch = type == ReleaseType.Batch,
+            isBatch = releaseType == ReleaseType.Batch,
             isDownloaded = false,
             isDownloading = false
         )

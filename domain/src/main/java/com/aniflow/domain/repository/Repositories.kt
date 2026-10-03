@@ -168,3 +168,9 @@ interface SavedSearchRepository {
     suspend fun save(search: SavedSearch)
     suspend fun delete(id: SavedSearchId)
 }
+
+interface SettingsRepository {
+    fun observeMaxConcurrentDownloads(): Flow<Int>
+    fun observeDownloadDirectory(): Flow<String>
+    suspend fun setMaxConcurrentDownloads(count: Int)
+}

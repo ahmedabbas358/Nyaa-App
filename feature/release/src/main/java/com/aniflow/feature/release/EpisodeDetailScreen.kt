@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Movie
+import com.aniflow.core.ui.components.AniEmptyState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -97,9 +99,6 @@ data class CandidateReleaseUiModel(
     val confidence: Float,
     val recommendationLabel: String? = null
 )
-
-import com.aniflow.core.ui.components.AniEmptyState
-import androidx.compose.material.icons.filled.Movie
 
 data class BatchMembershipUiModel(
     val batchReleaseId: String,
@@ -320,6 +319,8 @@ fun EpisodeDetailScreen(
         }
     }
 }
+}
+
 
 @Composable
 private fun EpisodeHeaderCard(uiState: EpisodeDetailUiState) {

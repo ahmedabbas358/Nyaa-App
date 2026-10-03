@@ -54,6 +54,7 @@ import com.aniflow.core.ui.theme.DarkBackground
 import com.aniflow.core.ui.theme.DarkCardBorder
 import com.aniflow.core.ui.theme.DarkSurface
 import com.aniflow.core.ui.theme.PrimaryIndigo
+import com.aniflow.core.ui.theme.TextMuted
 import com.aniflow.core.ui.theme.TextPrimary
 import com.aniflow.core.ui.theme.TextSecondary
 import com.aniflow.domain.model.aggregate.organization.RuleScope

@@ -92,7 +92,7 @@ data class SettingsUiState(
 )
 
 class SettingsViewModel(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -103,6 +103,7 @@ class SettingsViewModel(
     }
 
     private fun observeSettings() {
+        if (settingsRepository == null) return
         viewModelScope.launch {
             settingsRepository.observeMaxConcurrentDownloads().collect {
                 _uiState.value = _uiState.value.copy(maxConcurrentDownloads = it)
@@ -117,7 +118,7 @@ class SettingsViewModel(
 
     fun setMaxConcurrentDownloads(count: Int) {
         viewModelScope.launch {
-            settingsRepository.setMaxConcurrentDownloads(count)
+            settingsRepository?.setMaxConcurrentDownloads(count)
         }
     }
 

@@ -206,10 +206,10 @@ fun ReleaseDetailScreen(
                     )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QualityBadge(text = release.provider.providerName, color = PrimaryIndigo)
-                        release.technical.resolution?.let { QualityBadge(text = it.name.removePrefix("R"), color = Badge1080p) }
-                        release.technical.codec?.let { QualityBadge(text = it.name, color = BadgeHevc) }
-                        if (release.uploader?.isTrusted == true) QualityBadge(text = "Trusted", color = BadgeTrusted)
+                        QualityBadge(text = release.provider.name, color = PrimaryIndigo)
+                        release.technical.resolution?.let { QualityBadge(text = it.displayName, color = Badge1080p) }
+                        release.technical.videoCodec?.let { QualityBadge(text = it.displayName, color = BadgeHevc) }
+                        if (release.uploader != null) QualityBadge(text = release.uploader.name, color = BadgeTrusted)
                     }
 
                     // 2. Swarm & Size Stats Card
@@ -254,8 +254,8 @@ fun ReleaseDetailScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             MetadataRow("Anime Title", release.animeIdentity?.rawTitle ?: release.title)
-                            release.seasonHint?.let { MetadataRow("Season", "${it.number}") }
-                            release.episodeRange?.let { MetadataRow("Episode", "${it.start.number}") }
+                            release.seasonHint?.let { MetadataRow("Season", "${it.numericValue ?: it}") }
+                            release.episodeRange?.let { MetadataRow("Episode", it.toString()) }
                             release.releaseGroup?.let { MetadataRow("Release Group", it.name) }
                             release.uploader?.let { MetadataRow("Uploader", it.name) }
                             if (release.source is ReleaseSource.Torrent) {

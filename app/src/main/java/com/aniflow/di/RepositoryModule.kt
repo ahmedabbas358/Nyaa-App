@@ -142,4 +142,18 @@ object RepositoryModule {
     @Singleton
     fun provideWatchProgressRepository(): com.aniflow.domain.library.repository.WatchProgressRepository =
         com.aniflow.data.repository.WatchProgressRepositoryImpl()
+
+    @Provides
+    @Singleton
+    fun provideSettingsRepository(): com.aniflow.domain.repository.SettingsRepository =
+        object : com.aniflow.domain.repository.SettingsRepository {
+            private val maxConcurrent = kotlinx.coroutines.flow.MutableStateFlow(3)
+            private val downloadDir = kotlinx.coroutines.flow.MutableStateFlow("Downloads/AniFlow")
+
+            override fun observeMaxConcurrentDownloads(): kotlinx.coroutines.flow.Flow<Int> = maxConcurrent
+            override fun observeDownloadDirectory(): kotlinx.coroutines.flow.Flow<String> = downloadDir
+            override suspend fun setMaxConcurrentDownloads(count: Int) {
+                maxConcurrent.value = count
+            }
+        }
 }

@@ -44,26 +44,38 @@ class DatabaseIntegrityValidator {
             }
 
             // 2. Check for impossible/negative byte sizes
-            if (file.totalBytes.bytes < 0) {
+            val expBytes = file.expectedSize?.bytes
+            if (expBytes != null && expBytes < 0) {
                 violations.add(
                     IntegrityViolation(
                         entityType = "DownloadFile",
                         identifier = file.id.value,
-                        issue = "Negative file size detected: ${file.totalBytes.bytes}",
+                        issue = "Negative file size detected: $expBytes",
+                        severity = IntegrityViolation.Severity.Critical
+                    )
+                )
+            }
+            if (file.downloadedSize.bytes < 0) {
+                violations.add(
+                    IntegrityViolation(
+                        entityType = "DownloadFile",
+                        identifier = file.id.value,
+                        issue = "Negative downloaded size detected: ${file.downloadedSize.bytes}",
                         severity = IntegrityViolation.Severity.Critical
                     )
                 )
             }
         }
 
-        // 3. Check for task state consistency
-        for (task in tasks) {
-            if (task.downloadedBytes.bytes > task.totalBytes.bytes && task.totalBytes.bytes > 0) {
+        // 3. Check for file downloaded bytes exceeding expected size
+        for (file in files) {
+            val exp = file.expectedSize?.bytes
+            if (exp != null && exp > 0 && file.downloadedSize.bytes > exp) {
                 violations.add(
                     IntegrityViolation(
-                        entityType = "DownloadTask",
-                        identifier = task.id.value,
-                        issue = "Downloaded bytes (${task.downloadedBytes.bytes}) exceeds total size (${task.totalBytes.bytes})",
+                        entityType = "DownloadFile",
+                        identifier = file.id.value,
+                        issue = "Downloaded bytes (${file.downloadedSize.bytes}) exceeds expected size ($exp)",
                         severity = IntegrityViolation.Severity.Warning
                     )
                 )

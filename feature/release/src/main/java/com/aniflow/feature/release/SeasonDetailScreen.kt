@@ -218,6 +218,8 @@ fun SeasonDetailScreen(
         }
     }
 }
+}
+
 
 @Composable
 private fun SeasonCoverageCard(
@@ -237,9 +239,11 @@ private fun SeasonCoverageCard(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             val cov = uiState.coverage
+            val missing = cov?.missingCount
+            val pct = cov?.percentage
             val statusText = when {
                 cov != null && cov.expectedCount != null ->
-                    "${cov.availableCount} of ${cov.expectedCount} Available (${cov.percentage?.toInt() ?: 0}%)"
+                    "${cov.availableCount} of ${cov.expectedCount} Available (${pct?.toInt() ?: 0}%)"
                 cov != null ->
                     "${cov.availableCount} Episodes Discovered"
                 else -> "Loading coverage..."
@@ -257,13 +261,13 @@ private fun SeasonCoverageCard(
                     fontWeight = FontWeight.Bold
                 )
 
-                if (cov?.missingCount != null && cov.missingCount > 0) {
+                if (missing != null && missing > 0) {
                     Surface(
                         color = AppSemanticColors.Warning.copy(alpha = 0.15f),
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
-                            text = "${cov.missingCount} Missing",
+                            text = "$missing Missing",
                             color = AppSemanticColors.Warning,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -273,9 +277,9 @@ private fun SeasonCoverageCard(
                 }
             }
 
-            if (cov?.percentage != null) {
+            if (pct != null) {
                 LinearProgressIndicator(
-                    progress = { cov.percentage.coerceIn(0f, 1f) },
+                    progress = { pct.coerceIn(0f, 1f) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp),
@@ -285,7 +289,7 @@ private fun SeasonCoverageCard(
                 )
             }
 
-            if (cov?.missingCount != null && cov.missingCount > 0) {
+            if (missing != null && missing > 0) {
                 Button(
                     onClick = onDownloadMissingClick,
                     modifier = Modifier.fillMaxWidth(),
