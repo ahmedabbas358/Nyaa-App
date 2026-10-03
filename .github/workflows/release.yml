@@ -58,14 +58,13 @@ jobs:
 
       - name: Run Full Pre-Release Verification Suites
         run: |
-          set -o pipefail
-          ./gradlew :testing:test :domain:test --stacktrace --info 2>&1 | tee /tmp/gradle-test.log || {
-            echo "### Gradle Verification / Compilation Failure" >> $GITHUB_STEP_SUMMARY
-            echo '```text' >> $GITHUB_STEP_SUMMARY
-            tail -n 150 /tmp/gradle-test.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            exit 1
-          }
+          ./gradlew :testing:test :domain:test --stacktrace --info > gradle-build.log 2>&1 || STATUS=$?
+          if [ -n "$STATUS" ] && [ "$STATUS" -ne 0 ]; then
+            echo "=== GRADLE FAILURE LOG START ==="
+            cat gradle-build.log
+            echo "=== GRADLE FAILURE LOG END ==="
+            exit $STATUS
+          fi
 
       - name: Upload Test Results & Build Logs
         if: always()
@@ -75,7 +74,7 @@ jobs:
           path: |
             **/build/reports/tests/
             **/build/reports/
-            /tmp/gradle-test.log
+            gradle-build.log
 
       - name: Assemble Release APK & Bundle AAB
         run: |
