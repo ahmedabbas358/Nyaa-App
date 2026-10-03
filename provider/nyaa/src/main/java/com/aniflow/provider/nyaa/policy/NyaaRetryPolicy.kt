@@ -27,8 +27,9 @@ class NyaaRetryPolicy(
                 }
 
                 val jitter = (0..200).random()
-                val sleepTime = if (e is ProviderError.RateLimited && e.retryAfterSeconds != null) {
-                    (e.retryAfterSeconds * 1000L) + jitter
+                val retrySec = (e as? ProviderError.RateLimited)?.retryAfterSeconds
+                val sleepTime = if (retrySec != null) {
+                    (retrySec * 1000L) + jitter
                 } else {
                     currentDelay.coerceAtMost(maxDelayMs) + jitter
                 }

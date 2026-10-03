@@ -46,20 +46,7 @@ class NyaaProvider(
         id = ProviderId("nyaa"),
         name = "Nyaa.si",
         baseUrl = config.baseUrl,
-        capabilities = ProviderCapabilities(
-            supportsSearch = true,
-            supportsPagination = true,
-            supportsSorting = true,
-            supportsCategories = true,
-            supportsUploaderSearch = true,
-            supportsReleaseDetails = true,
-            supportsTorrent = true,
-            supportsMagnet = true,
-            supportsRss = true,
-            supportsHtml = true,
-            supportsTrustedFilter = true,
-            supportsRemakeFilter = true
-        ),
+        capabilities = ProviderCapabilities.NYAA,
         version = "1.0.0",
         description = "Public anime & Asian media torrent tracker"
     )

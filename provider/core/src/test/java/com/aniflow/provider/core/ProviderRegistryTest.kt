@@ -44,7 +44,7 @@ class ProviderRegistryTest {
             id = ProviderId("animetosho"),
             name = "AnimeTosho",
             baseUrl = UrlValue.HttpsUrl("https://animetosho.org"),
-            capabilities = ProviderCapabilities(supportsUploaderSearch = true)
+            capabilities = ProviderCapabilities(uploaderSearch = true)
         )
         override suspend fun search(request: ProviderSearchRequest) = AniFlowResult.Success(ProviderSearchPage(emptyList(), 1, false))
         override suspend fun getRelease(providerReleaseId: String) = AniFlowResult.Error(com.aniflow.core.common.result.ErrorType.DatabaseError("Not implemented"))
