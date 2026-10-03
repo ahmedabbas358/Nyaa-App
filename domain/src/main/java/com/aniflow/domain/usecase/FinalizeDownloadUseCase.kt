@@ -4,13 +4,12 @@ import com.aniflow.core.common.result.AniFlowResult
 import com.aniflow.domain.event.AniFlowEventBus
 import com.aniflow.domain.event.DomainEvent
 import com.aniflow.domain.identity.DownloadTaskId
-import com.aniflow.domain.identity.EpisodeId
 import com.aniflow.domain.identity.LibraryFileId
 import com.aniflow.domain.identity.LibraryItemId
+import com.aniflow.domain.identity.MediaIdentity
 import com.aniflow.domain.model.aggregate.download.DownloadTask
 import com.aniflow.domain.model.aggregate.library.LibraryFile
 import com.aniflow.domain.model.aggregate.library.LibraryItem
-import com.aniflow.domain.model.aggregate.library.LibraryItemType
 import com.aniflow.domain.model.aggregate.release.Release
 import com.aniflow.domain.repository.DownloadRepository
 import com.aniflow.domain.repository.LibraryRepository
@@ -67,24 +66,22 @@ class FinalizeDownloadUseCase(
 
             val libraryItem = LibraryItem(
                 id = libraryItemId,
-                animeId = null,
-                title = animeTitle,
-                type = LibraryItemType.Series,
-                addedAt = Instant.now(),
-                lastScannedAt = Instant.now()
+                mediaIdentity = MediaIdentity(
+                    animeId = null,
+                    seasonNumber = release?.seasonHint,
+                    episodeRange = release?.episodeRange,
+                    canonicalTitle = animeTitle
+                ),
+                location = StorageTarget(finalPath)
             )
             libraryRepository.saveItem(libraryItem)
 
             val libraryFile = LibraryFile(
                 id = LibraryFileId("file-${UUID.randomUUID().toString().take(8)}"),
-                itemId = libraryItemId,
-                episodeId = null,
-                storageLocationId = "loc-default",
-                relativePath = finalPath,
-                size = ByteSize.fromBytes(actualSizeBytes),
-                resolution = release?.technical?.resolution,
-                codec = release?.technical?.codec,
-                detectedAt = Instant.now()
+                libraryItemId = libraryItemId,
+                path = finalPath,
+                fileName = "$sanitizedName.mkv",
+                size = ByteSize.fromBytes(actualSizeBytes)
             )
             libraryRepository.saveFile(libraryFile)
 
@@ -112,7 +109,7 @@ class FinalizeDownloadUseCase(
             return AniFlowResult.Error(
                 error = com.aniflow.core.common.result.ErrorType.DatabaseError(e.message ?: "Finalization failed"),
                 message = "Error during finalization: ${e.message}",
-                throwable = e
+                cause = e
             )
         }
     }

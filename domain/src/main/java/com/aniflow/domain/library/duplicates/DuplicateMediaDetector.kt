@@ -24,7 +24,7 @@ class DuplicateMediaDetector {
         val isSameFingerprint = fingerprintsMatch(fileA.fingerprint, fileB.fingerprint)
 
         // 1. Exact Duplicate: Same fingerprint or same exact size + display name
-        if (isSameFingerprint && isSameFingerprint != null || (isSameSize && fileA.displayName.equals(fileB.displayName, ignoreCase = true))) {
+        if (isSameFingerprint == true || (isSameSize && fileA.displayName.equals(fileB.displayName, ignoreCase = true))) {
             return DuplicateComparison(
                 fileA = fileA,
                 fileB = fileB,

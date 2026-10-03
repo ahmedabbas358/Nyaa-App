@@ -40,8 +40,12 @@ object RuleResolutionPolicy {
 
     private fun getScopeWeight(scope: RuleScope): Int = when (scope) {
         RuleScope.Global -> 1
-        RuleScope.Category -> 2
-        RuleScope.Anime -> 3
+        RuleScope.Provider -> 2
+        RuleScope.Collection -> 3
+        RuleScope.Anime -> 4
+        RuleScope.Season -> 5
+        RuleScope.Uploader -> 6
+        RuleScope.ReleaseGroup -> 7
     }
 }
 

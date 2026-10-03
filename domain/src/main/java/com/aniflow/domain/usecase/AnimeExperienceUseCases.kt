@@ -77,7 +77,7 @@ class GetEpisodeCandidatesUseCase(
 
         for (map in mappings) {
             val rel = releaseRepository.getById(map.releaseId) ?: continue
-            val isBatch = rel.isBatch || (rel.episodeRange != null && !rel.episodeRange.isSingleEpisode)
+            val isBatch = rel.isBatch || (rel.episodeRange != null && !rel.episodeRange.isSingle)
             val batchLabel = when {
                 rel.releaseType == com.aniflow.domain.model.aggregate.release.ReleaseType.CompleteSeries -> "Complete Series"
                 rel.releaseType == com.aniflow.domain.model.aggregate.release.ReleaseType.Season -> "Season Batch"
@@ -217,15 +217,15 @@ class CompareReleasesUseCase(
         val releases = releaseIds.mapNotNull { releaseRepository.getById(it) }
 
         val attributes = listOf(
-            ReleaseComparisonAttribute("Resolution", releases.map { it.technicalMetadata?.resolution?.displayName ?: "Unknown" }),
-            ReleaseComparisonAttribute("Video Codec", releases.map { it.technicalMetadata?.videoCodec?.displayName ?: "Unknown" }),
-            ReleaseComparisonAttribute("Source", releases.map { it.technicalMetadata?.source?.displayName ?: "Unknown" }),
-            ReleaseComparisonAttribute("Size", releases.map { it.availability?.size?.displayString ?: "Unknown" }),
-            ReleaseComparisonAttribute("Seeders", releases.map { it.availability?.seeders?.toString() ?: "0" }),
-            ReleaseComparisonAttribute("Release Group", releases.map { it.groupRef?.name ?: "No Group" }),
-            ReleaseComparisonAttribute("Uploader", releases.map { it.uploaderRef?.name ?: "Anonymous" }),
-            ReleaseComparisonAttribute("Audio", releases.map { it.technicalMetadata?.audioTracks?.joinToString { a -> a.codec?.displayName ?: "Audio" } ?: "Not detected" }),
-            ReleaseComparisonAttribute("Subtitles", releases.map { it.technicalMetadata?.subtitles?.joinToString { s -> s.language?.code ?: "Sub" } ?: "Not detected" })
+            ReleaseComparisonAttribute("Resolution", releases.map { it.technical.resolution?.displayName ?: "Unknown" }),
+            ReleaseComparisonAttribute("Video Codec", releases.map { it.technical.videoCodec?.displayName ?: "Unknown" }),
+            ReleaseComparisonAttribute("Source", releases.map { it.technical.source?.displayName ?: "Unknown" }),
+            ReleaseComparisonAttribute("Size", releases.map { it.availability.size?.formatted ?: "Unknown" }),
+            ReleaseComparisonAttribute("Seeders", releases.map { it.availability.seeders?.toString() ?: "0" }),
+            ReleaseComparisonAttribute("Release Group", releases.map { it.releaseGroup?.name ?: "No Group" }),
+            ReleaseComparisonAttribute("Uploader", releases.map { it.uploader?.name ?: "Anonymous" }),
+            ReleaseComparisonAttribute("Audio", releases.map { rel -> rel.technical.audioTracks.joinToString { a -> a.codec?.displayName ?: a.language?.code ?: "Audio" }.ifEmpty { "Not detected" } }),
+            ReleaseComparisonAttribute("Subtitles", releases.map { rel -> rel.technical.subtitles.joinToString { s -> s.language?.code ?: "Sub" }.ifEmpty { "Not detected" } })
         )
 
         return ReleaseComparisonResult(releases, attributes)

@@ -16,5 +16,6 @@ sealed interface ErrorType {
     data class PermissionError(val permission: String) : ErrorType
     data class DuplicateError(val identifier: String) : ErrorType
     data class DatabaseError(val message: String) : ErrorType
+    data class ValidationError(val reason: String) : ErrorType
     data class UnknownError(val exception: Throwable? = null) : ErrorType
 }

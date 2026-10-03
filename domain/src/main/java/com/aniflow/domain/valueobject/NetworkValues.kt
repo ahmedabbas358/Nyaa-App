@@ -99,7 +99,7 @@ value class InfoHash(val value: String) {
  */
 data class StorageTarget(
     val identifier: String,
-    val displayName: String
+    val displayName: String = identifier
 ) {
     init {
         require(identifier.isNotBlank()) { "StorageTarget identifier cannot be blank" }
