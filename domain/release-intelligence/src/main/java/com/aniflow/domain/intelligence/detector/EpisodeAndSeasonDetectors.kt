@@ -188,8 +188,8 @@ data class EpisodeDetection(
     val isRange: Boolean = false
 ) {
     val range: EpisodeRange? get() = when (coverage) {
-        is EpisodeCoverage.Range -> EpisodeRange(EpisodeNumber(coverage.from), EpisodeNumber(coverage.to))
-        is EpisodeCoverage.Single -> EpisodeRange(EpisodeNumber(coverage.episode), EpisodeNumber(coverage.episode))
+        is EpisodeCoverage.Range -> EpisodeRange.ofRange(coverage.from, coverage.to)
+        is EpisodeCoverage.Single -> EpisodeRange.ofSingle(coverage.episode)
         else -> null
     }
 }

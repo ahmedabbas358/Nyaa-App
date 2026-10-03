@@ -12,8 +12,8 @@ import com.aniflow.domain.identity.SeasonId
 import com.aniflow.domain.model.aggregate.release.ProviderRef
 import com.aniflow.domain.model.aggregate.release.Release
 import com.aniflow.domain.model.aggregate.release.ReleaseAvailability
-import com.aniflow.domain.identity.ReleaseGroup
-import com.aniflow.domain.identity.Uploader
+import com.aniflow.domain.model.aggregate.release.ReleaseGroup
+import com.aniflow.domain.model.aggregate.release.Uploader
 import com.aniflow.domain.model.aggregate.release.ReleaseType
 import com.aniflow.domain.valueobject.MediaSource
 import com.aniflow.domain.valueobject.ReleaseTechnicalMetadata

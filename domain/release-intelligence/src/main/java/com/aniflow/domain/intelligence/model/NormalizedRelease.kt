@@ -113,14 +113,8 @@ data class NormalizedRelease(
         get() = batchType != BatchType.SingleEpisode && batchType != BatchType.Unknown || episodes.isBatch
     val episodeList: List<Int> get() = episodes.allEpisodes
     val episodeRange: EpisodeRange? get() = when (episodes) {
-        is EpisodeCoverage.Range -> EpisodeRange(
-            start = com.aniflow.domain.valueobject.EpisodeNumber(episodes.from),
-            end = com.aniflow.domain.valueobject.EpisodeNumber(episodes.to)
-        )
-        is EpisodeCoverage.Single -> EpisodeRange(
-            start = com.aniflow.domain.valueobject.EpisodeNumber(episodes.episode),
-            end = com.aniflow.domain.valueobject.EpisodeNumber(episodes.episode)
-        )
+        is EpisodeCoverage.Range -> EpisodeRange.ofRange(episodes.from, episodes.to)
+        is EpisodeCoverage.Single -> EpisodeRange.ofSingle(episodes.episode)
         else -> null
     }
 

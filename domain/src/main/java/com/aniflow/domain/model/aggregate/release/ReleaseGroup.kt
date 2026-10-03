@@ -16,6 +16,13 @@ data class ReleaseGroup(
         require(name.isNotBlank()) { "ReleaseGroup name cannot be blank" }
         require(normalizedName.isNotBlank()) { "ReleaseGroup normalizedName cannot be blank" }
     }
+
+    constructor(name: String, provider: ProviderRef = ProviderRef(com.aniflow.domain.identity.ProviderId("unknown"), "Unknown")) : this(
+        id = ReleaseGroupId(name.lowercase().trim()),
+        provider = provider,
+        name = name,
+        normalizedName = name.lowercase().trim()
+    )
 }
 
 /**

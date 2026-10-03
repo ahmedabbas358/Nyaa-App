@@ -188,6 +188,8 @@ sealed interface MediaSource {
                 else -> Other(value)
             }
         }
+
+        val Web: MediaSource get() = WebRip
     }
 }
 
@@ -212,8 +214,8 @@ data class ReleaseTechnicalMetadata(
     val videoCodec: VideoCodec?,
     val audioTracks: List<AudioTrack> = emptyList(),
     val subtitles: List<SubtitleTrack> = emptyList(),
-    val source: MediaSource?,
-    val bitDepth: BitDepth?,
+    val source: MediaSource? = null,
+    val bitDepth: BitDepth? = null,
     val hdr: HdrType? = HdrType.None,
     val channels: AudioChannels? = null
 )

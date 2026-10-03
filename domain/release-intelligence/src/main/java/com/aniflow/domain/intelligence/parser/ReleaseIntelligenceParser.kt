@@ -205,7 +205,15 @@ class ReleaseIntelligenceParser(
 
         val episodeCoverage: EpisodeCoverage = when {
             episodeRes.value?.range != null && episodeRes.value.isRange -> {
-                EpisodeCoverage.Range(episodeRes.value.range!!.start.value, episodeRes.value.range!!.end.value)
+                val r = episodeRes.value.range
+                if (r is EpisodeRange.Range) {
+                    EpisodeCoverage.Range(r.start.major, r.end.major)
+                } else {
+                    val list = r?.toList() ?: emptyList()
+                    if (list.size >= 2) EpisodeCoverage.Range(list.first().major, list.last().major)
+                    else if (list.size == 1) EpisodeCoverage.Single(list.first().major)
+                    else EpisodeCoverage.Unknown
+                }
             }
             episodeRes.value?.singleEpisode != null -> {
                 EpisodeCoverage.Single(episodeRes.value.singleEpisode!!)

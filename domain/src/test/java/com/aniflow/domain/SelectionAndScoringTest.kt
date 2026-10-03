@@ -15,7 +15,7 @@ import com.aniflow.domain.model.aggregate.organization.RuleCondition
 import com.aniflow.domain.model.aggregate.release.ProviderRef
 import com.aniflow.domain.model.aggregate.release.Release
 import com.aniflow.domain.model.aggregate.release.ReleaseAvailability
-import com.aniflow.domain.model.aggregate.release.ReleaseTechnicalMetadata
+import com.aniflow.domain.valueobject.ReleaseTechnicalMetadata
 import com.aniflow.domain.model.aggregate.release.Uploader
 import com.aniflow.domain.service.SelectionService
 import com.aniflow.domain.valueobject.ByteSize
