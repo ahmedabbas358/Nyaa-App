@@ -62,7 +62,7 @@ data class NormalizedRelease(
         releaseId: ReleaseId,
         providerReleaseId: String? = null,
         source: ReleaseSource? = null,
-        technical: TechnicalMetadata = TechnicalMetadata(null, null),
+        technical: TechnicalMetadata = TechnicalMetadata(resolution = null, codec = null),
         episodeMatch: EpisodeMatch? = null,
         stats: ReleaseStats = ReleaseStats(),
         fileInfo: FileInfo = FileInfo(),

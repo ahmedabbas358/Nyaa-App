@@ -71,14 +71,15 @@ class AutomationRuntime(
                 explainabilityLog.add("Rule '${rule.name}' triggered by ${trigger::class.simpleName}")
 
                 // 1. Evaluate Rule AST conditions (reusing existing Step 11 evaluator)
-                if (rule.conditions != null) {
+                val ruleConditions = rule.conditions
+                if (ruleConditions != null) {
                     val candidateContext = CandidateReleaseContext(
                         title = releaseTitle,
                         animeTitle = release.animeCandidate ?: release.normalizedTitle,
                         resolution = release.technical.resolution ?: Resolution.R1080p,
                         codec = release.technical.codec ?: VideoCodec.HEVC
                     )
-                    val conditionsPassed = ruleTreeEvaluator.evaluateNode(rule.conditions, candidateContext)
+                    val conditionsPassed = ruleTreeEvaluator.evaluateNode(ruleConditions, candidateContext)
                     if (!conditionsPassed) {
                         explainabilityLog.add("Rule conditions evaluated to false for release '$releaseTitle'")
                         continue

@@ -31,7 +31,7 @@ import com.aniflow.domain.identity.SavedSearchId
 import com.aniflow.domain.identity.SearchScheduleId
 import com.aniflow.domain.intelligence.model.AudioTrack
 import com.aniflow.domain.intelligence.model.EpisodeMatch
-import com.aniflow.domain.intelligence.model.EpisodeRange
+import com.aniflow.domain.intelligence.model.EpisodeRangeMatch
 import com.aniflow.domain.intelligence.model.FileInfo
 import com.aniflow.domain.intelligence.model.MagnetLink
 import com.aniflow.domain.intelligence.model.NormalizedRelease
@@ -86,7 +86,7 @@ class AutomationTestSuite {
             episodeMatch = EpisodeMatch(
                 confidence = 0.95f,
                 detectedEpisode = 1.0,
-                range = EpisodeRange(1.0, 1.0)
+                range = EpisodeRangeMatch(1.0, 1.0)
             ),
             stats = ReleaseStats(seeders = seeders, leechers = leechers, downloads = 50),
             fileInfo = FileInfo(sizeBytes = sizeBytes, fileCount = 1),

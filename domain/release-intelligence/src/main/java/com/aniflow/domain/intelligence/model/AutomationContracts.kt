@@ -28,7 +28,7 @@ data class ReleaseSource(
     val pageUrl: String? = null
 )
 
-data class EpisodeRange(
+data class EpisodeRangeMatch(
     val from: Double,
     val to: Double
 )
@@ -36,7 +36,7 @@ data class EpisodeRange(
 data class EpisodeMatch(
     val confidence: Float = 1.0f,
     val detectedEpisode: Double = 1.0,
-    val range: EpisodeRange = EpisodeRange(1.0, 1.0)
+    val range: EpisodeRangeMatch = EpisodeRangeMatch(1.0, 1.0)
 )
 
 data class AudioTrack(

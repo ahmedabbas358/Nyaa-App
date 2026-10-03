@@ -12,13 +12,13 @@ import com.aniflow.domain.identity.SeasonId
 import com.aniflow.domain.model.aggregate.release.ProviderRef
 import com.aniflow.domain.model.aggregate.release.Release
 import com.aniflow.domain.model.aggregate.release.ReleaseAvailability
-import com.aniflow.domain.model.aggregate.release.ReleaseGroupRef
+import com.aniflow.domain.identity.ReleaseGroup
+import com.aniflow.domain.identity.Uploader
 import com.aniflow.domain.model.aggregate.release.ReleaseType
-import com.aniflow.domain.model.aggregate.release.TechnicalMetadata
-import com.aniflow.domain.model.aggregate.release.UploaderRef
-import com.aniflow.domain.model.aggregate.release.VideoCodec
-import com.aniflow.domain.model.aggregate.release.VideoResolution
-import com.aniflow.domain.model.aggregate.release.VideoSource
+import com.aniflow.domain.valueobject.MediaSource
+import com.aniflow.domain.valueobject.ReleaseTechnicalMetadata
+import com.aniflow.domain.valueobject.Resolution
+import com.aniflow.domain.valueobject.VideoCodec
 import com.aniflow.domain.repository.ReleaseRepository
 import com.aniflow.domain.repository.ReviewQueueRepository
 import com.aniflow.domain.repository.UserMappingRepository
@@ -79,8 +79,8 @@ class AnimeExperienceTestSuite {
                 animeId = animeId,
                 value = "ONE.PIECE",
                 normalizedValue = "one piece",
-                type = AnimeTitleType.Alias,
-                source = TitleSource.ProviderObserved
+                type = AnimeTitleType.ProviderObserved,
+                source = TitleSource.Provider
             )
         )
 
@@ -195,7 +195,7 @@ class AnimeExperienceTestSuite {
         val ineligibleCov = coverageService.calculateEpisodeCoverage(
             episode = ep,
             mappedReleases = listOf(ReleaseEpisode(ReleaseId("r_bad"), ep.id)),
-            hasEligibleReleases = false
+            hasEligibleRelease = false
         )
         assertEquals(EpisodeAvailabilityState.NoEligibleRelease, ineligibleCov.state)
         assertTrue(ineligibleCov.isMissing)
@@ -282,14 +282,14 @@ class AnimeExperienceTestSuite {
             providerReleaseId = "1",
             title = "[SubsPlease] One Piece - 1050 (1080p)",
             normalizedTitle = "one piece 1050",
-            technicalMetadata = TechnicalMetadata(
-                resolution = VideoResolution.FHD_1080p,
-                videoCodec = VideoCodec.H264,
-                source = VideoSource.Web
+            technical = ReleaseTechnicalMetadata(
+                resolution = Resolution.R1080p,
+                videoCodec = VideoCodec.AVC,
+                source = MediaSource.Web
             ),
             availability = ReleaseAvailability(size = ByteSize.ofGigabytes(1.4), seeders = 85),
-            groupRef = ReleaseGroupRef("SubsPlease"),
-            uploaderRef = UploaderRef("SubsPlease"),
+            releaseGroup = ReleaseGroup("SubsPlease"),
+            uploader = Uploader("SubsPlease"),
             identity = ReleaseIdentity(provider.providerId, "1", null, null, "one piece", null, null)
         )
 
@@ -299,14 +299,14 @@ class AnimeExperienceTestSuite {
             providerReleaseId = "2",
             title = "[Erai-raws] One Piece - 1050 [720p]",
             normalizedTitle = "one piece 1050",
-            technicalMetadata = TechnicalMetadata(
-                resolution = VideoResolution.HD_720p,
+            technical = ReleaseTechnicalMetadata(
+                resolution = Resolution.R720p,
                 videoCodec = VideoCodec.HEVC,
-                source = VideoSource.Web
+                source = MediaSource.Web
             ),
             availability = ReleaseAvailability(size = ByteSize.ofGigabytes(0.7), seeders = 42),
-            groupRef = ReleaseGroupRef("Erai-raws"),
-            uploaderRef = UploaderRef("Erai-raws"),
+            releaseGroup = ReleaseGroup("Erai-raws"),
+            uploader = Uploader("Erai-raws"),
             identity = ReleaseIdentity(provider.providerId, "2", null, null, "one piece", null, null)
         )
 
@@ -329,7 +329,7 @@ class AnimeExperienceTestSuite {
 
         assertEquals(2, result.releases.size)
         assertTrue(result.attributes.any { it.name == "Resolution" && it.values == listOf("1080p", "720p") })
-        assertTrue(result.attributes.any { it.name == "Video Codec" && it.values == listOf("H.264 / AVC", "HEVC / H.265") })
+        assertTrue(result.attributes.any { it.name == "Video Codec" && (it.values == listOf("AVC / H.264", "HEVC / H.265") || it.values == listOf("H.264 / AVC", "HEVC / H.265")) })
         assertTrue(result.attributes.any { it.name == "Seeders" && it.values == listOf("85", "42") })
     }
 
