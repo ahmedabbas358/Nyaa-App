@@ -301,18 +301,19 @@ fun StorageLargeFilesTab(files: List<StorageFileSummary>) {
                     shape = AppShapes.medium,
                     colors = CardDefaults.cardColors(containerColor = DarkSurface)
                 ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(AppSpacing.md),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(file.fileName, style = AppTypography.bodyMedium, color = TextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(file.animeTitle ?: "Unidentified", style = AppTypography.bodySmall, color = TextMuted)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(AppSpacing.md),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(file.fileName, style = AppTypography.bodyMedium, color = TextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(file.animeTitle ?: "Unidentified", style = AppTypography.bodySmall, color = TextMuted)
+                        }
+                        Text(formatBytes(file.sizeBytes), style = AppTypography.labelLarge, color = PrimaryIndigo)
                     }
-                    Text(formatBytes(file.sizeBytes), style = AppTypography.labelLarge, color = PrimaryIndigo)
                 }
             }
         }
