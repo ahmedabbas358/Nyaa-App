@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - 2026-10-02
+## [1.0.0] - 2026-10-03
 
 ### Added
 - **Core Architecture**: Full Clean Architecture multi-module foundation across `:domain`, `:core:*`, `:provider:*`, `:download:*`, and `:feature:*`.
@@ -20,3 +20,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Full Localization**: English and Arabic (RTL) support with bidirectional Unicode formatting isolation.
 - **Production Hardening**: Path traversal prevention, log redactor for secrets, circuit breaker for network reliability, and crash recovery.
 - **Release Engineering**: Automated GitHub Actions CI/CD workflows, release signing configuration, and artifact validation scripts.
+- **Zero Fake Data & Truthful Integration**: Completely eliminated synthetic anime entries, mock uploaders, static storage/progress figures, and dead-end buttons. Built pure empty state recovery (`AniEmptyState`) throughout the UI.
+
