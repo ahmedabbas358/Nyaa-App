@@ -1,5 +1,7 @@
 package com.aniflow.core.ui.components
 
+import com.aniflow.domain.state.DownloadState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable

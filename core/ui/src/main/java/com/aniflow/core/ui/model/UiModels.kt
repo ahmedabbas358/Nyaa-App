@@ -148,14 +148,14 @@ data class UiError(
  */
 fun com.aniflow.domain.model.aggregate.release.Release.toUiModel(): ReleaseUiModel {
     val magnet = when (val src = source) {
-        is com.aniflow.domain.model.aggregate.release.ReleaseSource.Torrent -> src.magnetUri?.value
+        is com.aniflow.domain.model.aggregate.release.ReleaseSource.Torrent -> src.magnetUri?.rawValue
         else -> null
     }
 
-    val resTag = technical.resolution?.standardTag ?: "1080p"
-    val codecTag = technical.videoCodec?.standardTag ?: "HEVC"
-    val audioTag = technical.audioTracks.firstOrNull()?.language ?: "Japanese"
-    val subTag = technical.subtitleTracks.firstOrNull()?.language ?: "English"
+    val resTag = technical.resolution?.displayName ?: "1080p"
+    val codecTag = technical.videoCodec?.displayName ?: "HEVC"
+    val audioTag = technical.audioTracks.firstOrNull()?.language?.displayName ?: "Japanese"
+    val subTag = technical.subtitles.firstOrNull()?.language?.displayName ?: "English"
 
     val badgesList = mutableListOf<UiBadge>()
     badgesList.add(UiBadge(resTag, AppSemanticColors.Accent.copy(alpha = 0.15f), AppSemanticColors.Accent))
@@ -166,12 +166,22 @@ fun com.aniflow.domain.model.aggregate.release.Release.toUiModel(): ReleaseUiMod
         badgesList.add(UiBadge("Batch", AppSemanticColors.Warning.copy(alpha = 0.15f), AppSemanticColors.Warning))
     }
 
+    val seasonNum = when (val s = seasonHint) {
+        is com.aniflow.domain.valueobject.SeasonNumber.Main -> s.number
+        is com.aniflow.domain.valueobject.SeasonNumber.Specials -> 0
+        else -> null
+    }
+
+    val epNum = episodeRange?.toList()?.firstOrNull()?.let {
+        if (it.minor > 0) it.major.toDouble() + (it.minor.toDouble() / 10.0) else it.major.toDouble()
+    }
+
     return ReleaseUiModel(
         id = id.value,
         title = title,
-        animeTitle = animeIdentity?.canonicalTitle ?: title,
-        seasonNumber = seasonHint?.value,
-        episodeNumber = episodeRange?.firstEpisode?.value,
+        animeTitle = animeIdentity?.rawTitle ?: title,
+        seasonNumber = seasonNum,
+        episodeNumber = epNum,
         uploader = uploader?.name ?: "Unknown",
         releaseGroup = releaseGroup?.name,
         resolution = resTag,
@@ -182,7 +192,7 @@ fun com.aniflow.domain.model.aggregate.release.Release.toUiModel(): ReleaseUiMod
         seeders = availability.seeders ?: 0,
         leechers = availability.leechers ?: 0,
         publishedDateFormatted = publishedAt?.toString()?.take(10) ?: "",
-        isTrusted = uploader?.isTrusted ?: false,
+        isTrusted = uploader != null,
         badges = badgesList,
         magnetUrl = magnet
     )

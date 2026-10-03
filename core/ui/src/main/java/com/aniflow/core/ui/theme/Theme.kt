@@ -82,6 +82,17 @@ fun AniFlowTheme(
     }
 }
 
+@Composable
+fun AniFlowTheme(
+    darkTheme: Boolean,
+    content: @Composable () -> Unit
+) {
+    AniFlowTheme(
+        themeMode = if (darkTheme) ThemeMode.Dark else ThemeMode.Light,
+        content = content
+    )
+}
+
 /**
  * Global accessor for AniFlow design system tokens.
  */
