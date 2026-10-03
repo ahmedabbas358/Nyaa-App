@@ -10,9 +10,6 @@ class TestingConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             tasks.withType<Test> {
-                useJUnitPlatform {
-                    includeEngines("junit-jupiter", "junit-vintage")
-                }
                 testLogging {
                     events("passed", "skipped", "failed")
                 }

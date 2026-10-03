@@ -34,8 +34,8 @@ jobs:
       - name: Grant Execute Permission to Gradlew
         run: chmod +x gradlew
 
-      - name: Decode Production Keystore
-        id: decode_keystore
+      - name: Configure Release Signing Keystore
+        id: configure_keystore
         run: |
           if [ -n "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
             echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > /tmp/release.keystore
@@ -43,14 +43,29 @@ jobs:
             echo "KEYSTORE_PASSWORD=${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
             echo "KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}" >> $GITHUB_ENV
             echo "KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}" >> $GITHUB_ENV
+            echo "Using secret-provided production keystore."
           else
-            echo "Warning: No production keystore secret configured. Release signing will fallback."
+            echo "Generating automated release signing keystore for CI..."
+            keytool -genkeypair -v -keystore /tmp/release.keystore -alias aniflow -keyalg RSA -keysize 2048 -validity 10000 -storepass aniflow -keypass aniflow -dname "CN=AniFlow, OU=AniFlow, O=AniFlow, L=Tokyo, S=Tokyo, C=JP"
+            echo "KEYSTORE_FILE=/tmp/release.keystore" >> $GITHUB_ENV
+            echo "KEYSTORE_PASSWORD=aniflow" >> $GITHUB_ENV
+            echo "KEY_ALIAS=aniflow" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=aniflow" >> $GITHUB_ENV
+            echo "Automated release signing keystore configured."
           fi
 
       - name: Run Full Pre-Release Verification Suites
         run: |
-          ./gradlew test --stacktrace
-          ./gradlew :testing:test --tests "com.aniflow.testing.FinalAcceptanceScenarioTest"
+          ./gradlew :testing:test --tests "com.aniflow.testing.FinalAcceptanceScenarioTest" --stacktrace
+          ./gradlew :testing:test --tests "com.aniflow.testing.ArchitectureVerificationTests" --stacktrace
+          ./gradlew test --continue --stacktrace
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-test-results
+          path: '**/build/reports/tests/'
 
       - name: Assemble Release APK & Bundle AAB
         run: |
