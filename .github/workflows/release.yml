@@ -81,7 +81,7 @@ jobs:
 
       - name: Assemble Release APK & Bundle AAB
         run: |
-          ./gradlew :app:assembleRelease :app:bundleRelease --stacktrace --info > gradle-assemble.log 2>&1 || STATUS=$?
+          ./gradlew :app:assembleRelease :app:bundleRelease --continue --stacktrace --info > gradle-assemble.log 2>&1 || STATUS=$?
           if [ -n "$STATUS" ] && [ "$STATUS" -ne 0 ]; then
             echo "=== ASSEMBLE RELEASE FAILURE (TAIL 300) ==="
             tail -n 300 gradle-assemble.log

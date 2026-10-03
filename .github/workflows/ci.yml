@@ -54,7 +54,7 @@ jobs:
 
       - name: Build Debug Artifact
         run: |
-          ./gradlew :app:assembleDebug --stacktrace --info > gradle-ci-assemble.log 2>&1 || STATUS=$?
+          ./gradlew :app:assembleDebug --continue --stacktrace --info > gradle-ci-assemble.log 2>&1 || STATUS=$?
           if [ -n "$STATUS" ] && [ "$STATUS" -ne 0 ]; then
             echo "=== CI ASSEMBLE DEBUG FAILURE (TAIL 300) ==="
             tail -n 300 gradle-ci-assemble.log

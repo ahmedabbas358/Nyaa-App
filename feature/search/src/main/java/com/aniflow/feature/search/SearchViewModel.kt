@@ -28,7 +28,6 @@ import com.aniflow.domain.usecase.SearchReleasesCoordinatorUseCase
 import com.aniflow.domain.usecase.SearchReleasesUseCase
 import com.aniflow.domain.valueobject.SearchFilters
 import com.aniflow.feature.search.components.AdvancedFilterSelection
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,15 +36,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.util.UUID
-import javax.inject.Inject
 
 /**
  * Universal SearchViewModel.
  * Connected directly to real SearchUseCases, ProviderSearchCoordinator, and SearchHistoryManager.
  * Zero hardcoded mock results, zero fake suggestions, and zero fake history.
  */
-@HiltViewModel
-class SearchViewModel @Inject constructor(
+class SearchViewModel(
     private val searchReleasesUseCase: SearchReleasesUseCase? = null,
     private val searchCoordinatorUseCase: SearchReleasesCoordinatorUseCase? = null,
     private val coordinator: SearchCoordinator? = null,

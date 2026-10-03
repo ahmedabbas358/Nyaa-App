@@ -154,7 +154,7 @@ class HomeViewModel(
         val downloadFlow = downloadRepository?.observeTasks()
             ?: MutableStateFlow(emptyList())
 
-        val releasesFlow = releaseRepository?.search(SearchQuery.empty())
+        val releasesFlow = releaseRepository?.search(SearchQuery.of(""))
             ?: MutableStateFlow(null)
 
         combine(continueFlow, downloadFlow, releasesFlow) { continueList, tasks, releasesResult ->
@@ -288,7 +288,7 @@ fun HomeScreen(
             state.error != null -> {
                 AniErrorState(
                     title = stringResource(R.string.state_error),
-                    message = state.error.orEmpty(),
+                    reason = state.error.orEmpty(),
                     onRetry = viewModel::onRefresh,
                     modifier = Modifier
                         .fillMaxSize()
@@ -329,8 +329,8 @@ private fun HomeDashboardContent(
         AniEmptyState(
             title = stringResource(R.string.state_empty),
             message = stringResource(R.string.downloads_empty_desc),
-            actionLabel = stringResource(R.string.search_action),
-            onAction = onNavigateToSearch,
+            actionText = stringResource(R.string.search_action),
+            onActionClick = onNavigateToSearch,
             icon = Icons.Default.Search,
             modifier = Modifier
                 .fillMaxSize()
@@ -424,7 +424,15 @@ private fun HomeDashboardContent(
             ) { release ->
                 Box(modifier = Modifier.padding(horizontal = AppSpacing.md)) {
                     AniReleaseRow(
-                        release = release,
+                        title = release.title,
+                        resolution = release.resolution,
+                        codec = release.codec,
+                        source = release.releaseGroup ?: "",
+                        sizeFormatted = release.sizeFormatted,
+                        seeds = release.seeders,
+                        peers = release.leechers,
+                        uploader = release.uploader,
+                        isPreferred = release.isPreferred,
                         onClick = { onReleaseClick(release.id) },
                         onDownloadClick = { onReleaseClick(release.id) }
                     )

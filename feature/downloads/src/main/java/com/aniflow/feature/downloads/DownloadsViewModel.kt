@@ -21,13 +21,11 @@ import com.aniflow.feature.downloads.model.DownloadSortOption
 import com.aniflow.feature.downloads.model.DownloadStateUi
 import com.aniflow.feature.downloads.model.DownloadStatisticsUiModel
 import com.aniflow.feature.downloads.model.DownloadTaskUiModel
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
-import javax.inject.Inject
 
 data class DownloadsUiState(
     val rawTasks: List<DownloadTaskUiModel> = emptyList(),
@@ -54,8 +52,7 @@ data class DownloadsUiState(
  * pause, resume, and cancellation through domain use cases.
  * Zero hardcoded mock tasks.
  */
-@HiltViewModel
-class DownloadsViewModel @Inject constructor(
+class DownloadsViewModel(
     private val downloadRepository: DownloadRepository,
     private val pauseDownloadUseCase: PauseDownloadUseCase,
     private val resumeDownloadUseCase: ResumeDownloadUseCase,

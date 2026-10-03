@@ -318,7 +318,7 @@ private fun StepReady() {
         verticalArrangement = Arrangement.Center,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = AppSemanticColors.success, modifier = Modifier.size(72.dp))
+        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = AppSemanticColors.Success, modifier = Modifier.size(72.dp))
         Spacer(modifier = Modifier.height(AppSpacing.md))
         Text("You're All Set!", style = AppTypography.displayLarge, color = TextPrimary)
         Spacer(modifier = Modifier.height(AppSpacing.sm))
@@ -340,7 +340,7 @@ private fun SelectionOptionCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = if (isSelected) DarkSurface else DarkBackground),
-        shape = AppShapes.card,
+        shape = AppShapes.medium,
         border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) PrimaryIndigo else DarkCardBorder),
         modifier = Modifier
             .fillMaxWidth()
