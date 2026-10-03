@@ -1,7 +1,5 @@
 package com.aniflow.core.ui.components
 
-import com.aniflow.domain.state.DownloadState
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,41 +16,24 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.HourglassEmpty
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aniflow.core.ui.model.DownloadUiModel
+import com.aniflow.core.ui.model.ReleaseUiModel
+import com.aniflow.core.ui.model.toUiModel
 import com.aniflow.core.ui.theme.Badge1080p
-import com.aniflow.core.ui.theme.Badge4K
-import com.aniflow.core.ui.theme.Badge720p
-import com.aniflow.core.ui.theme.BadgeHevc
-import com.aniflow.core.ui.theme.BadgeTrusted
 import com.aniflow.core.ui.theme.DarkCardBorder
 import com.aniflow.core.ui.theme.DarkSurface
 import com.aniflow.core.ui.theme.ErrorRose
@@ -62,10 +43,21 @@ import com.aniflow.core.ui.theme.SuccessGreen
 import com.aniflow.core.ui.theme.TextMuted
 import com.aniflow.core.ui.theme.TextSecondary
 import com.aniflow.core.ui.theme.WarningAmber
-import com.aniflow.domain.entity.DownloadTask
-import com.aniflow.domain.entity.Release
-import com.aniflow.domain.enums.DownloadState
-import com.aniflow.domain.enums.EpisodeStatus
+import com.aniflow.domain.model.aggregate.release.Release
+
+/**
+ * Episode status enum for presentation layer badges.
+ */
+enum class EpisodeStatus {
+    Downloaded,
+    Downloading,
+    Queued,
+    Missing,
+    Failed,
+    Available,
+    Selected,
+    Duplicate
+}
 
 @Composable
 fun QualityBadge(
@@ -122,7 +114,7 @@ fun StatusBadge(
 }
 
 /**
- * Release Card conforming to Section 63 (Search Result UI).
+ * Domain-aggregate ReleaseCard overload delegating directly to presentation ReleaseCard.
  */
 @Composable
 fun ReleaseCard(
@@ -133,249 +125,34 @@ fun ReleaseCard(
     isSelected: Boolean = false,
     onSelectToggle: ((Boolean) -> Unit)? = null
 ) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
-        shape = RoundedCornerShape(10.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            width = if (isSelected) 2.dp else 1.dp,
-            color = if (isSelected) PrimaryIndigo else DarkCardBorder
-        ),
+    ReleaseCard(
+        release = release.toUiModel(),
+        isSelected = isSelected,
+        isSelectionMode = onSelectToggle != null,
+        onSelectToggle = { onSelectToggle?.invoke(!isSelected) },
+        onClick = onClick,
+        onDownloadClick = onDownloadClick,
         modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            // Title & Trust Badge
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (release.trusted) {
-                    Icon(
-                        imageVector = Icons.Default.Verified,
-                        contentDescription = "Trusted",
-                        tint = BadgeTrusted,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                }
-                Text(
-                    text = release.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Metadata Badges (1080p, HEVC, Dual Audio, Group)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                release.resolution?.let { res ->
-                    val color = when (res.height) {
-                        2160 -> Badge4K
-                        1080 -> Badge1080p
-                        else -> Badge720p
-                    }
-                    QualityBadge(text = res.standardTag, color = color)
-                }
-
-                release.codec?.let { cdc ->
-                    QualityBadge(text = cdc.standardTag, color = BadgeHevc)
-                }
-
-                if (release.audio?.isDualAudio == true) {
-                    QualityBadge(text = "Dual Audio", color = InfoBlue)
-                }
-
-                release.releaseGroup?.let { grp ->
-                    Text(
-                        text = grp,
-                        color = TextSecondary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Bottom stats & Action
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Size, Seeds, Leeches
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = release.size.formatted,
-                        color = TextSecondary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowUpward,
-                            contentDescription = "Seeders",
-                            tint = SuccessGreen,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(
-                            text = "${release.seeders}",
-                            color = SuccessGreen,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowDownward,
-                            contentDescription = "Leechers",
-                            tint = ErrorRose,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(
-                            text = "${release.leechers}",
-                            color = ErrorRose,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                // Download Button
-                IconButton(
-                    onClick = onDownloadClick,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .background(PrimaryIndigo, CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Download,
-                        contentDescription = "Download",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-        }
-    }
+    )
 }
 
 /**
- * Download Item adhering to Section 54 (Download Item).
+ * Download item adapter delegating directly to DownloadRow.
  */
 @Composable
 fun DownloadItem(
-    task: DownloadTask,
-    onPauseResume: () -> Unit,
-    onCancel: () -> Unit,
+    download: DownloadUiModel,
+    onPauseResume: () -> Unit = {},
+    onCancel: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
-        shape = RoundedCornerShape(10.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            // Title & Status
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = task.release.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                StatusBadge(
-                    status = when (task.state) {
-                        DownloadState.Downloading -> EpisodeStatus.Downloading
-                        DownloadState.Completed -> EpisodeStatus.Downloaded
-                        DownloadState.Queued -> EpisodeStatus.Queued
-                        DownloadState.Failed -> EpisodeStatus.Failed
-                        else -> EpisodeStatus.Available
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Progress Bar
-            LinearProgressIndicator(
-                progress = { task.progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp)),
-                color = when (task.state) {
-                    DownloadState.Completed -> SuccessGreen
-                    DownloadState.Failed -> ErrorRose
-                    DownloadState.Paused -> WarningAmber
-                    else -> PrimaryIndigo
-                },
-                trackColor = Color(0xFF334155)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Stats row (Downloaded/Total, Speed, ETA)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                val downloadedFormatted = com.aniflow.domain.valueobject.FileSize.fromBytes(task.downloadedBytes).formatted
-                val totalFormatted = com.aniflow.domain.valueobject.FileSize.fromBytes(task.totalBytes).formatted
-                val speedFormatted = "${com.aniflow.domain.valueobject.FileSize.fromBytes(task.speedBps).formatted}/s"
-
-                Text(
-                    text = "$downloadedFormatted / $totalFormatted • $speedFormatted",
-                    color = TextSecondary,
-                    fontSize = 12.sp
-                )
-
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(
-                        onClick = onPauseResume,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (task.state == DownloadState.Downloading) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (task.state == DownloadState.Downloading) "Pause" else "Resume",
-                            tint = Color.White
-                        )
-                    }
-
-                    IconButton(
-                        onClick = onCancel,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Cancel",
-                            tint = ErrorRose
-                        )
-                    }
-                }
-            }
-        }
-    }
+    DownloadRow(
+        download = download,
+        onClick = {},
+        onPauseResumeToggle = onPauseResume,
+        onMoreClick = onCancel,
+        modifier = modifier
+    )
 }
 
 /**

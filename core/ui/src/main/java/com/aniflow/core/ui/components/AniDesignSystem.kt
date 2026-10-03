@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -77,6 +78,7 @@ import com.aniflow.core.ui.theme.AppTypography
 import com.aniflow.core.ui.theme.DarkBackground
 import com.aniflow.core.ui.theme.DarkCardBorder
 import com.aniflow.core.ui.theme.DarkSurface
+import com.aniflow.core.ui.theme.DarkSurfaceVariant
 import com.aniflow.core.ui.theme.PrimaryIndigo
 import com.aniflow.core.ui.theme.TextMuted
 import com.aniflow.core.ui.theme.TextPrimary
