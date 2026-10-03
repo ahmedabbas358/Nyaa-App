@@ -103,16 +103,16 @@ class FinalAcceptanceScenarioTest {
     fun executeCompleteAcceptanceScenario() = runBlocking {
         // Step 1 & 2: Search Anime & Return Nyaa Provider Result
         val rawNyaaRelease = ProviderRelease(
-            id = "nyaa-101",
-            providerId = ProviderId("nyaa"),
+            providerReleaseId = "101",
             title = "[SubsPlease] One Piece - 1089 (1080p) [A1B2C3D4].mkv",
             detailsUrl = com.aniflow.domain.valueobject.UrlValue.parse("https://nyaa.si/view/101"),
-            downloadUrl = com.aniflow.domain.valueobject.UrlValue.parse("https://nyaa.si/download/101.torrent"),
-            magnetUrl = com.aniflow.domain.valueobject.UrlValue.parse("magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=One+Piece+-+1089"),
+            torrentUrl = com.aniflow.domain.valueobject.UrlValue.parse("https://nyaa.si/download/101.torrent"),
+            magnetUri = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=One+Piece+-+1089",
             sizeBytes = 1_450_000_000L,
             seeders = 250,
             leechers = 15,
-            publishedDate = Instant.now(),
+            downloads = 1000L,
+            publishedAt = Instant.now(),
             category = ProviderCategory.ANIME_ENGLISH
         )
 

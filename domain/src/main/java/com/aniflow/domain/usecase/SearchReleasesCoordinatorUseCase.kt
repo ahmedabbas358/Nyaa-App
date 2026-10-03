@@ -108,19 +108,19 @@ class SearchReleasesCoordinatorUseCase(
     private fun mapToDomainRelease(pr: ProviderRelease): Release {
         val parsed = releaseParser.parse(pr.title)
         val cleanTitle = ReleaseNormalizationService.normalizeTitle(pr.title)
-        val animeIdentity = ReleaseNormalizationService.createAnimeIdentity(parsed.canonicalTitle)
+        val animeIdentity = ReleaseNormalizationService.createAnimeIdentity(parsed.animeTitle)
 
         val infoHash = pr.magnetUri?.let { uri ->
             val match = Regex("""xt=urn:btih:([a-fA-F0-9]{40}|[a-zA-Z2-7]{32})""", RegexOption.IGNORE_CASE).find(uri)
             match?.groupValues?.get(1)?.let { InfoHash(it) }
-        }
+        } ?: InfoHash("0000000000000000000000000000000000000000")
 
         val source = when {
             pr.magnetUri != null || pr.torrentUrl != null -> {
                 ReleaseSource.Torrent(
-                    infoHash = infoHash ?: InfoHash("0000000000000000000000000000000000000000"),
-                    torrentUrl = pr.torrentUrl as? UrlValue.TorrentUrl,
-                    magnetUri = pr.magnetUri?.let { UrlValue.MagnetUri.parse(it).getOrNull() }
+                    infoHash = infoHash,
+                    torrentUrl = pr.torrentUrl?.let { UrlValue.TorrentUrl(it.rawValue) },
+                    magnetUri = pr.magnetUri?.let { UrlValue.MagnetUri(it) }
                 )
             }
             else -> ReleaseSource.Unknown
@@ -129,15 +129,18 @@ class SearchReleasesCoordinatorUseCase(
         val uploader = pr.uploader?.let {
             Uploader(
                 id = UploaderId(it.displayName),
+                provider = ProviderRef.NYAA,
                 name = it.displayName,
-                isTrusted = pr.isTrusted
+                normalizedName = it.displayName.lowercase()
             )
         }
 
-        val group = (parsed.releaseGroup ?: pr.releaseGroup?.displayName)?.let {
+        val group = (parsed.releaseGroup ?: pr.releaseGroup)?.let {
             ReleaseGroup(
                 id = ReleaseGroupId(it),
-                name = it
+                provider = ProviderRef.NYAA,
+                name = it,
+                normalizedName = it.lowercase()
             )
         }
 
@@ -145,36 +148,33 @@ class SearchReleasesCoordinatorUseCase(
 
         return Release(
             id = releaseId,
-            provider = ProviderRef(
-                providerId = ProviderId("nyaa"),
-                providerName = "Nyaa.si",
-                externalId = pr.providerReleaseId ?: releaseId.value,
-                detailsUrl = pr.detailsUrl
-            ),
+            provider = ProviderRef.NYAA,
             providerReleaseId = pr.providerReleaseId,
             title = pr.title,
             normalizedTitle = if (cleanTitle.isNotBlank()) cleanTitle else pr.title,
             releaseType = parsed.releaseType,
             animeIdentity = animeIdentity,
-            seasonHint = parsed.season,
+            seasonHint = parsed.seasonHint,
             episodeRange = parsed.episodeRange,
             uploader = uploader,
             releaseGroup = group,
-            technical = parsed.technicalMetadata,
+            technical = parsed.technical,
             availability = ReleaseAvailability(
-                size = pr.sizeBytes?.let { ByteSize.fromBytes(it) },
+                size = pr.sizeBytes?.let { ByteSize.ofBytes(it) },
                 seeders = pr.seeders,
                 leechers = pr.leechers,
-                completedDownloads = pr.downloads?.toLong()
+                completedDownloads = pr.downloads
             ),
             source = source,
             publishedAt = pr.publishedAt ?: Instant.now(),
             identity = ReleaseIdentity(
+                providerId = ProviderId("nyaa"),
+                providerReleaseId = pr.providerReleaseId,
                 infoHash = infoHash,
-                canonicalTitle = cleanTitle,
-                episodeNumber = parsed.episode?.number?.toDouble(),
-                resolution = parsed.technicalMetadata.resolution?.name,
-                codec = parsed.technicalMetadata.codec?.name
+                canonicalSourceUrl = pr.detailsUrl?.rawValue,
+                normalizedTitle = if (cleanTitle.isNotBlank()) cleanTitle else pr.title,
+                episodeRange = parsed.episodeRange,
+                technicalSignature = parsed.technical.resolution?.displayName
             ),
             parseInfo = parsed.parseInfo
         )
