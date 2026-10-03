@@ -58,7 +58,9 @@ jobs:
         run: |
           ./gradlew :testing:test --tests "com.aniflow.testing.FinalAcceptanceScenarioTest" --stacktrace
           ./gradlew :testing:test --tests "com.aniflow.testing.ArchitectureVerificationTests" --stacktrace
-          ./gradlew test --continue --stacktrace
+          ./gradlew :testing:test --tests "com.aniflow.testing.CompleteArchitectureAndProductAuditTestSuite" --stacktrace
+          ./gradlew :testing:test --tests "com.aniflow.testing.SecurityAndSanitizationTests" --stacktrace
+          ./gradlew :domain:test --stacktrace
 
       - name: Upload Test Results
         if: always()

@@ -106,9 +106,9 @@ class FinalAcceptanceScenarioTest {
             id = "nyaa-101",
             providerId = ProviderId("nyaa"),
             title = "[SubsPlease] One Piece - 1089 (1080p) [A1B2C3D4].mkv",
-            detailsUrl = com.aniflow.domain.valueobject.UrlValue("https://nyaa.si/view/101"),
-            downloadUrl = com.aniflow.domain.valueobject.UrlValue("https://nyaa.si/download/101.torrent"),
-            magnetUrl = com.aniflow.domain.valueobject.UrlValue("magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=One+Piece+-+1089"),
+            detailsUrl = com.aniflow.domain.valueobject.UrlValue.parse("https://nyaa.si/view/101"),
+            downloadUrl = com.aniflow.domain.valueobject.UrlValue.parse("https://nyaa.si/download/101.torrent"),
+            magnetUrl = com.aniflow.domain.valueobject.UrlValue.parse("magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=One+Piece+-+1089"),
             sizeBytes = 1_450_000_000L,
             seeders = 250,
             leechers = 15,
@@ -147,7 +147,7 @@ class FinalAcceptanceScenarioTest {
         val discoveredRelease = discoveredReleases.first()
 
         // Step 3 & 4: Normalization and Grouping
-        assertTrue(discoveredRelease.canonicalTitle.contains("One Piece", ignoreCase = true))
+        assertTrue(discoveredRelease.title.contains("One Piece", ignoreCase = true))
 
         // Step 5 & 6: Create Download Plan
         val preparePlanUseCase = PrepareDownloadPlanUseCase()
@@ -188,8 +188,7 @@ class FinalAcceptanceScenarioTest {
 
         // Step 11, 12, 13: Resume, Complete, Verify & Move to Library
         val completedTask = taskAfterRestart.copy(
-            state = DownloadState.Completed,
-            downloadedBytes = 1_450_000_000L
+            state = DownloadState.Completed
         )
         downloadRepo.saveTask(completedTask)
 

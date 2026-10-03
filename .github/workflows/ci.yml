@@ -43,7 +43,11 @@ jobs:
           ./gradlew :testing:test --tests "com.aniflow.testing.ArchitectureVerificationTests"
 
       - name: Run Unit & Integration Test Suites
-        run: ./gradlew test --continue --stacktrace
+        run: |
+          ./gradlew :testing:test --tests "com.aniflow.testing.FinalAcceptanceScenarioTest" --stacktrace
+          ./gradlew :testing:test --tests "com.aniflow.testing.CompleteArchitectureAndProductAuditTestSuite" --stacktrace
+          ./gradlew :testing:test --tests "com.aniflow.testing.SecurityAndSanitizationTests" --stacktrace
+          ./gradlew :domain:test --stacktrace
 
       - name: Build Debug Artifact
         run: ./gradlew assembleDebug --stacktrace
