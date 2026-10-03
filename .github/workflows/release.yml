@@ -60,9 +60,12 @@ jobs:
         run: |
           ./gradlew :testing:test :domain:test --stacktrace --info > gradle-build.log 2>&1 || STATUS=$?
           if [ -n "$STATUS" ] && [ "$STATUS" -ne 0 ]; then
-            echo "=== GRADLE FAILURE LOG START ==="
-            cat gradle-build.log
-            echo "=== GRADLE FAILURE LOG END ==="
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git checkout -B ci-diagnostics
+            git add gradle-build.log -f
+            git commit -m "ci(diagnostics): dump gradle-build.log"
+            git push origin ci-diagnostics --force || true
             exit $STATUS
           fi
 
