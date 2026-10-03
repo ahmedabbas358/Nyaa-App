@@ -53,7 +53,19 @@ jobs:
           fi
 
       - name: Build Debug Artifact
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          ./gradlew :app:assembleDebug --stacktrace --info > gradle-ci-assemble.log 2>&1 || STATUS=$?
+          if [ -n "$STATUS" ] && [ "$STATUS" -ne 0 ]; then
+            echo "=== CI ASSEMBLE DEBUG FAILURE (TAIL 300) ==="
+            tail -n 300 gradle-ci-assemble.log
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git checkout -B ci-diagnostics
+            git add gradle-ci-assemble.log -f
+            git commit -m "ci(diagnostics): dump gradle-ci-assemble.log"
+            git push origin ci-diagnostics --force || true
+            exit $STATUS
+          fi
 
       - name: Upload Test Results & Build Logs
         if: always()
@@ -64,3 +76,4 @@ jobs:
             **/build/reports/tests/
             **/build/reports/
             gradle-ci-test.log
+            gradle-ci-assemble.log

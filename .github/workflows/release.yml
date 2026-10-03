@@ -81,7 +81,27 @@ jobs:
 
       - name: Assemble Release APK & Bundle AAB
         run: |
-          ./gradlew assembleRelease bundleRelease --stacktrace
+          ./gradlew :app:assembleRelease :app:bundleRelease --stacktrace --info > gradle-assemble.log 2>&1 || STATUS=$?
+          if [ -n "$STATUS" ] && [ "$STATUS" -ne 0 ]; then
+            echo "=== ASSEMBLE RELEASE FAILURE (TAIL 300) ==="
+            tail -n 300 gradle-assemble.log
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git checkout -B ci-diagnostics
+            git add gradle-assemble.log -f
+            git commit -m "ci(diagnostics): dump gradle-assemble.log"
+            git push origin ci-diagnostics --force || true
+            exit $STATUS
+          fi
+
+      - name: Upload Release Build Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-build-logs
+          path: |
+            gradle-assemble.log
+            app/build/reports/
 
       - name: Organize & Rename Artifacts
         id: organize_artifacts
