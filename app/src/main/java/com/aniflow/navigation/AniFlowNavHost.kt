@@ -81,11 +81,11 @@ fun AniFlowApp(
             composable(ScreenRoute.Search.route) {
                 SearchScreen(
                     viewModel = searchViewModel,
+                    onAnimeClick = { animeId ->
+                        navController.navigate(ScreenRoute.AnimeDetails.createRoute(animeId))
+                    },
                     onReleaseClick = { releaseId ->
                         navController.navigate(ScreenRoute.ReleaseDetails.createRoute(releaseId))
-                    },
-                    onReviewPlanClick = {
-                        navController.navigate(ScreenRoute.DownloadPlan.route)
                     }
                 )
             }
@@ -268,7 +268,7 @@ fun AniFlowApp(
             composable(ScreenRoute.SavedSearches.route) {
                 com.aniflow.feature.savedsearch.ui.SavedSearchScreen(
                     onBack = { navController.popBackStack() },
-                    onAutomate = { navController.navigate(ScreenRoute.Automation.route) }
+                    onAutomate = { _ -> navController.navigate(ScreenRoute.Automation.route) }
                 )
             }
 

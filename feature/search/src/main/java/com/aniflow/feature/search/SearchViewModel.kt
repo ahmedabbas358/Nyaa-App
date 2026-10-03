@@ -93,7 +93,7 @@ class SearchViewModel(
         }
     }
 
-    private fun onQueryChanged(newQuery: String) {
+    fun onQueryChanged(newQuery: String) {
         _uiState.value = _uiState.value.copy(query = newQuery)
         debounceJob?.cancel()
 

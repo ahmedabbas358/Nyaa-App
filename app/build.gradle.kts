@@ -116,15 +116,22 @@ dependencies {
     implementation(project(":platform:network"))
     implementation(project(":platform:storage"))
 
-    // Features
     implementation(project(":feature:home"))
     implementation(project(":feature:search"))
     implementation(project(":feature:release"))
     implementation(project(":feature:collections"))
     implementation(project(":feature:downloads"))
     implementation(project(":feature:library"))
+    implementation(project(":feature:storage"))
     implementation(project(":feature:favorites"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:automation"))
+    implementation(project(":feature:watchlist"))
+    implementation(project(":feature:saved-search"))
+
+    // Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
 
     // Compose
     implementation(platform(libs.androidx.compose.bom))
