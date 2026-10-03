@@ -60,8 +60,6 @@ import com.aniflow.core.ui.theme.DarkSurface
 import com.aniflow.core.ui.theme.PrimaryIndigo
 import com.aniflow.core.ui.theme.TextMuted
 import com.aniflow.core.ui.theme.TextPrimary
-import com.aniflow.core.ui.theme.TextSecondary
-import com.aniflow.domain.watchlist.model.FollowMode
 import com.aniflow.domain.watchlist.model.WatchlistItem
 import com.aniflow.domain.watchlist.model.WatchlistPolicy
 import com.aniflow.domain.watchlist.model.WatchlistState
@@ -216,7 +214,7 @@ private fun WatchlistCard(
                         color = if (item.state == WatchlistState.Watching) AppSemanticColors.Success else TextMuted
                     )
                     WatchlistChip(
-                        label = "Mode: ${item.policy.followMode.name}",
+                        label = "Type: ${item.targetType.name}",
                         color = PrimaryIndigo
                     )
                 }
@@ -231,6 +229,10 @@ private fun WatchlistCard(
         }
     }
 }
+
+private val WatchlistItem.coveredEpisodesCount: Int get() = lastKnownEpisode?.toInt() ?: 0
+private val WatchlistItem.knownEpisodesCount: Int get() = (lastKnownEpisode?.toInt() ?: 0).coerceAtLeast(1)
+private val WatchlistItem.newReleasesCount: Int get() = matchedReleaseCount
 
 @Composable
 private fun WatchlistChip(label: String, color: Color) {

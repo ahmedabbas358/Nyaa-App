@@ -189,7 +189,7 @@ fun StorageOverviewTab(
                     Spacer(modifier = Modifier.height(AppSpacing.sm))
 
                     LinearProgressIndicator(
-                        progress = { state.root.usedPercentage / 100f },
+                        progress = { (state.root?.usedPercentage ?: 0f) / 100f },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp),
@@ -201,8 +201,8 @@ fun StorageOverviewTab(
                     Spacer(modifier = Modifier.height(AppSpacing.sm))
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("${formatBytes(state.root.usedSpaceBytes)} used", style = AppTypography.bodySmall, color = TextSecondary)
-                        Text("${formatBytes(state.root.freeSpaceBytes)} free", style = AppTypography.bodySmall, color = TextMuted)
+                        Text("${formatBytes(state.root?.usedSpaceBytes ?: 0L)} used", style = AppTypography.bodySmall, color = TextSecondary)
+                        Text("${formatBytes(state.root?.freeSpaceBytes ?: 0L)} free", style = AppTypography.bodySmall, color = TextMuted)
                     }
                 }
             }
@@ -277,8 +277,6 @@ fun UsageRow(label: String, bytes: Long, color: androidx.compose.ui.graphics.Col
         }
     }
 }
-
-import androidx.compose.material.icons.filled.Movie
 
 @Composable
 fun StorageLargeFilesTab(files: List<StorageFileSummary>) {

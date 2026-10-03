@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -176,7 +177,7 @@ private fun SavedSearchCard(
                     Text(savedSearch.name, style = AppTypography.headline.copy(fontSize = 16.sp), color = TextPrimary)
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = "Query: ${savedSearch.query.toQueryString()}",
+                        text = "Query: ${savedSearch.query.rawText}",
                         style = AppTypography.caption,
                         color = PrimaryIndigo
                     )
@@ -191,10 +192,10 @@ private fun SavedSearchCard(
             Spacer(Modifier.height(AppSpacing.sm))
 
             Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)) {
-                SearchBadgeChip(label = savedSearch.providerScope.name, color = PrimaryIndigo)
-                SearchBadgeChip(label = "Sort: ${savedSearch.sort.name}", color = TextMuted)
-                if (savedSearch.filters.trustedOnly) {
-                    SearchBadgeChip(label = "Trusted Only", color = AppSemanticColors.Success)
+                SearchBadgeChip(label = savedSearch.providerScope.type.name, color = PrimaryIndigo)
+                SearchBadgeChip(label = "Sort: ${savedSearch.sort.field}", color = TextMuted)
+                savedSearch.filters.quality?.let { quality ->
+                    SearchBadgeChip(label = quality, color = AppSemanticColors.Success)
                 }
             }
 

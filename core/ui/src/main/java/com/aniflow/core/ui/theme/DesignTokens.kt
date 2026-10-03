@@ -206,6 +206,10 @@ object AppTypography {
     val labelLarge = SectionTitle
     @get:JvmName("getLabelSmallAlias")
     val labelSmall = Caption
+    @get:JvmName("getLabelMediumAlias")
+    val labelMedium = Subtitle
+    @get:JvmName("getTitleSmallAlias")
+    val titleSmall = SectionTitle
     @get:JvmName("getSubtitleAlias")
     val subtitle = Subtitle
 

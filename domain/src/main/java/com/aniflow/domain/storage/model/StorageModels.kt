@@ -54,6 +54,12 @@ enum class StorageAvailability {
     Unknown
 }
 
+enum class StorageRole {
+    Library,
+    Downloads,
+    Both
+}
+
 /**
  * StorageRoot represents a registered storage root / library volume (Section 9, 10, 11, 12).
  */
