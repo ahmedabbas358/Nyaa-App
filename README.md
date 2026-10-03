@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="art/aniflow_brand_logo.png" alt="AniFlow Banner" width="100%" />
+</p>
+
 # AniFlow
 
 > **Advanced Anime Discovery, Release Intelligence, Download Management, Library, Playback, Automation & Media Organization for Android.**
