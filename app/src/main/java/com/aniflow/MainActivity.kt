@@ -9,7 +9,6 @@ import com.aniflow.domain.repository.DownloadRepository
 import com.aniflow.domain.repository.LibraryRepository
 import com.aniflow.domain.repository.ReleaseRepository
 import com.aniflow.domain.repository.SettingsRepository
-import com.aniflow.domain.service.GroupingEngine
 import com.aniflow.domain.usecase.BuildDownloadPlanUseCase
 import com.aniflow.domain.usecase.CancelDownloadUseCase
 import com.aniflow.domain.usecase.PauseDownloadUseCase
@@ -22,7 +21,6 @@ import com.aniflow.feature.release.ReleaseDetailViewModel
 import com.aniflow.feature.search.SearchViewModel
 import com.aniflow.feature.settings.SettingsViewModel
 import com.aniflow.navigation.AniFlowApp
-import com.aniflow.provider.core.ProviderRegistry
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -33,8 +31,6 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var downloadRepository: DownloadRepository
     @Inject lateinit var libraryRepository: LibraryRepository
     @Inject lateinit var settingsRepository: SettingsRepository
-    @Inject lateinit var providerRegistry: ProviderRegistry
-    @Inject lateinit var groupingEngine: GroupingEngine
     @Inject lateinit var searchReleasesCoordinatorUseCase: com.aniflow.domain.usecase.SearchReleasesCoordinatorUseCase
     @Inject lateinit var searchReleasesUseCase: com.aniflow.domain.usecase.SearchReleasesUseCase
     @Inject lateinit var prepareDownloadPlanUseCase: com.aniflow.domain.usecase.PrepareDownloadPlanUseCase

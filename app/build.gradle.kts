@@ -98,7 +98,10 @@ dependencies {
     implementation(project(":core:logging"))
 
     implementation(project(":domain"))
+    implementation(project(":domain:release-intelligence"))
+    implementation(project(":domain:selection"))
     implementation(project(":data"))
+    implementation(libs.okhttp)
 
     implementation(project(":provider:core"))
     implementation(project(":provider:nyaa"))

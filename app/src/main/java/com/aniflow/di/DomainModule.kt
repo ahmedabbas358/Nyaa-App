@@ -7,13 +7,8 @@ import com.aniflow.domain.repository.ProfileRepository
 import com.aniflow.domain.repository.ReleaseRepository
 import com.aniflow.domain.repository.RuleRepository
 import com.aniflow.domain.repository.SettingsRepository
-import com.aniflow.domain.service.DuplicateDetector
-import com.aniflow.domain.service.GroupingEngine
-import com.aniflow.domain.service.GroupingEngineImpl
 import com.aniflow.domain.service.ReleaseParser
 import com.aniflow.domain.service.ReleaseParserImpl
-import com.aniflow.domain.service.SelectionEngine
-import com.aniflow.domain.service.SelectionEngineImpl
 import com.aniflow.domain.service.StorageManager
 import com.aniflow.domain.usecase.BuildDownloadPlanUseCase
 import com.aniflow.domain.usecase.CancelDownloadUseCase
@@ -45,14 +40,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DomainModule {
-
-    @Provides
-    @Singleton
-    fun provideGroupingEngine(): GroupingEngine = GroupingEngineImpl()
-
-    @Provides
-    @Singleton
-    fun provideSelectionEngine(): SelectionEngine = SelectionEngineImpl()
 
     @Provides
     @Singleton
