@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Thread-safe transactional implementation of ProfileRepository (STEP 27).
  * Strictly guarantees that exactly ONE profile is default at any time (Section 54).
  */
-class ProfileRepositoryImpl : ProfileRepository {
+class UserProfileRepositoryImpl : ProfileRepository {
 
     private val profiles = ConcurrentHashMap<ProfileId, UserProfile>()
     private val _flow = MutableStateFlow<List<UserProfile>>(emptyList())

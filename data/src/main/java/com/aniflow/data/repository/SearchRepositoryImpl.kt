@@ -17,8 +17,6 @@ import com.aniflow.provider.core.model.ProviderSearchRequest
 import com.aniflow.provider.core.model.ProviderSort
 import com.aniflow.provider.core.model.ProviderSortField
 import java.security.MessageDigest
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Implementation of SearchRepository (Sections 51, 52).
@@ -29,8 +27,7 @@ import javax.inject.Singleton
  * 4. Room persistence for offline caching & fast local retrieval
  * 5. Returns clean SearchResult to UseCase
  */
-@Singleton
-class SearchRepositoryImpl @Inject constructor(
+class SearchRepositoryImpl(
     private val coordinator: ProviderSearchCoordinator,
     private val releaseDao: ReleaseDao,
     private val cacheDao: ProviderCacheDao
@@ -68,8 +65,7 @@ class SearchRepositoryImpl @Inject constructor(
                 pageSize = 50,
                 category = ProviderCategory.All,
                 filters = filter,
-                sort = ProviderSort(sortField, request.sort.direction),
-                trustedOnly = request.filters.trustedOnly
+                sort = ProviderSort(sortField, request.sort.direction)
             )
 
             // 2. Execute search through provider coordinator (Nyaa HTTP + Parser)
@@ -89,10 +85,11 @@ class SearchRepositoryImpl @Inject constructor(
                 ProviderCacheEntity(
                     cacheKey = cacheKey,
                     providerId = "nyaa",
-                    queryHash = cacheKey,
-                    cachedAt = now,
-                    expiresAt = now + cacheTtlMillis,
-                    responsePayload = "count=${domainReleases.size}"
+                    requestHash = cacheKey,
+                    responseType = "search",
+                    payload = "count=${domainReleases.size}",
+                    fetchedAt = now,
+                    expiresAt = now + cacheTtlMillis
                 )
             )
 

@@ -85,10 +85,11 @@ class ReleaseDiscoveryRepository(
             ProviderCacheEntity(
                 cacheKey = cacheKey,
                 providerId = "coordinated",
-                queryHash = cacheKey,
-                cachedAt = now,
-                expiresAt = now + cacheTtlMillis,
-                responsePayload = "count=${domainReleases.size}"
+                requestHash = cacheKey,
+                responseType = "search",
+                payload = "count=${domainReleases.size}",
+                fetchedAt = now,
+                expiresAt = now + cacheTtlMillis
             )
         )
 

@@ -84,13 +84,13 @@ object AppSemanticColors {
     val Secondary = SecondaryTeal    // Auxiliary interactive
 
     // Lower-case aliases for component compatibility
-    val success = Success
-    val warning = Warning
-    val error = Error
-    val info = Info
-    val neutral = Neutral
-    val accent = Accent
-    val secondary = Secondary
+    @get:JvmName("getSuccessLower") val success = Success
+    @get:JvmName("getWarningLower") val warning = Warning
+    @get:JvmName("getErrorLower") val error = Error
+    @get:JvmName("getInfoLower") val info = Info
+    @get:JvmName("getNeutralLower") val neutral = Neutral
+    @get:JvmName("getAccentLower") val accent = Accent
+    @get:JvmName("getSecondaryLower") val secondary = Secondary
 }
 
 /**

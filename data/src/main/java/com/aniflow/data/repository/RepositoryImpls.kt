@@ -143,6 +143,9 @@ class AnimeRepositoryImpl(
 
     override suspend fun getById(id: AnimeId): Anime? = animeDao.getById(id.value)?.toDomain()
 
+    override fun observeById(id: AnimeId): Flow<Anime?> =
+        animeDao.observeAll().map { list -> list.find { it.id == id.value }?.toDomain() }
+
     override suspend fun findByIdentity(identity: AnimeIdentity): Anime? =
         animeDao.findByNormalizedTitle(identity.normalizedTitle)?.toDomain()
 
@@ -150,6 +153,8 @@ class AnimeRepositoryImpl(
         animeDao.observeAll().map { list -> list.map { it.toDomain() } }
 
     override suspend fun save(anime: Anime) = animeDao.insert(anime.toEntity())
+
+    override suspend fun delete(id: AnimeId) = animeDao.delete(id.value)
 }
 
 class SeasonRepositoryImpl(
@@ -158,6 +163,8 @@ class SeasonRepositoryImpl(
 
     override suspend fun getById(id: SeasonId): Season? = seasonDao.getById(id.value)?.toDomain()
 
+    override fun observeById(id: SeasonId): Flow<Season?> = flow { emit(getById(id)) }
+
     override suspend fun getByAnimeId(animeId: AnimeId): List<Season> =
         seasonDao.getByAnimeId(animeId.value).map { it.toDomain() }
 
@@ -165,6 +172,8 @@ class SeasonRepositoryImpl(
         seasonDao.observeByAnimeId(animeId.value).map { list -> list.map { it.toDomain() } }
 
     override suspend fun save(season: Season) = seasonDao.insert(season.toEntity())
+
+    override suspend fun delete(id: SeasonId) = seasonDao.delete(id.value)
 }
 
 class EpisodeRepositoryImpl(
@@ -174,11 +183,16 @@ class EpisodeRepositoryImpl(
 
     override suspend fun getById(id: EpisodeId): Episode? = episodeDao.getById(id.value)?.toDomain()
 
+    override fun observeById(id: EpisodeId): Flow<Episode?> = flow { emit(getById(id)) }
+
     override suspend fun getBySeasonId(seasonId: SeasonId): List<Episode> =
         episodeDao.getBySeasonId(seasonId.value).map { it.toDomain() }
 
     override fun observeBySeasonId(seasonId: SeasonId): Flow<List<Episode>> =
         episodeDao.observeBySeasonId(seasonId.value).map { list -> list.map { it.toDomain() } }
+
+    override suspend fun getByAnimeId(animeId: AnimeId): List<Episode> =
+        episodeDao.getByAnimeId(animeId.value).map { it.toDomain() }
 
     override suspend fun getReleasesForEpisode(episodeId: EpisodeId): List<ReleaseEpisode> {
         return releaseEpisodeDao.getReleasesForEpisode(episodeId.value).map {
@@ -201,6 +215,8 @@ class EpisodeRepositoryImpl(
             )
         )
     }
+
+    override suspend fun delete(id: EpisodeId) = episodeDao.delete(id.value)
 }
 
 class UploaderRepositoryImpl(
@@ -362,7 +378,7 @@ class LibraryRepositoryImpl(
 
 class ProfileRepositoryImpl(
     private val profileDao: ProfileDao
-) : ProfileRepository {
+) : com.aniflow.domain.repository.ProfileRepository {
 
     override suspend fun getById(id: DownloadProfileId): DownloadProfile? {
         val entity = profileDao.getById(id.value) ?: return null
@@ -433,8 +449,7 @@ class SavedSearchRepositoryImpl(
             query = SearchQuery.of(s.queryText),
             isPinned = s.isPinned,
             createdAt = Instant.ofEpochMilli(s.createdAt),
-            updatedAt = Instant.ofEpochMilli(s.updatedAt),
-            lastRunAt = s.lastRunAt?.let { Instant.ofEpochMilli(it) }
+            updatedAt = Instant.ofEpochMilli(s.updatedAt)
         )
     }
 
@@ -447,8 +462,7 @@ class SavedSearchRepositoryImpl(
                     query = SearchQuery.of(it.queryText),
                     isPinned = it.isPinned,
                     createdAt = Instant.ofEpochMilli(it.createdAt),
-                    updatedAt = Instant.ofEpochMilli(it.updatedAt),
-                    lastRunAt = it.lastRunAt?.let { t -> Instant.ofEpochMilli(t) }
+                    updatedAt = Instant.ofEpochMilli(it.updatedAt)
                 )
             }
         }
@@ -463,7 +477,7 @@ class SavedSearchRepositoryImpl(
                 isPinned = search.isPinned,
                 createdAt = search.createdAt.toEpochMilli(),
                 updatedAt = search.updatedAt.toEpochMilli(),
-                lastRunAt = search.lastRunAt?.toEpochMilli()
+                lastRunAt = null
             )
         )
     }
