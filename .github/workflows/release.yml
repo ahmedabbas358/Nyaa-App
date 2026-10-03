@@ -58,13 +58,16 @@ jobs:
 
       - name: Run Full Pre-Release Verification Suites
         run: |
-          ./gradlew :testing:test --tests "com.aniflow.testing.FinalAcceptanceScenarioTest" --stacktrace --info
-          ./gradlew :testing:test --tests "com.aniflow.testing.ArchitectureVerificationTests" --stacktrace --info
-          ./gradlew :testing:test --tests "com.aniflow.testing.CompleteArchitectureAndProductAuditTestSuite" --stacktrace --info
-          ./gradlew :testing:test --tests "com.aniflow.testing.SecurityAndSanitizationTests" --stacktrace --info
-          ./gradlew :domain:test --stacktrace --info
+          set -o pipefail
+          ./gradlew :testing:test :domain:test --stacktrace --info 2>&1 | tee /tmp/gradle-test.log || {
+            echo "### Gradle Verification / Compilation Failure" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 150 /tmp/gradle-test.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
 
-      - name: Upload Test Results
+      - name: Upload Test Results & Build Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -72,6 +75,7 @@ jobs:
           path: |
             **/build/reports/tests/
             **/build/reports/
+            /tmp/gradle-test.log
 
       - name: Assemble Release APK & Bundle AAB
         run: |

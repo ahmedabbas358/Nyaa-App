@@ -35,6 +35,8 @@ value class ByteSize(val bytes: Long) : Comparable<ByteSize> {
     val inGigabytes: Double get() = bytes / (1024.0 * 1024.0 * 1024.0)
     val inTerabytes: Double get() = bytes / (1024.0 * 1024.0 * 1024.0 * 1024.0)
 
+    val formatted: String get() = toDisplayString()
+
     fun toDisplayString(): String {
         if (bytes <= 0L) return "0 B"
         val units = arrayOf("B", "KiB", "MiB", "GiB", "TiB")
@@ -49,20 +51,26 @@ value class ByteSize(val bytes: Long) : Comparable<ByteSize> {
         val ZERO = ByteSize(0L)
 
         fun ofBytes(bytes: Long): ByteSize = ByteSize(bytes.coerceAtLeast(0L))
+        fun fromBytes(bytes: Long): ByteSize = ofBytes(bytes)
 
         fun ofKilobytes(kb: Double): ByteSize {
             require(kb >= 0.0) { "Kilobytes cannot be negative" }
             return ByteSize((kb * 1024.0).toLong())
         }
+        fun fromKilobytes(kb: Double): ByteSize = ofKilobytes(kb)
 
         fun ofMegabytes(mb: Double): ByteSize {
             require(mb >= 0.0) { "Megabytes cannot be negative" }
             return ByteSize((mb * 1024.0 * 1024.0).toLong())
         }
+        fun fromMegabytes(mb: Double): ByteSize = ofMegabytes(mb)
 
         fun ofGigabytes(gb: Double): ByteSize {
             require(gb >= 0.0) { "Gigabytes cannot be negative" }
             return ByteSize((gb * 1024.0 * 1024.0 * 1024.0).toLong())
         }
+        fun fromGigabytes(gb: Double): ByteSize = ofGigabytes(gb)
     }
 }
+
+typealias FileSize = ByteSize

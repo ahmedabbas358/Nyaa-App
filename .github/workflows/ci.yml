@@ -44,15 +44,19 @@ jobs:
 
       - name: Run Unit & Integration Test Suites
         run: |
-          ./gradlew :testing:test --tests "com.aniflow.testing.FinalAcceptanceScenarioTest" --stacktrace --info
-          ./gradlew :testing:test --tests "com.aniflow.testing.CompleteArchitectureAndProductAuditTestSuite" --stacktrace --info
-          ./gradlew :testing:test --tests "com.aniflow.testing.SecurityAndSanitizationTests" --stacktrace --info
-          ./gradlew :domain:test --stacktrace --info
+          set -o pipefail
+          ./gradlew :testing:test :domain:test --stacktrace --info 2>&1 | tee /tmp/gradle-ci-test.log || {
+            echo "### CI Verification / Compilation Failure" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 150 /tmp/gradle-ci-test.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
 
       - name: Build Debug Artifact
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: Upload Test Results
+      - name: Upload Test Results & Build Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -60,3 +64,4 @@ jobs:
           path: |
             **/build/reports/tests/
             **/build/reports/
+            /tmp/gradle-ci-test.log
