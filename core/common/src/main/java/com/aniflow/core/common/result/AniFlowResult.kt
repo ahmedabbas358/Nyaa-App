@@ -30,18 +30,18 @@ sealed interface AniFlowResult<out T> {
         else -> defaultValue
     }
 
-    inline fun <R> map(transform: (T) -> R): AniFlowResult<R> = when (this) {
+    fun <R> map(transform: (T) -> R): AniFlowResult<R> = when (this) {
         is Success -> Success(transform(data))
         is Error -> this
         is Loading -> this
     }
 
-    inline fun onSuccess(action: (T) -> Unit): AniFlowResult<T> {
+    fun onSuccess(action: (T) -> Unit): AniFlowResult<T> {
         if (this is Success) action(data)
         return this
     }
 
-    inline fun onError(action: (ErrorType, String, Throwable?) -> Unit): AniFlowResult<T> {
+    fun onError(action: (ErrorType, String, Throwable?) -> Unit): AniFlowResult<T> {
         if (this is Error) action(error, message, cause)
         return this
     }
