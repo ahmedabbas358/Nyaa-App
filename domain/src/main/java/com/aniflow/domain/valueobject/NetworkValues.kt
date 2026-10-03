@@ -14,12 +14,28 @@ value class LanguageCode(val code: String) {
     val isArabic: Boolean get() = code.equals("ar", ignoreCase = true) || code.equals("ara", ignoreCase = true) || code.equals("arabic", ignoreCase = true)
     val isMulti: Boolean get() = code.equals("multi", ignoreCase = true) || code.equals("dual", ignoreCase = true)
 
+    val displayName: String get() = when {
+        isEnglish -> "English"
+        isJapanese -> "Japanese"
+        isArabic -> "Arabic"
+        isMulti -> "Multi"
+        code.equals("fr", ignoreCase = true) || code.equals("fra", ignoreCase = true) || code.equals("french", ignoreCase = true) -> "French"
+        code.equals("de", ignoreCase = true) || code.equals("deu", ignoreCase = true) || code.equals("ger", ignoreCase = true) || code.equals("german", ignoreCase = true) -> "German"
+        code.equals("es", ignoreCase = true) || code.equals("spa", ignoreCase = true) || code.equals("spanish", ignoreCase = true) -> "Spanish"
+        code.equals("it", ignoreCase = true) || code.equals("ita", ignoreCase = true) || code.equals("italian", ignoreCase = true) -> "Italian"
+        else -> code
+    }
+
     override fun toString(): String = code
 
     companion object {
         val JAPANESE = LanguageCode("ja")
         val ENGLISH = LanguageCode("en")
         val ARABIC = LanguageCode("ar")
+        val FRENCH = LanguageCode("fr")
+        val GERMAN = LanguageCode("de")
+        val SPANISH = LanguageCode("es")
+        val ITALIAN = LanguageCode("it")
         val MULTI = LanguageCode("multi")
     }
 }

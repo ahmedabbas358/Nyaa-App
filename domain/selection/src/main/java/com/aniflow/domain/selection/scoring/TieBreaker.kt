@@ -19,8 +19,8 @@ class TieBreaker {
         val relB = candidateB.release
 
         // 1. Explicit user uploader preference
-        val uploaderA = preferences.uploader.getDisposition(relA.uploader) == PreferenceMode.Preferred
-        val uploaderB = preferences.uploader.getDisposition(relB.uploader) == PreferenceMode.Preferred
+        val uploaderA = preferences.uploader.getDisposition(relA.uploaderName) == PreferenceMode.Preferred
+        val uploaderB = preferences.uploader.getDisposition(relB.uploaderName) == PreferenceMode.Preferred
         if (uploaderA && !uploaderB) return -1
         if (!uploaderA && uploaderB) return 1
 

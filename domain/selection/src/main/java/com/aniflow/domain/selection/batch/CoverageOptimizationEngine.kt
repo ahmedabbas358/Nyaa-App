@@ -15,8 +15,16 @@ class CoverageOptimizationEngine {
         batchRelease: NormalizedRelease,
         episodes: List<EpisodeCandidateSet>
     ): BatchSuggestion? {
-        val range = batchRelease.episodeRange ?: return null
-        val coveredEps = (range.start..range.end).toList()
+        val coveredEps = batchRelease.episodeList.ifEmpty {
+            batchRelease.episodeRange?.let { range ->
+                when (range) {
+                    is com.aniflow.domain.valueobject.EpisodeRange.Range -> (range.start.major..range.end.major).toList()
+                    is com.aniflow.domain.valueobject.EpisodeRange.Single -> listOf(range.number.major)
+                    else -> emptyList()
+                }
+            } ?: emptyList()
+        }
+        if (coveredEps.isEmpty()) return null
 
         val missingEps = mutableListOf<Int>()
         val existingEps = mutableListOf<Int>()
@@ -44,8 +52,10 @@ class CoverageOptimizationEngine {
             individualSizeBytes += size
         }
 
+        val minEp = coveredEps.minOrNull() ?: 1
+        val maxEp = coveredEps.maxOrNull() ?: 1
         val explanation = buildString {
-            append("Batch covers ${coveredEps.size} episodes (${range.start}-${range.end}). ")
+            append("Batch covers ${coveredEps.size} episodes ($minEp-$maxEp). ")
             append("${missingEps.size} missing episodes needed. ")
             if (existingEps.isNotEmpty()) {
                 append("${existingEps.size} already downloaded (Partial batch). ")

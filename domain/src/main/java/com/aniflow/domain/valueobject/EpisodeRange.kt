@@ -102,6 +102,7 @@ sealed interface EpisodeRange {
     }
 
     companion object {
+        operator fun invoke(start: Int, end: Int): EpisodeRange = ofRange(start, end)
         fun ofSingle(number: Int): EpisodeRange = Single(EpisodeNumber.of(number))
         fun ofSingle(number: EpisodeNumber): EpisodeRange = Single(number)
 

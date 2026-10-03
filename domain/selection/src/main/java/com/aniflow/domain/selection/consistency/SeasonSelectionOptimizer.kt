@@ -19,7 +19,7 @@ class SeasonSelectionOptimizer {
         val preferredUploader = preferences.uploader.preferred.firstOrNull()
         if (preferredUploader != null) {
             val coverage = episodeSets.count { set ->
-                set.candidates.any { it.release.uploader.equals(preferredUploader, ignoreCase = true) }
+                set.candidates.any { it.release.uploaderName.equals(preferredUploader, ignoreCase = true) }
             }
             if (coverage >= (episodeSets.size * 0.6)) {
                 return preferredUploader
@@ -30,7 +30,7 @@ class SeasonSelectionOptimizer {
         val frequency = mutableMapOf<String, Int>()
         episodeSets.forEach { set ->
             set.candidates.forEach { cand ->
-                cand.release.uploader?.let { uploader ->
+                cand.release.uploaderName?.let { uploader ->
                     frequency[uploader] = (frequency[uploader] ?: 0) + 1
                 }
             }
@@ -49,7 +49,7 @@ class SeasonSelectionOptimizer {
         }
 
         return candidates.map { evaluated ->
-            val uploader = evaluated.candidate.release.uploader
+            val uploader = evaluated.candidate.release.uploaderName
             if (uploader.equals(dominantUploader, ignoreCase = true)) {
                 // If candidate matches dominant uploader, boost its score by 15 consistency points
                 val newScore = evaluated.score.copy(total = evaluated.score.total + 15)

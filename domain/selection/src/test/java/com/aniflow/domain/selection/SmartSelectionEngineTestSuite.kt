@@ -6,7 +6,7 @@ import com.aniflow.domain.identity.ProviderId
 import com.aniflow.domain.identity.ReleaseId
 import com.aniflow.domain.identity.SeasonId
 import com.aniflow.domain.intelligence.model.ReleaseConfidence
-import com.aniflow.domain.model.aggregate.organization.DownloadProfile
+import com.aniflow.domain.selection.model.DownloadProfile
 import com.aniflow.domain.model.aggregate.organization.Rule
 import com.aniflow.domain.model.aggregate.release.TechnicalMetadata
 import com.aniflow.domain.selection.context.SelectionCandidate
@@ -29,10 +29,13 @@ import com.aniflow.domain.selection.optimization.SeasonSelectionOptimizer
 import com.aniflow.domain.selection.preference.LayeredResolutionPreference
 import com.aniflow.domain.selection.preference.PreferenceLayer
 import com.aniflow.domain.selection.preference.PreferencePrecedencePolicy
+import com.aniflow.domain.valueobject.AudioTrack
 import com.aniflow.domain.valueobject.ByteSize
 import com.aniflow.domain.valueobject.EpisodeNumber
+import com.aniflow.domain.valueobject.LanguageCode
 import com.aniflow.domain.valueobject.MediaSource
 import com.aniflow.domain.valueobject.Resolution
+import com.aniflow.domain.valueobject.SubtitleTrack
 import com.aniflow.domain.valueobject.VideoCodec
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -69,7 +72,9 @@ class SmartSelectionEngineTestSuite {
             technical = TechnicalMetadata(
                 resolution = resolution,
                 videoCodec = codec,
-                source = source
+                source = source,
+                subtitles = listOf(SubtitleTrack(LanguageCode.ENGLISH, null, null)),
+                audioTracks = listOf(AudioTrack(LanguageCode.JAPANESE, null, null, null))
             ),
             uploader = uploader,
             releaseGroup = group,
@@ -255,7 +260,7 @@ class SmartSelectionEngineTestSuite {
         val forbidden = createCandidate(
             id = "c_forbidden",
             title = "Forbidden Release",
-            codec = VideoCodec.Unknown("CAM")
+            codec = VideoCodec.Other("CAM")
         )
         val profile = DownloadProfile(
             name = "No CAM",

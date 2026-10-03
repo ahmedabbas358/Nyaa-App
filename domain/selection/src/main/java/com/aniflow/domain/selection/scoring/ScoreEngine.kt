@@ -63,7 +63,7 @@ class ScoreEngine {
         )
 
         // 3. Uploader Preference
-        val uploaderDisp = preferences.uploader.getDisposition(release.uploader)
+        val uploaderDisp = preferences.uploader.getDisposition(release.uploaderName)
         val uploaderPoints = when (uploaderDisp) {
             PreferenceMode.Preferred -> weights.uploader
             PreferenceMode.Neutral -> (weights.uploader * 0.4).toInt()
@@ -76,9 +76,9 @@ class ScoreEngine {
             rawValue = if (uploaderDisp == PreferenceMode.Preferred) 1.0 else 0.0,
             normalizedPoints = uploaderPoints,
             explanation = when (uploaderDisp) {
-                PreferenceMode.Preferred -> "Preferred uploader: ${release.uploader}"
-                PreferenceMode.Avoid -> "Avoid uploader penalty: ${release.uploader}"
-                else -> "Uploader: ${release.uploader ?: "Unknown"}"
+                PreferenceMode.Preferred -> "Preferred uploader: ${release.uploaderName}"
+                PreferenceMode.Avoid -> "Avoid uploader penalty: ${release.uploaderName}"
+                else -> "Uploader: ${release.uploaderName ?: "Unknown"}"
             }
         )
 
@@ -108,7 +108,7 @@ class ScoreEngine {
         val matchedSubtitles = technical.subtitles.filter { preferences.subtitles.preferredLanguages.contains(it.language) }
         if (matchedSubtitles.isNotEmpty()) {
             subPoints = weights.subtitle
-            subExplanation = "Preferred subtitles: ${matchedSubtitles.mapNotNull { it.language?.code }.joinToString()}"
+            subExplanation = "Preferred subtitles: ${matchedSubtitles.mapNotNull { it.language?.displayName ?: it.language?.code }.joinToString()}"
         }
         components += ScoreComponent(
             criterion = SelectionCriterion.SubtitleMatch,
@@ -123,7 +123,7 @@ class ScoreEngine {
         val matchedAudio = technical.audioTracks.filter { preferences.audioLanguage.primary.contains(it.language) }
         if (matchedAudio.isNotEmpty()) {
             audioPoints = weights.audio
-            audioExplanation = "Primary audio track: ${matchedAudio.mapNotNull { it.language?.code }.joinToString()}"
+            audioExplanation = "Primary audio track: ${matchedAudio.mapNotNull { it.language?.displayName ?: it.language?.code }.joinToString()}"
         }
         components += ScoreComponent(
             criterion = SelectionCriterion.AudioMatch,
@@ -188,7 +188,7 @@ class ScoreEngine {
         }
 
         // 11. Cross-Episode Consistency Bonus (Section 108, 109, 161)
-        if (previousEpisodeUploader != null && release.uploader.equals(previousEpisodeUploader, ignoreCase = true)) {
+        if (previousEpisodeUploader != null && release.uploaderName.equals(previousEpisodeUploader, ignoreCase = true)) {
             components += ScoreComponent(
                 criterion = SelectionCriterion.ConsistencyBonus,
                 rawValue = 1.0,

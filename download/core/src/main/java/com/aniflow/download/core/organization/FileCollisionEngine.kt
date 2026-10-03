@@ -1,6 +1,12 @@
 package com.aniflow.download.core.organization
 
-import com.aniflow.platform.storage.model.StorageFile
+data class StorageFile(
+    val name: String,
+    val relativePath: String = "",
+    val persistentUri: String = "",
+    val sizeBytes: Long = 0L,
+    val lastModified: java.time.Instant = java.time.Instant.now()
+)
 
 enum class CollisionPolicy {
     Skip,

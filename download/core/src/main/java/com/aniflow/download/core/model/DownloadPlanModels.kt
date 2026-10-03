@@ -164,7 +164,7 @@ data class PlanWarning(
 data class StorageTarget(
     val locationId: String,
     val relativePath: String,
-    val absoluteBasePath: String
+    val absoluteBasePath: String = ""
 ) {
     val fullPath: String
         get() = if (absoluteBasePath.endsWith("/") || relativePath.startsWith("/")) {

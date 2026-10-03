@@ -1,12 +1,12 @@
 package com.aniflow.download.core
 
-import com.aniflow.domain.entity.DownloadTask
-import com.aniflow.domain.enums.DownloadState
-import com.aniflow.domain.enums.Priority
-import com.aniflow.domain.service.DownloadEngine
-import com.aniflow.domain.service.DownloadProgress
+import com.aniflow.domain.identity.DownloadTaskId
+import com.aniflow.domain.model.aggregate.download.DownloadTask
+import com.aniflow.domain.model.aggregate.download.DownloadPriority as Priority
+import com.aniflow.domain.repository.DownloadRepository
+import com.aniflow.domain.state.DownloadState
 import kotlinx.coroutines.flow.Flow
-import java.time.Instant
+import kotlinx.coroutines.flow.emptyFlow
 
 data class DownloadCapabilities(
     val supportsRangeRequests: Boolean = true,
@@ -23,6 +23,28 @@ data class DownloadRequest(
     val priority: Priority = Priority.Normal,
     val totalBytes: Long = 0L,
     val isTorrent: Boolean = false
+)
+
+interface DownloadEngine {
+    val engineType: String
+    suspend fun start(task: DownloadTask): Flow<DownloadProgress>
+    fun observeProgress(taskId: String): Flow<DownloadProgress> = emptyFlow()
+    fun observeProgress(taskId: DownloadTaskId): Flow<DownloadProgress> = observeProgress(taskId.value)
+    suspend fun pause(taskId: String) {}
+    suspend fun pause(taskId: DownloadTaskId) = pause(taskId.value)
+    suspend fun resume(taskId: String) {}
+    suspend fun resume(taskId: DownloadTaskId) = resume(taskId.value)
+    suspend fun cancel(taskId: String) {}
+    suspend fun cancel(taskId: DownloadTaskId) = cancel(taskId.value)
+}
+
+data class DownloadProgress(
+    val taskId: String,
+    val downloadedBytes: Long,
+    val totalBytes: Long,
+    val speedBps: Long = 0L,
+    val state: DownloadState = DownloadState.Downloading,
+    val errorMessage: String? = null
 )
 
 interface DownloadEngineRegistry {
@@ -46,4 +68,26 @@ class DefaultDownloadEngineRegistry : DownloadEngineRegistry {
     }
 
     override fun getAllEngines(): List<DownloadEngine> = engines.values.toList()
+}
+
+suspend fun DownloadRepository.getDownload(taskId: String): DownloadTask? =
+    if (taskId.isBlank()) null else getTaskById(DownloadTaskId(taskId))
+
+suspend fun DownloadRepository.updateState(taskId: String, state: DownloadState, errorMessage: String? = null) {
+    if (taskId.isBlank()) return
+    val task = getTaskById(DownloadTaskId(taskId)) ?: return
+    saveTask(task.copy(state = state, errorMessage = errorMessage))
+}
+
+suspend fun DownloadRepository.updateState(taskId: DownloadTaskId, state: DownloadState, errorMessage: String? = null) {
+    updateState(taskId.value, state, errorMessage)
+}
+
+suspend fun DownloadRepository.updateProgress(
+    taskId: DownloadTaskId,
+    downloadedBytes: Long,
+    totalBytes: Long,
+    speedBps: Long
+) {
+    // Progress tracking placeholder
 }

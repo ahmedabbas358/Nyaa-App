@@ -8,7 +8,7 @@ import com.aniflow.domain.identity.ProviderId
 import com.aniflow.domain.identity.ReleaseId
 import com.aniflow.domain.identity.SeasonId
 import com.aniflow.domain.intelligence.model.ReleaseConfidence
-import com.aniflow.domain.model.aggregate.organization.DownloadProfile
+import com.aniflow.domain.selection.model.DownloadProfile
 import com.aniflow.domain.model.aggregate.release.TechnicalMetadata
 import com.aniflow.domain.selection.model.ExistingDownloadState
 import com.aniflow.domain.selection.model.ExistingMediaState

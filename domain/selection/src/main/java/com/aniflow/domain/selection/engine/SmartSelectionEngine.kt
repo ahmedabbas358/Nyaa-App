@@ -17,19 +17,11 @@ import com.aniflow.domain.selection.model.SelectionStatus
 import com.aniflow.domain.selection.model.SelectionTrace
 import com.aniflow.domain.selection.model.SmartSelectionExplanation
 import com.aniflow.domain.selection.model.SmartSelectionResult
+import com.aniflow.domain.selection.model.SelectionStrategy
 import com.aniflow.domain.selection.policy.SelectionPolicy
-import com.aniflow.domain.selection.policy.SelectionStrategy
 import com.aniflow.domain.selection.scoring.ScoreEngine
 import com.aniflow.domain.selection.scoring.TieBreaker
 
-/**
- * Step 21 — Smart Selection Engine API (Section 109).
- */
-interface SelectionEngine {
-    suspend fun select(context: SelectionContext): SmartSelectionResult
-    suspend fun simulateSelection(context: SelectionContext): SmartSelectionResult
-    suspend fun traceSelection(context: SelectionContext): SelectionTrace
-}
 
 /**
  * Step 21 — Full Smart Selection Engine Implementation.

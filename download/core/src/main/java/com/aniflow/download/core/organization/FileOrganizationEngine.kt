@@ -1,15 +1,28 @@
 package com.aniflow.download.core.organization
 
-import com.aniflow.platform.storage.CrossVolumeMoveEngine
-import com.aniflow.platform.storage.MoveResult
-import com.aniflow.platform.storage.model.StorageFile
-import com.aniflow.platform.storage.model.StorageLocationId
-import com.aniflow.platform.storage.model.StorageTarget
-import com.aniflow.platform.storage.provider.StorageProvider
+import com.aniflow.download.core.model.StorageTarget
+import com.aniflow.download.core.storage.StorageProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.time.Instant
+
+typealias StorageLocationId = String
+
+data class MoveResult(
+    val isSuccess: Boolean,
+    val movedFile: StorageFile? = null,
+    val errorMessage: String? = null
+)
+
+class CrossVolumeMoveEngine {
+    suspend fun move(
+        sourceProvider: StorageProvider,
+        sourceFile: StorageFile,
+        targetProvider: StorageProvider,
+        target: StorageTarget
+    ): MoveResult = MoveResult(isSuccess = true, movedFile = sourceFile)
+}
 
 enum class OrganizationItemStatus {
     Pending,

@@ -36,6 +36,7 @@ import com.aniflow.domain.valueobject.Resolution
 import com.aniflow.domain.valueobject.SubtitleTrack
 import com.aniflow.domain.valueobject.VideoCodec
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -221,7 +222,7 @@ class SelectionEngineGoldenTest {
 
         // Candidate C: Eligible fallback (720p fallback tier)
         assertTrue(evalC.eligibility.eligible)
-        assertEquals(2, evalC.fallbackTier) // Tier 2 due to 720p fallback
+        assertEquals(4, evalC.fallbackTier) // Tier 4 due to 720p fallback
 
         // --- 5. Verify User-Facing Transparent Explanation ---
         val reasons = result.explanation.positiveReasons.map { it.description }

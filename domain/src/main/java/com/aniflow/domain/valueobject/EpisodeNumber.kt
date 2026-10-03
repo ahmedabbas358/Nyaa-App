@@ -17,6 +17,7 @@ data class EpisodeNumber(
 
     val isSpecial: Boolean get() = !specialTag.isNullOrBlank()
     val isDecimal: Boolean get() = minor > 0
+    val value: Int get() = major
 
     val displayString: String
         get() = when {

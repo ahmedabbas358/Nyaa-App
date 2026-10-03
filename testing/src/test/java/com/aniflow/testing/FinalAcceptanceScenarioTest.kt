@@ -21,7 +21,6 @@ import com.aniflow.domain.model.aggregate.download.GroupingMode
 import com.aniflow.domain.model.aggregate.download.NetworkPolicy
 import com.aniflow.domain.model.aggregate.library.LibraryFile
 import com.aniflow.domain.model.aggregate.library.LibraryItem
-import com.aniflow.domain.model.aggregate.library.LibraryItemType
 import com.aniflow.domain.model.aggregate.release.Release
 import com.aniflow.domain.repository.DownloadRepository
 import com.aniflow.domain.repository.LibraryRepository

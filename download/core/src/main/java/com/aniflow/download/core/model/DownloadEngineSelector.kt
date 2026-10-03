@@ -7,13 +7,13 @@ class DownloadEngineSelector {
 
     fun selectEngine(source: DownloadSource, capabilities: RuntimeCapabilities): DownloadEngineType {
         return when (source) {
-            is DownloadSource.HttpSource -> {
+            is DownloadSource.HttpSource, is DownloadSource.Http -> {
                 if (!capabilities.supportsHttp) {
                     throw IllegalStateException("HTTP engine is unsupported in this runtime environment")
                 }
                 DownloadEngineType.Http
             }
-            is DownloadSource.MagnetSource, is DownloadSource.TorrentFileSource -> {
+            is DownloadSource.MagnetSource, is DownloadSource.TorrentFileSource, is DownloadSource.Magnet, is DownloadSource.TorrentFile -> {
                 if (!capabilities.supportsTorrent) {
                     throw IllegalStateException("Torrent engine is unsupported in this runtime environment")
                 }

@@ -8,6 +8,11 @@ import com.aniflow.domain.model.aggregate.organization.Rule
  */
 sealed interface ExistingMediaState {
     data object Missing : ExistingMediaState
+    data object Queued : ExistingMediaState
+    data object Downloading : ExistingMediaState
+    data object Downloaded : ExistingMediaState
+    data object Failed : ExistingMediaState
+
     data class Satisfied(
         val fileSize: Long,
         val resolution: String? = null,

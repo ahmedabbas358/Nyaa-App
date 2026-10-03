@@ -204,8 +204,32 @@ data class ReleaseConfidence(
     val needsManualReview: Boolean get() = overall < ConfidenceThresholds.MEDIUM || level == ConfidenceLevel.Low
     val titleConfidence: Float get() = identityConfidence
     val episodeConfidence: Float get() = coverageConfidence
+    val score: Float get() = overall
+
+    constructor(
+        overall: Float = 1.0f,
+        identity: Float = 1.0f,
+        coverage: Float = 1.0f,
+        technical: Float = 1.0f
+    ) : this(
+        overall = overall,
+        level = when {
+            overall >= ConfidenceThresholds.CONFIRMED -> ConfidenceLevel.Confirmed
+            overall >= ConfidenceThresholds.HIGH -> ConfidenceLevel.High
+            overall >= ConfidenceThresholds.MEDIUM -> ConfidenceLevel.Medium
+            else -> ConfidenceLevel.Low
+        },
+        identityConfidence = identity,
+        coverageConfidence = coverage,
+        technicalConfidence = technical
+    )
 
     companion object {
+        val Confirmed = fromScores(1.0f, 1.0f, 1.0f, 1.0f)
+        val High = fromScores(0.9f, 0.9f, 0.9f, 0.9f)
+        val Medium = fromScores(0.7f, 0.7f, 0.7f, 0.7f)
+        val Low = fromScores(0.4f, 0.4f, 0.4f, 0.4f)
+
         fun fromScores(
             overall: Float,
             identity: Float,

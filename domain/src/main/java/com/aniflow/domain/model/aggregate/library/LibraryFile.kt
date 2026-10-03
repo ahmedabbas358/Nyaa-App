@@ -22,4 +22,6 @@ data class LibraryFile(
         require(path.isNotBlank()) { "LibraryFile path cannot be blank" }
         require(fileName.isNotBlank()) { "LibraryFile fileName cannot be blank" }
     }
+
+    val itemId: LibraryItemId get() = libraryItemId
 }

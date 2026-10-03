@@ -127,14 +127,3 @@ data class ConstraintEvaluation(
     val isHardConstraint: Boolean,
     val message: String
 )
-
-/**
- * The media state of the episode within local storage / download engine.
- */
-enum class ExistingMediaState {
-    Missing,
-    Queued,
-    Downloading,
-    Downloaded,
-    Failed
-}

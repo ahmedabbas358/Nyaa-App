@@ -90,6 +90,56 @@ data class NormalizedRelease(
         episodeMatch = episodeMatch
     )
 
+    constructor(
+        releaseId: ReleaseId,
+        rawTitle: String = "",
+        normalizedTitle: String = "",
+        animeCandidate: String? = null,
+        seasonCandidate: Int? = 1,
+        episodeRange: com.aniflow.domain.valueobject.EpisodeRange? = null,
+        episodes: List<Int> = listOf(1),
+        releaseType: ReleaseType = ReleaseType.SingleEpisode,
+        technicalMetadata: com.aniflow.domain.valueobject.ReleaseTechnicalMetadata = com.aniflow.domain.valueobject.ReleaseTechnicalMetadata(null, null),
+        groupCandidate: String? = null,
+        uploader: String? = null,
+        source: com.aniflow.domain.valueobject.MediaSource? = null,
+        confidence: Any? = null,
+        rawMetadata: Map<String, String> = emptyMap(),
+        isBatch: Boolean = releaseType == ReleaseType.Batch || releaseType == ReleaseType.CompleteSeries || releaseType == ReleaseType.Season
+    ) : this(
+        releaseId = releaseId,
+        animeIdentity = animeCandidate?.let { AnimeIdentity(it) },
+        season = seasonCandidate?.let { SeasonReference(it) },
+        episodes = when {
+            episodes.size > 1 -> EpisodeCoverage.Range(episodes.minOrNull() ?: 1, episodes.maxOrNull() ?: 1)
+            episodes.size == 1 -> EpisodeCoverage.Single(episodes.first())
+            else -> EpisodeCoverage.Unknown
+        },
+        technical = TechnicalMetadata(
+            resolution = technicalMetadata.resolution,
+            codec = technicalMetadata.videoCodec,
+            source = technicalMetadata.source?.let { VideoSource.fromString(it.displayName) },
+            audio = technicalMetadata.audioTracks.map { AudioTrackDescriptor(codec = it.codec, language = it.language?.code) },
+            subtitles = technicalMetadata.subtitles.map { SubtitleDescriptor(language = it.language?.code) }
+        ),
+        uploader = uploader?.let { UploaderReference(it) },
+        releaseGroup = groupCandidate?.let { ReleaseGroupReference(it) },
+        batchType = when (releaseType) {
+            ReleaseType.CompleteSeries -> BatchType.Complete
+            ReleaseType.Season -> BatchType.SeasonBatch
+            ReleaseType.Batch -> BatchType.EpisodeRange
+            else -> if (isBatch) BatchType.SeasonBatch else BatchType.SingleEpisode
+        },
+        confidence = when (confidence) {
+            is ReleaseConfidence -> confidence
+            else -> ReleaseConfidence.fromScores(0.95f, 0.95f, 0.95f, 0.95f)
+        },
+        rawTitle = rawTitle,
+        normalizedTitle = normalizedTitle,
+        rawMetadata = rawMetadata,
+        legacyReleaseType = releaseType
+    )
+
     // Backward compatibility getters
     val id: ReleaseId get() = releaseId
     val sourceInfo: ReleaseSource? get() = releaseSource

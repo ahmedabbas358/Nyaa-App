@@ -60,7 +60,7 @@ class EligibilityEngine {
                     }
                 }
                 is HardConstraint.BlockUploader -> {
-                    if (release.uploader?.equals(constraint.uploader, ignoreCase = true) == true) {
+                    if (release.uploaderName?.equals(constraint.uploader, ignoreCase = true) == true) {
                         violations += ConstraintViolation.BlockedUploader(constraint.uploader)
                     }
                 }
@@ -112,8 +112,8 @@ class EligibilityEngine {
         }
 
         // 3. Blocked uploader & release group checks from preferences
-        if (preferences.uploader.getDisposition(release.uploader) == PreferenceMode.Forbidden) {
-            violations += ConstraintViolation.BlockedUploader(release.uploader ?: "Unknown")
+        if (preferences.uploader.getDisposition(release.uploaderName) == PreferenceMode.Forbidden) {
+            violations += ConstraintViolation.BlockedUploader(release.uploaderName ?: "Unknown")
         }
         if (preferences.releaseGroup.getDisposition(release.groupCandidate) == PreferenceMode.Forbidden) {
             violations += ConstraintViolation.BlockedReleaseGroup(release.groupCandidate ?: "Unknown")

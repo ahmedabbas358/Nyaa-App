@@ -45,6 +45,7 @@ enum class SelectionPolicyType {
 data class SelectionWeights(
     val resolution: Int = 30,
     val uploader: Int = 25,
+    val releaseGroup: Int = 20,
     val codec: Int = 20,
     val subtitle: Int = 15,
     val audio: Int = 10,
@@ -58,6 +59,7 @@ data class SelectionWeights(
     fun validate() {
         require(resolution >= 0) { "resolution weight cannot be negative" }
         require(uploader >= 0) { "uploader weight cannot be negative" }
+        require(releaseGroup >= 0) { "releaseGroup weight cannot be negative" }
         require(codec >= 0) { "codec weight cannot be negative" }
         require(subtitle >= 0) { "subtitle weight cannot be negative" }
         require(audio >= 0) { "audio weight cannot be negative" }
@@ -68,6 +70,9 @@ data class SelectionWeights(
 
     companion object {
         val Default = SelectionWeights()
+        val QualityFirst get() = QualityHeavy
+        val SizeFirst get() = SizeHeavy
+        val Balanced get() = Default
 
         val QualityHeavy = SelectionWeights(
             resolution = 40,
@@ -132,7 +137,7 @@ data class UserSelectionPreferences(
  * Rich domain DownloadProfile holding policy, constraints, weights, and preferences.
  */
 data class DownloadProfile(
-    val id: DownloadProfileId,
+    val id: DownloadProfileId = DownloadProfileId(java.util.UUID.randomUUID().toString()),
     val name: String,
     val schemaVersion: Int = 1,
     val hardConstraints: List<HardConstraint> = emptyList(),

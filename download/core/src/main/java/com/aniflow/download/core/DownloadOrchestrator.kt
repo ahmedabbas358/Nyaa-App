@@ -1,10 +1,9 @@
 package com.aniflow.download.core
 
-import com.aniflow.domain.entity.DownloadTask
-import com.aniflow.domain.enums.DownloadState
+import com.aniflow.domain.identity.DownloadTaskId
+import com.aniflow.domain.model.aggregate.download.DownloadTask
 import com.aniflow.domain.repository.DownloadRepository
-import com.aniflow.domain.service.DownloadEngine
-import com.aniflow.domain.service.DownloadProgress
+import com.aniflow.domain.state.DownloadState
 import com.aniflow.domain.state.DownloadStateMachine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -53,7 +52,7 @@ class DownloadOrchestrator(
 
     suspend fun startTask(task: DownloadTask) {
         mutex.withLock {
-            if (activeJobs.containsKey(task.id)) return
+            if (activeJobs.containsKey(task.id.value)) return
 
             val engine = engineSelector(task)
             val job = scope.launch {
@@ -70,20 +69,20 @@ class DownloadOrchestrator(
 
                         if (progress.state == DownloadState.Completed) {
                             downloadRepository.updateState(task.id, DownloadState.Completed)
-                            finishTask(task.id)
+                            finishTask(task.id.value)
                         } else if (progress.state == DownloadState.Failed) {
                             downloadRepository.updateState(task.id, DownloadState.Failed, progress.errorMessage)
-                            finishTask(task.id)
+                            finishTask(task.id.value)
                         }
                     }.launchIn(this)
 
                     engine.start(task)
                 } catch (e: Exception) {
                     downloadRepository.updateState(task.id, DownloadState.Failed, e.message)
-                    finishTask(task.id)
+                    finishTask(task.id.value)
                 }
             }
-            activeJobs[task.id] = job
+            activeJobs[task.id.value] = job
         }
     }
 

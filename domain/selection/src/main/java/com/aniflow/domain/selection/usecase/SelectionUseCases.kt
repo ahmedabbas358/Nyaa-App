@@ -24,7 +24,7 @@ class SelectEpisodeReleaseUseCase(
         target: SelectionTarget.EpisodeTarget,
         candidates: List<SelectionCandidate>,
         preferences: ResolvedPreferences,
-        profile: com.aniflow.domain.model.aggregate.organization.DownloadProfile? = null,
+        profile: com.aniflow.domain.selection.model.DownloadProfile? = null,
         existingMedia: ExistingMediaState = ExistingMediaState.Missing
     ): SmartSelectionResult {
         val context = SelectionContext(

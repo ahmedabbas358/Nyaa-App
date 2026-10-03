@@ -2,12 +2,12 @@ package com.aniflow.testing
 
 import com.aniflow.core.common.sanitization.PathSanitizer
 import com.aniflow.core.logging.LogRedactor
-import com.aniflow.domain.controlplane.models.ComparisonExpression
-import com.aniflow.domain.controlplane.models.ComparisonOperator
-import com.aniflow.domain.controlplane.models.GroupConditionNode
-import com.aniflow.domain.controlplane.models.LogicalOperator
-import com.aniflow.domain.controlplane.models.SearchField
+import com.aniflow.domain.controlplane.models.AdvancedRuleCondition
+import com.aniflow.domain.controlplane.models.AndNode
+import com.aniflow.domain.controlplane.models.ConditionNode
+import com.aniflow.domain.controlplane.models.RuleNode
 import com.aniflow.domain.controlplane.service.ConfigurationSecurity
+import com.aniflow.domain.valueobject.Resolution
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -114,12 +114,12 @@ class SecurityAndSanitizationTests {
 
     @Test
     fun testRuleAstDepthLimiter() {
-        val leaf = ComparisonExpression(SearchField.Resolution, ComparisonOperator.Equals, "1080p")
+        val leaf = ConditionNode(AdvancedRuleCondition.ResolutionIs(Resolution.R1080p))
 
         // Build a malicious 15-level deeply nested rule tree
-        var currentTree: com.aniflow.domain.controlplane.models.ConditionNode = leaf
+        var currentTree: RuleNode = leaf
         for (i in 1..14) {
-            currentTree = GroupConditionNode(LogicalOperator.And, listOf(currentTree))
+            currentTree = AndNode(listOf(currentTree))
         }
 
         val validation = ConfigurationSecurity.validateRuleDepth(currentTree)

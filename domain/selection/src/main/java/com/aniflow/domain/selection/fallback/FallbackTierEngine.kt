@@ -65,7 +65,7 @@ class FallbackTierEngine {
         for (tier in tiers) {
             val resMatch = tier.resolution == null || technical.resolution == tier.resolution
             val codecMatch = tier.codec == null || technical.videoCodec == tier.codec
-            val uploaderMatch = tier.uploader == null || rel.uploader.equals(tier.uploader, ignoreCase = true)
+            val uploaderMatch = tier.uploader == null || rel.uploaderName.equals(tier.uploader, ignoreCase = true)
             val groupMatch = tier.group == null || rel.groupCandidate.equals(tier.group, ignoreCase = true)
 
             if (resMatch && codecMatch && uploaderMatch && groupMatch) {

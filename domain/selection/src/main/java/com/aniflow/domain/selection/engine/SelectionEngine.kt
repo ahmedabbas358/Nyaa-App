@@ -33,9 +33,13 @@ import com.aniflow.domain.selection.simulation.SimulationResult
 import java.time.Instant
 
 interface SelectionEngine {
-    fun evaluate(context: SelectionContext): SelectionResult
-    fun evaluateAll(context: MultiEpisodeSelectionContext): MultiEpisodeSelectionResult
-    fun simulate(context: MultiEpisodeSelectionContext): SimulationResult
+    fun evaluate(context: SelectionContext): SelectionResult = throw UnsupportedOperationException()
+    fun evaluateAll(context: MultiEpisodeSelectionContext): MultiEpisodeSelectionResult = throw UnsupportedOperationException()
+    fun simulate(context: MultiEpisodeSelectionContext): SimulationResult = throw UnsupportedOperationException()
+
+    suspend fun select(context: com.aniflow.domain.selection.context.SelectionContext): com.aniflow.domain.selection.model.SmartSelectionResult = throw UnsupportedOperationException()
+    suspend fun simulateSelection(context: com.aniflow.domain.selection.context.SelectionContext): com.aniflow.domain.selection.model.SmartSelectionResult = throw UnsupportedOperationException()
+    suspend fun traceSelection(context: com.aniflow.domain.selection.context.SelectionContext): com.aniflow.domain.selection.model.SelectionTrace = throw UnsupportedOperationException()
 }
 
 class DefaultSelectionEngine(
@@ -289,7 +293,7 @@ class DefaultSelectionEngine(
             } else {
                 val size = result.selected.release.rawMetadata["sizeBytes"]?.toLongOrNull() ?: 0L
                 totalBytes += size
-                previousUploader = result.selected.release.uploader
+                previousUploader = result.selected.release.uploaderName
             }
 
             allWarnings += result.explanation.warnings.map {
@@ -329,7 +333,7 @@ class DefaultSelectionEngine(
             val selected = result.selected
             if (selected != null) {
                 selectedCount++
-                val uploader = selected.release.uploader ?: "Unknown"
+                val uploader = selected.release.uploaderName ?: "Unknown"
                 uploaderCounts[uploader] = (uploaderCounts[uploader] ?: 0) + 1
 
                 val topEvaluated = result.rankedCandidates.firstOrNull { it.candidate == selected }

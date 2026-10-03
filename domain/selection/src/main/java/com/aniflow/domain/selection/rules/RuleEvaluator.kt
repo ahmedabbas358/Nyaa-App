@@ -43,7 +43,7 @@ class RuleEvaluator {
                     is RuleCondition.SeedersLessThan -> seeders < condition.seeders
                     is RuleCondition.LanguageIs -> technical.audioTracks.any { it.language == condition.language } ||
                         technical.subtitles.any { it.language == condition.language }
-                    is RuleCondition.UploaderIs -> release.uploader.equals(condition.uploaderId.value, ignoreCase = true)
+                    is RuleCondition.UploaderIs -> release.uploaderName.equals(condition.uploaderId.value, ignoreCase = true)
                     is RuleCondition.ReleaseGroupIs -> release.groupCandidate.equals(condition.groupId.value, ignoreCase = true)
                     is RuleCondition.AnimeIs -> release.animeCandidate.equals(condition.animeId.value, ignoreCase = true)
                     is RuleCondition.EpisodeIsMissing -> true

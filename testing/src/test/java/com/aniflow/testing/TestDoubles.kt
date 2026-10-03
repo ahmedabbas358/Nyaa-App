@@ -22,9 +22,12 @@ import com.aniflow.domain.valueobject.PageResult
 import com.aniflow.domain.valueobject.SearchQuery
 import com.aniflow.domain.valueobject.UrlValue
 import com.aniflow.provider.core.ReleaseProvider
+import com.aniflow.provider.core.health.ProviderHealth
+import com.aniflow.provider.core.health.ProviderHealthMetrics
+import com.aniflow.provider.core.model.ProviderCapabilities
 import com.aniflow.provider.core.model.ProviderDescriptor
-import com.aniflow.provider.core.model.ProviderPageResult
 import com.aniflow.provider.core.model.ProviderRelease
+import com.aniflow.provider.core.model.ProviderSearchPage
 import com.aniflow.provider.core.model.ProviderSearchRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -36,13 +39,14 @@ class FakeReleaseProvider(
     override val descriptor = ProviderDescriptor(
         id = ProviderId(providerId),
         name = "Fake Nyaa",
-        version = "1.0",
-        capabilities = emptySet()
+        baseUrl = UrlValue.HttpsUrl("https://nyaa.si"),
+        capabilities = ProviderCapabilities.NYAA,
+        version = "1.0"
     )
 
-    override suspend fun search(request: ProviderSearchRequest): AniFlowResult<ProviderPageResult<ProviderRelease>> {
+    override suspend fun search(request: ProviderSearchRequest): AniFlowResult<ProviderSearchPage> {
         return AniFlowResult.Success(
-            ProviderPageResult(
+            ProviderSearchPage(
                 items = cannedReleases,
                 page = request.page,
                 hasNextPage = false
@@ -50,13 +54,22 @@ class FakeReleaseProvider(
         )
     }
 
-    override suspend fun getDetails(detailsUrl: UrlValue): AniFlowResult<ProviderRelease> {
-        return cannedReleases.firstOrNull()?.let { AniFlowResult.Success(it) }
-            ?: AniFlowResult.Error(ErrorType.NotFoundError("Not found"), "Not found")
+    override suspend fun getRelease(providerReleaseId: String): AniFlowResult<ProviderRelease> {
+        val found = cannedReleases.firstOrNull { it.providerReleaseId == providerReleaseId }
+            ?: cannedReleases.firstOrNull()
+        return if (found != null) {
+            AniFlowResult.Success(found)
+        } else {
+            AniFlowResult.Error(ErrorType.ProviderUnavailable(providerId), "Release not found: $providerReleaseId")
+        }
     }
 
-    override suspend fun getRecent(limit: Int): AniFlowResult<List<ProviderRelease>> {
-        return AniFlowResult.Success(cannedReleases.take(limit))
+    override suspend fun searchByUploader(uploader: String, request: ProviderSearchRequest): AniFlowResult<ProviderSearchPage> {
+        return search(request)
+    }
+
+    override suspend fun healthCheck(): ProviderHealth {
+        return ProviderHealth.Healthy(ProviderHealthMetrics())
     }
 }
 

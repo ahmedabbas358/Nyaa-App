@@ -12,6 +12,9 @@ import com.aniflow.domain.valueobject.SeasonNumber
 import com.aniflow.domain.valueobject.UrlValue
 import java.time.Instant
 
+typealias TechnicalMetadata = ReleaseTechnicalMetadata
+
+
 /**
  * High-level categorization of the release structure (Section 16).
  */
