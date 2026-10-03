@@ -9,11 +9,15 @@ import com.aniflow.domain.repository.RuleRepository
 import com.aniflow.domain.repository.SettingsRepository
 import com.aniflow.domain.service.ReleaseParser
 import com.aniflow.domain.service.ReleaseParserImpl
+import com.aniflow.domain.usecase.CancelDownloadUseCase
 import com.aniflow.domain.usecase.EvaluateReleaseSelectionUseCase
 import com.aniflow.domain.usecase.ExecuteDownloadPlanUseCase
 import com.aniflow.domain.usecase.FinalizeDownloadUseCase
+import com.aniflow.domain.usecase.PauseDownloadUseCase
 import com.aniflow.domain.usecase.PrepareDownloadPlanUseCase
+import com.aniflow.domain.usecase.QueueDownloadUseCase
 import com.aniflow.domain.usecase.ReconcileDownloadsUseCase
+import com.aniflow.domain.usecase.ResumeDownloadUseCase
 import com.aniflow.domain.usecase.SearchReleasesCoordinatorUseCase
 import com.aniflow.provider.core.coordinator.ProviderSearchCoordinator
 import dagger.Module
@@ -75,6 +79,34 @@ object DomainModule {
     fun provideReconcileDownloadsUseCase(
         downloadRepository: DownloadRepository
     ): ReconcileDownloadsUseCase = ReconcileDownloadsUseCase(
+        downloadRepository = downloadRepository
+    )
+
+    @Provides
+    fun provideQueueDownloadUseCase(
+        downloadRepository: DownloadRepository
+    ): QueueDownloadUseCase = QueueDownloadUseCase(
+        downloadRepository = downloadRepository
+    )
+
+    @Provides
+    fun providePauseDownloadUseCase(
+        downloadRepository: DownloadRepository
+    ): PauseDownloadUseCase = PauseDownloadUseCase(
+        downloadRepository = downloadRepository
+    )
+
+    @Provides
+    fun provideResumeDownloadUseCase(
+        downloadRepository: DownloadRepository
+    ): ResumeDownloadUseCase = ResumeDownloadUseCase(
+        downloadRepository = downloadRepository
+    )
+
+    @Provides
+    fun provideCancelDownloadUseCase(
+        downloadRepository: DownloadRepository
+    ): CancelDownloadUseCase = CancelDownloadUseCase(
         downloadRepository = downloadRepository
     )
 
