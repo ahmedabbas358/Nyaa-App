@@ -41,15 +41,6 @@ import com.aniflow.domain.valueobject.SearchQuery
 import com.aniflow.domain.valueobject.StorageTarget
 import kotlinx.coroutines.flow.Flow
 
-/**
- * UseCase: Executes release search across providers with query and filter constraints.
- */
-class SearchReleasesUseCase(
-    private val releaseRepository: ReleaseRepository
-) {
-    operator fun invoke(query: SearchQuery): Flow<AniFlowResult<PageResult<Release>>> =
-        releaseRepository.search(query)
-}
 
 /**
  * UseCase: Groups discovered releases according to the specified grouping strategy.

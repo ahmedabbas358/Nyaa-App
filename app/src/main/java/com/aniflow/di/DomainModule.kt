@@ -119,10 +119,9 @@ object DomainModule {
 
     @Provides
     fun provideGetReleaseDetailsUseCase(
-        releaseRepository: ReleaseRepository,
-        providerRegistry: com.aniflow.provider.core.registry.ProviderRegistry
+        releaseRepository: ReleaseRepository
     ): com.aniflow.domain.usecase.GetReleaseDetailsUseCase =
-        com.aniflow.domain.usecase.GetReleaseDetailsUseCase(releaseRepository, providerRegistry)
+        com.aniflow.domain.usecase.GetReleaseDetailsUseCase(releaseRepository)
 
     @Provides
     fun provideGetAnimeUseCase(

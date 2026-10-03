@@ -26,10 +26,15 @@ import com.aniflow.domain.valueobject.ByteSize
 import com.aniflow.domain.valueobject.InfoHash
 import com.aniflow.domain.valueobject.PageResult
 import com.aniflow.domain.valueobject.ReleaseTechnicalMetadata
+import com.aniflow.domain.valueobject.SortOption
 import com.aniflow.domain.valueobject.UrlValue
 import com.aniflow.provider.core.coordinator.ProviderSearchCoordinator
+import com.aniflow.provider.core.model.ProviderCategory
 import com.aniflow.provider.core.model.ProviderRelease
+import com.aniflow.provider.core.model.ProviderSearchFilters
 import com.aniflow.provider.core.model.ProviderSearchRequest
+import com.aniflow.provider.core.model.ProviderSort
+import com.aniflow.provider.core.model.ProviderSortField
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.time.Instant
@@ -59,13 +64,27 @@ class SearchReleasesCoordinatorUseCase(
                 else -> request.query.toQueryString()
             }
 
+            val filter = when {
+                request.filters.trustedOnly -> ProviderSearchFilters.TrustedOnly
+                request.filters.excludeRemakes -> ProviderSearchFilters.NoRemakes
+                else -> ProviderSearchFilters.NoFilter
+            }
+            val sortField = when (request.sort.option) {
+                SortOption.PublishedDate -> ProviderSortField.Date
+                SortOption.Seeders -> ProviderSortField.Seeders
+                SortOption.Leechers -> ProviderSortField.Leechers
+                SortOption.Downloads -> ProviderSortField.Downloads
+                SortOption.Size -> ProviderSortField.Size
+                SortOption.Title -> ProviderSortField.Date
+            }
+
             val providerRequest = ProviderSearchRequest(
                 query = queryText,
                 page = request.page,
                 pageSize = 50,
-                sort = request.sort.option.name,
-                sortAscending = request.sort.direction.name.equals("Ascending", ignoreCase = true),
-                trustedOnly = request.filters.trustedOnly
+                category = ProviderCategory.All,
+                filters = filter,
+                sort = ProviderSort(sortField, request.sort.direction)
             )
 
             val mergedResult = coordinator.search(providerRequest)

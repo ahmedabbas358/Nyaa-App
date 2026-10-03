@@ -40,4 +40,12 @@ sealed interface ProviderCategory {
         override val id: String,
         override val displayName: String
     ) : ProviderCategory
+
+    companion object {
+        val ANIME_ENGLISH: ProviderCategory = Anime.EnglishTranslated
+        val ANIME_NON_ENGLISH: ProviderCategory = Anime.NonEnglishTranslated
+        val ANIME_RAW: ProviderCategory = Anime.Raw
+        val ANIME_ALL: ProviderCategory = Anime.AllAnime
+        val ALL: ProviderCategory = All
+    }
 }

@@ -55,19 +55,23 @@ object ProviderReleaseMapper {
             else -> ReleaseSource.Unknown
         }
 
+        val providerRef = ProviderRef(providerId = providerId, name = providerName)
+
         val uploader = providerRelease.uploader?.let {
             Uploader(
                 id = UploaderId(it.displayName.lowercase().replace(" ", "_")),
+                provider = providerRef,
                 name = it.displayName,
-                providerId = providerId
+                normalizedName = it.displayName.lowercase()
             )
         }
 
         val releaseGroup = providerRelease.releaseGroup?.let {
             ReleaseGroup(
                 id = ReleaseGroupId(it.lowercase().replace(" ", "_")),
+                provider = providerRef,
                 name = it,
-                providerId = providerId
+                normalizedName = it.lowercase()
             )
         }
 
@@ -79,18 +83,19 @@ object ProviderReleaseMapper {
             lastCheckedAt = Instant.now()
         )
 
-        val identity = when {
-            infoHash != null -> ReleaseIdentity.TorrentHash(infoHash)
-            providerRelease.providerReleaseId != null -> ReleaseIdentity.ProviderSpecific(
-                providerId = providerId,
-                externalId = providerRelease.providerReleaseId
-            )
-            else -> ReleaseIdentity.Custom(releaseId.value)
-        }
+        val identity = ReleaseIdentity(
+            providerId = providerId,
+            providerReleaseId = providerRelease.providerReleaseId,
+            infoHash = infoHash,
+            canonicalSourceUrl = providerRelease.detailsUrl?.rawValue,
+            normalizedTitle = providerRelease.title.trim(),
+            episodeRange = null,
+            technicalSignature = null
+        )
 
         return Release(
             id = releaseId,
-            provider = ProviderRef(id = providerId, name = providerName),
+            provider = providerRef,
             providerReleaseId = providerRelease.providerReleaseId,
             title = providerRelease.title,
             normalizedTitle = providerRelease.title.trim(),
