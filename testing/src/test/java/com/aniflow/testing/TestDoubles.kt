@@ -102,6 +102,14 @@ class InMemoryDownloadRepository : DownloadRepository {
     override suspend fun getFilesForTask(taskId: DownloadTaskId): List<DownloadFile> =
         fileStore.values.filter { it.taskId == taskId }
     override suspend fun saveFile(file: DownloadFile) { fileStore[file.id] = file }
+    override suspend fun updateTaskState(id: DownloadTaskId, state: DownloadState, errorMessage: String?) {
+        taskStore[id]?.let { taskStore[id] = it.copy(state = state, errorMessage = errorMessage) }
+    }
+    override suspend fun updateTaskProgress(id: DownloadTaskId, downloadedBytes: Long, totalBytes: Long?, speed: Long, eta: Long) {
+        taskStore[id]?.let { taskStore[id] = it.copy(downloadedBytes = downloadedBytes, totalBytes = totalBytes ?: it.totalBytes, speedBytesPerSecond = speed, etaSeconds = eta) }
+    }
+    override suspend fun getQueuedTasks(limit: Int): List<DownloadTask> =
+        taskStore.values.filter { it.state == DownloadState.Queued }.take(limit)
 }
 
 class InMemoryLibraryRepository : LibraryRepository {

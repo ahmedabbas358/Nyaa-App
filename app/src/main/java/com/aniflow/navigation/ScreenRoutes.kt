@@ -26,6 +26,10 @@ sealed class ScreenRoute(val route: String) {
         fun createRoute(releaseId: String): String = "release/$releaseId"
     }
 
+    data object BatchDetails : ScreenRoute("batch/{releaseId}") {
+        fun createRoute(releaseId: String): String = "batch/$releaseId"
+    }
+
     data object AnimeDetails : ScreenRoute("anime/{animeId}") {
         fun createRoute(animeId: String): String = "anime/$animeId"
     }

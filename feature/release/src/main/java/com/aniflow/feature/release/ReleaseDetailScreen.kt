@@ -44,7 +44,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
+import com.aniflow.core.ui.util.TorrentClientBridge
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -265,33 +267,85 @@ fun ReleaseDetailScreen(
                         }
                     }
 
-                    // 4. Quick Action Buttons (Copy Magnet / Share)
-                    Row(
+                    val context = LocalContext.current
+                    val t = release.source as? ReleaseSource.Torrent
+                    val magnetUri = t?.magnetUri?.rawValue
+                    val torrentUrl = t?.torrentUrl?.rawValue ?: "https://nyaa.si/download/${release.providerReleaseId}.torrent"
+                    val detailsWebUrl = "https://nyaa.si/view/${release.providerReleaseId}"
+
+                    // 4. Advanced Torrent & External Actions
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        OutlinedButton(
-                            onClick = { /* Copy magnet handled via clipboard manager */ },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(8.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Copy Magnet", fontSize = 12.sp)
+                            OutlinedButton(
+                                onClick = {
+                                    if (!magnetUri.isNullOrBlank()) {
+                                        TorrentClientBridge.copyToClipboard(context, magnetUri)
+                                    } else {
+                                        TorrentClientBridge.copyToClipboard(context, detailsWebUrl, toastMessage = "Page link copied")
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Copy Magnet", fontSize = 12.sp)
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    if (!magnetUri.isNullOrBlank()) {
+                                        TorrentClientBridge.openInExternalTorrentClient(context, magnetUri, release.title)
+                                    } else {
+                                        TorrentClientBridge.openWebPage(context, detailsWebUrl)
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("External Client", fontSize = 12.sp)
+                            }
                         }
 
-                        OutlinedButton(
-                            onClick = { /* Open provider details URL */ },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(8.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(Icons.Default.OpenInBrowser, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Open Page", fontSize = 12.sp)
+                            OutlinedButton(
+                                onClick = {
+                                    TorrentClientBridge.downloadTorrentFileDirectly(context, torrentUrl, release.title)
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Save .torrent", fontSize = 12.sp)
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    TorrentClientBridge.openWebPage(context, detailsWebUrl)
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(Icons.Default.OpenInBrowser, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Open on Nyaa", fontSize = 12.sp)
+                            }
                         }
                     }
 
-                    // 5. Action CTA
+                    // 5. Main Action CTA: Download inside AniFlow
                     Button(
                         onClick = { viewModel.downloadRelease() },
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
@@ -302,7 +356,7 @@ fun ReleaseDetailScreen(
                     ) {
                         Icon(Icons.Default.Download, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Download Release", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("Download in AniFlow", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

@@ -277,19 +277,20 @@ object EntityMappers {
 
     // --- DownloadTask Mappers ---
     fun DownloadTaskEntity.toDomain(): DownloadTask {
+        val resolvedName = destinationRelativePath.ifBlank { id }
         val src = when (sourceType) {
             "Torrent" -> DownloadSource.TorrentSource(
                 infoHash = torrentHash?.let { InfoHash(it) } ?: InfoHash("0000000000000000000000000000000000000000"),
                 magnetUri = if (sourceUri.startsWith("magnet:?")) UrlValue.MagnetUri(sourceUri) else null,
-                name = destinationRelativePath
+                name = resolvedName
             )
             "Http" -> DownloadSource.HttpSource(
                 url = UrlValue.HttpsUrl(sourceUri),
-                fileName = destinationRelativePath
+                fileName = resolvedName
             )
             else -> DownloadSource.DirectSource(
                 url = UrlValue.HttpsUrl(sourceUri),
-                fileName = destinationRelativePath
+                fileName = resolvedName
             )
         }
 
@@ -305,7 +306,11 @@ object EntityMappers {
                 1 -> DownloadPriority.Lowest
                 else -> DownloadPriority.Normal
             },
-            destination = StorageTarget(destinationId, destinationId),
+            destination = StorageTarget(destinationId, resolvedName),
+            downloadedBytes = downloadedBytes,
+            totalBytes = if (totalBytes > 0) totalBytes else null,
+            speedBytesPerSecond = speedBytesPerSecond,
+            etaSeconds = if (etaSeconds > 0) etaSeconds else null,
             createdAt = Instant.ofEpochMilli(createdAt),
             updatedAt = Instant.ofEpochMilli(updatedAt),
             startedAt = startedAt?.let { Instant.ofEpochMilli(it) },
@@ -332,9 +337,15 @@ object EntityMappers {
         state = state.name,
         priority = priority.weight,
         destinationId = destination.identifier,
-        destinationRelativePath = "",
-        totalBytes = 0L,
-        downloadedBytes = 0L,
+        destinationRelativePath = when (val s = source) {
+            is DownloadSource.TorrentSource -> s.name
+            is DownloadSource.HttpSource -> s.fileName
+            is DownloadSource.DirectSource -> s.fileName
+        },
+        totalBytes = totalBytes ?: 0L,
+        downloadedBytes = downloadedBytes,
+        speedBytesPerSecond = speedBytesPerSecond,
+        etaSeconds = etaSeconds ?: 0L,
         createdAt = createdAt.toEpochMilli(),
         startedAt = startedAt?.toEpochMilli(),
         updatedAt = updatedAt.toEpochMilli(),

@@ -167,21 +167,21 @@ class SearchViewModel(
         viewModelScope.launch {
             var queuedCount = 0
             for (release in releases) {
-                val magnet = release.magnetUri
-                if (!magnet.isNullOrBlank()) {
-                    queueDownloadUseCase?.queueTorrent(
-                        title = release.title,
-                        magnetUri = magnet,
-                        releaseId = release.id,
-                        destinationFolder = destinationFolder
-                    )
-                    queuedCount++
-                }
+                val effectiveUri: String = release.magnetUri?.takeIf { it.isNotBlank() }
+                    ?: "https://nyaa.si/download/${release.id}.torrent"
+
+                queueDownloadUseCase?.queueTorrent(
+                    title = release.title,
+                    magnetUri = effectiveUri,
+                    releaseId = release.id,
+                    destinationFolder = destinationFolder
+                )
+                queuedCount++
             }
             _uiState.value = _uiState.value.copy(
                 showBatchSelectionSheet = false,
                 selectedGroupForBatch = null,
-                batchSuccessNotification = "Queued $queuedCount episodes into $destinationFolder"
+                batchSuccessNotification = "Queued $queuedCount episode(s) into $destinationFolder"
             )
         }
     }

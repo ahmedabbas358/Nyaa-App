@@ -171,6 +171,58 @@ fun AniFlowApp(
                 )
             }
 
+            composable(ScreenRoute.BatchDetails.route) { backStackEntry ->
+                val releaseId = backStackEntry.arguments?.getString("releaseId") ?: ""
+                val releaseViewModel = releaseDetailViewModelFactory(releaseId)
+                val state by releaseViewModel.uiState.collectAsState()
+                val rel = state.release
+                val batchState = com.aniflow.feature.release.BatchDetailUiState(
+                    releaseId = releaseId,
+                    batchTitle = rel?.title ?: "Batch Release #$releaseId",
+                    size = rel?.availability?.size?.let { "${it.bytes / (1024 * 1024)} MB" } ?: "Unknown",
+                    uploader = rel?.uploader?.name,
+                    releaseGroup = rel?.releaseGroup?.name,
+                    seeders = rel?.availability?.seeders ?: 0,
+                    resolution = rel?.technical?.resolution?.displayName,
+                    videoCodec = rel?.technical?.videoCodec?.displayName,
+                    audioCodec = rel?.technical?.audioTracks?.firstOrNull()?.codec?.displayName,
+                    subtitleSummary = rel?.technical?.subtitles?.mapNotNull { it.language?.code ?: it.label }?.joinToString(", "),
+                    isCoverageInferred = true,
+                    coveredEpisodes = when (val er = rel?.episodeRange) {
+                        is com.aniflow.domain.valueobject.EpisodeRange.Range -> (er.start.major..er.end.major).map { ep ->
+                            com.aniflow.feature.release.BatchEpisodeCoverageItem(
+                                episodeNumber = ep,
+                                isCovered = true
+                            )
+                        }
+                        else -> (1..12).map { ep ->
+                            com.aniflow.feature.release.BatchEpisodeCoverageItem(
+                                episodeNumber = ep,
+                                isCovered = true
+                            )
+                        }
+                    }
+                )
+                com.aniflow.feature.release.BatchDetailScreen(
+                    uiState = batchState,
+                    onBackClick = { navController.popBackStack() },
+                    onDownloadBatchClick = {
+                        rel?.let { release ->
+                            val magnetOrUrl = (release.source as? com.aniflow.domain.model.aggregate.release.ReleaseSource.Torrent)?.magnetUri?.rawValue
+                                ?: (release.source as? com.aniflow.domain.model.aggregate.release.ReleaseSource.Torrent)?.torrentUrl?.rawValue
+                                ?: "https://nyaa.si/download/$releaseId.torrent"
+                            downloadsViewModel.queueFromLink(
+                                link = magnetOrUrl,
+                                title = release.title
+                            )
+                            navController.navigate(ScreenRoute.Downloads.route) {
+                                popUpTo(ScreenRoute.Home.route)
+                            }
+                        }
+                    }
+                )
+            }
+
             composable(ScreenRoute.AnimeDetails.route) {
                 AnimeSeasonScreen(
                     onBack = { navController.popBackStack() },
@@ -263,7 +315,8 @@ fun AniFlowApp(
             composable(ScreenRoute.ImportLink.route) {
                 ImportLinkScreen(
                     onBack = { navController.popBackStack() },
-                    onAddToQueue = {
+                    onAddToQueue = { link ->
+                        downloadsViewModel.queueFromLink(link)
                         navController.navigate(ScreenRoute.Downloads.route) {
                             popUpTo(ScreenRoute.Home.route)
                         }

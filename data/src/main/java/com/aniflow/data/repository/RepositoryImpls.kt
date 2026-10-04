@@ -351,6 +351,18 @@ class DownloadRepositoryImpl(
     override suspend fun saveFile(file: DownloadFile) = fileDao.insert(file.toEntity())
 
     override suspend fun deleteTask(id: DownloadTaskId) = taskDao.delete(id.value)
+
+    override suspend fun updateTaskState(id: DownloadTaskId, state: DownloadState, errorMessage: String?) {
+        taskDao.updateStateWithReason(id.value, state.name, errorMessage)
+    }
+
+    override suspend fun updateTaskProgress(id: DownloadTaskId, downloadedBytes: Long, totalBytes: Long?, speed: Long, eta: Long) {
+        taskDao.updateProgressWithTotal(id.value, downloadedBytes, totalBytes ?: 0L, speed, eta)
+    }
+
+    override suspend fun getQueuedTasks(limit: Int): List<DownloadTask> {
+        return taskDao.getQueuedTasksForExecution(limit).map { it.toDomain() }
+    }
 }
 
 class LibraryRepositoryImpl(

@@ -40,10 +40,14 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var cancelDownloadUseCase: CancelDownloadUseCase
     @Inject lateinit var getReleaseDetailsUseCase: com.aniflow.domain.usecase.GetReleaseDetailsUseCase
     @Inject lateinit var watchProgressRepository: com.aniflow.domain.library.repository.WatchProgressRepository
+    @Inject lateinit var downloadExecutionCoordinator: com.aniflow.download.service.DownloadExecutionCoordinator
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Start active download execution coordinator (Nyaa torrent + HTTP engines, concurrency slots, notifications)
+        downloadExecutionCoordinator.start()
 
         val realtimeSyncScheduler = com.aniflow.feature.automation.scheduler.NyaaRealtimeSyncScheduler(
             searchCoordinatorUseCase = searchReleasesCoordinatorUseCase,
@@ -65,10 +69,11 @@ class MainActivity : ComponentActivity() {
             queueDownloadUseCase = queueDownloadUseCase
         )
         val downloadsViewModel = DownloadsViewModel(
-            downloadRepository,
-            pauseDownloadUseCase,
-            resumeDownloadUseCase,
-            cancelDownloadUseCase
+            downloadRepository = downloadRepository,
+            pauseDownloadUseCase = pauseDownloadUseCase,
+            resumeDownloadUseCase = resumeDownloadUseCase,
+            cancelDownloadUseCase = cancelDownloadUseCase,
+            queueDownloadUseCase = queueDownloadUseCase
         )
         val libraryViewModel = LibraryViewModel(libraryRepository)
         val settingsViewModel = SettingsViewModel(settingsRepository)

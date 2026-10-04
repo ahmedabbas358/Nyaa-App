@@ -83,6 +83,71 @@ class QueueDownloadUseCase(
         downloadRepository.saveTask(task)
         return taskId
     }
+
+    suspend fun queueFromLink(
+        link: String,
+        customTitle: String? = null,
+        destinationFolder: String = "Anime/Downloads"
+    ): DownloadTaskId {
+        val trimmed = link.trim()
+        val title = customTitle?.ifBlank { null } ?: when {
+            trimmed.contains("nyaa.si/view/", ignoreCase = true) -> {
+                val id = trimmed.substringAfter("nyaa.si/view/").substringBefore("?").substringBefore("/")
+                "Nyaa Release #$id"
+            }
+            trimmed.startsWith("magnet:?", ignoreCase = true) -> {
+                val dn = trimmed.substringAfter("dn=", "").substringBefore("&").replace("+", " ")
+                if (dn.isNotBlank()) {
+                    try {
+                        java.net.URLDecoder.decode(dn, "UTF-8")
+                    } catch (e: Exception) {
+                        dn
+                    }
+                } else "Torrent Download"
+            }
+            trimmed.contains("/") -> trimmed.substringAfterLast("/").substringBefore("?")
+            else -> "Download Task"
+        }
+
+        return if (trimmed.startsWith("magnet:?", ignoreCase = true)) {
+            queueTorrent(title = title, magnetUri = trimmed, destinationFolder = destinationFolder)
+        } else if (trimmed.endsWith(".torrent", ignoreCase = true) || trimmed.contains("nyaa.si/download/")) {
+            val taskId = DownloadTaskId("task-${UUID.randomUUID().toString().take(8)}")
+            val task = DownloadTask(
+                id = taskId,
+                releaseId = null,
+                source = DownloadSource.TorrentSource(
+                    infoHash = InfoHash("0000000000000000000000000000000000000000"),
+                    torrentFileUrl = UrlValue.TorrentUrl(trimmed),
+                    name = title
+                ),
+                state = DownloadState.Queued,
+                priority = DownloadPriority.Normal,
+                destination = StorageTarget(destinationFolder),
+                createdAt = Instant.now(),
+                updatedAt = Instant.now()
+            )
+            downloadRepository.saveTask(task)
+            taskId
+        } else {
+            val taskId = DownloadTaskId("task-${UUID.randomUUID().toString().take(8)}")
+            val task = DownloadTask(
+                id = taskId,
+                releaseId = null,
+                source = DownloadSource.DirectSource(
+                    url = UrlValue.HttpsUrl(if (trimmed.startsWith("http")) trimmed else "https://$trimmed"),
+                    fileName = if (title.contains(".")) title else "$title.mp4"
+                ),
+                state = DownloadState.Queued,
+                priority = DownloadPriority.Normal,
+                destination = StorageTarget(destinationFolder),
+                createdAt = Instant.now(),
+                updatedAt = Instant.now()
+            )
+            downloadRepository.saveTask(task)
+            taskId
+        }
+    }
 }
 
 class QueueBatchDownloadsUseCase(

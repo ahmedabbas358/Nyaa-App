@@ -59,6 +59,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import com.aniflow.core.ui.util.TorrentClientBridge
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -414,25 +416,45 @@ fun EpisodeBatchSelectionSheet(
                         )
                     }
 
-                    Button(
-                        onClick = {
-                            if (selectedReleases.isNotEmpty()) {
-                                onQueueBatchDownload(selectedReleases)
-                            }
-                        },
-                        enabled = selectedCount > 0,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = PrimaryIndigo,
-                            disabledContainerColor = DarkCardBorder
-                        ),
-                        shape = RoundedCornerShape(AppShapes.sm)
-                    ) {
-                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = "Download ($selectedCount)",
-                            style = AppTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        )
+                    val context = LocalContext.current
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedButton(
+                            onClick = {
+                                val allMagnets = selectedReleases.mapNotNull {
+                                    if (!it.magnetUri.isNullOrBlank()) it.magnetUri else "https://nyaa.si/download/${it.id}.torrent"
+                                }.joinToString("\n")
+                                if (allMagnets.isNotBlank()) {
+                                    TorrentClientBridge.copyToClipboard(context, allMagnets, toastMessage = "Copied $selectedCount link(s)")
+                                }
+                            },
+                            enabled = selectedCount > 0,
+                            shape = RoundedCornerShape(AppShapes.sm),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text("Copy Magnets", fontSize = 11.sp)
+                        }
+
+                        Button(
+                            onClick = {
+                                if (selectedReleases.isNotEmpty()) {
+                                    onQueueBatchDownload(selectedReleases)
+                                }
+                            },
+                            enabled = selectedCount > 0,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PrimaryIndigo,
+                                disabledContainerColor = DarkCardBorder
+                            ),
+                            shape = RoundedCornerShape(AppShapes.sm)
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = "Queue ($selectedCount)",
+                                style = AppTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            )
+                        }
                     }
                 }
             }

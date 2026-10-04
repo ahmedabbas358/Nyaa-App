@@ -135,6 +135,9 @@ interface DownloadRepository {
     suspend fun getFilesForTask(taskId: DownloadTaskId): List<DownloadFile>
     suspend fun saveFile(file: DownloadFile)
     suspend fun deleteTask(id: DownloadTaskId)
+    suspend fun updateTaskState(id: DownloadTaskId, state: DownloadState, errorMessage: String? = null)
+    suspend fun updateTaskProgress(id: DownloadTaskId, downloadedBytes: Long, totalBytes: Long?, speed: Long, eta: Long)
+    suspend fun getQueuedTasks(limit: Int): List<DownloadTask>
 }
 
 interface LibraryRepository {

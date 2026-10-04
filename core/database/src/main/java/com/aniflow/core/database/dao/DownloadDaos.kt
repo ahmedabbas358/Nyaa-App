@@ -53,6 +53,9 @@ interface DownloadTaskDao {
     @Query("UPDATE download_tasks SET state = :state, updated_at = :updatedAt WHERE id = :id")
     suspend fun updateState(id: String, state: String, updatedAt: Long = System.currentTimeMillis())
 
+    @Query("UPDATE download_tasks SET state = :state, error_message = :errorMessage, updated_at = :updatedAt WHERE id = :id")
+    suspend fun updateStateWithReason(id: String, state: String, errorMessage: String? = null, updatedAt: Long = System.currentTimeMillis())
+
     @Query("""
         UPDATE download_tasks 
         SET downloaded_bytes = :downloadedBytes, speed_bytes_per_second = :speed, 
@@ -62,6 +65,24 @@ interface DownloadTaskDao {
     suspend fun updateProgress(
         id: String,
         downloadedBytes: Long,
+        speed: Long,
+        eta: Long,
+        updatedAt: Long = System.currentTimeMillis()
+    )
+
+    @Query("""
+        UPDATE download_tasks 
+        SET downloaded_bytes = :downloadedBytes, 
+            total_bytes = CASE WHEN :totalBytes > 0 THEN :totalBytes ELSE total_bytes END,
+            speed_bytes_per_second = :speed, 
+            eta_seconds = :eta, 
+            updated_at = :updatedAt 
+        WHERE id = :id
+    """)
+    suspend fun updateProgressWithTotal(
+        id: String,
+        downloadedBytes: Long,
+        totalBytes: Long,
         speed: Long,
         eta: Long,
         updatedAt: Long = System.currentTimeMillis()

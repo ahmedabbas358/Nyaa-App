@@ -10,6 +10,7 @@ import com.aniflow.domain.repository.DownloadRepository
 import com.aniflow.domain.state.DownloadState
 import com.aniflow.domain.usecase.CancelDownloadUseCase
 import com.aniflow.domain.usecase.PauseDownloadUseCase
+import com.aniflow.domain.usecase.QueueDownloadUseCase
 import com.aniflow.domain.usecase.ResumeDownloadUseCase
 import com.aniflow.feature.downloads.aggregator.DownloadDashboardAggregator
 import com.aniflow.feature.downloads.model.DownloadEngineBadge
@@ -56,7 +57,8 @@ class DownloadsViewModel(
     private val downloadRepository: DownloadRepository,
     private val pauseDownloadUseCase: PauseDownloadUseCase,
     private val resumeDownloadUseCase: ResumeDownloadUseCase,
-    private val cancelDownloadUseCase: CancelDownloadUseCase
+    private val cancelDownloadUseCase: CancelDownloadUseCase,
+    private val queueDownloadUseCase: QueueDownloadUseCase? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DownloadsUiState())
@@ -179,6 +181,20 @@ class DownloadsViewModel(
         }
     }
 
+    fun clearCompleted() {
+        viewModelScope.launch {
+            _uiState.value.rawTasks.filter { it.state == DownloadStateUi.Completed }.forEach {
+                downloadRepository.deleteTask(it.id)
+            }
+        }
+    }
+
+    fun queueFromLink(link: String, title: String? = null) {
+        viewModelScope.launch {
+            queueDownloadUseCase?.queueFromLink(link, title)
+        }
+    }
+
     private fun DownloadTask.toUiModel(): DownloadTaskUiModel {
         val taskTitle = when (val s = source) {
             is DownloadSource.TorrentSource -> s.name
@@ -213,6 +229,24 @@ class DownloadsViewModel(
             DownloadEngineBadge.HTTP
         }
 
+        val percent = if (totalBytes != null && totalBytes!! > 0L) {
+            ((downloadedBytes.toDouble() / totalBytes!!) * 100).toInt().coerceIn(0, 100)
+        } else if (state == DownloadState.Completed) {
+            100
+        } else 0
+
+        val speedFormatted = if (speedBytesPerSecond > 0L) {
+            "${com.aniflow.feature.downloads.util.ByteSizeFormatter.format(speedBytesPerSecond)}/s"
+        } else "0 B/s"
+
+        val etaFormatted = if (etaSeconds != null && etaSeconds!! > 0L) {
+            val mins = etaSeconds!! / 60
+            val secs = etaSeconds!! % 60
+            if (mins > 60) "${mins / 60}h ${mins % 60}m" else "${mins}m ${secs}s"
+        } else if (state == DownloadState.Completed) {
+            "Done"
+        } else "Estimating…"
+
         return DownloadTaskUiModel(
             id = id,
             title = taskTitle,
@@ -221,7 +255,19 @@ class DownloadsViewModel(
             state = stateUi,
             engineBadge = engineBadge,
             priority = priorityUi,
+            downloadedBytes = downloadedBytes,
+            totalBytes = totalBytes,
+            progressPercent = percent,
+            speedFormatted = speedFormatted,
+            speedBytesPerSec = speedBytesPerSecond,
+            etaFormatted = etaFormatted,
+            etaSeconds = etaSeconds,
             destinationPath = destination.identifier,
+            sourceUrlOrMagnet = when (val s = source) {
+                is DownloadSource.TorrentSource -> s.magnetUri?.rawValue ?: s.torrentFileUrl?.rawValue
+                is DownloadSource.HttpSource -> s.url.rawValue
+                is DownloadSource.DirectSource -> s.url.rawValue
+            },
             createdAt = createdAt,
             errorMessage = errorMessage
         )
