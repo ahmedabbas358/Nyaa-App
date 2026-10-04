@@ -21,6 +21,7 @@ class NyaaHttpClient(
 ) {
 
     private val client: OkHttpClient = baseOkHttpClient.newBuilder()
+        .dns(ResilientNyaaDns())
         .connectTimeout(config.connectTimeoutMs, TimeUnit.MILLISECONDS)
         .readTimeout(config.readTimeoutMs, TimeUnit.MILLISECONDS)
         .writeTimeout(config.writeTimeoutMs, TimeUnit.MILLISECONDS)

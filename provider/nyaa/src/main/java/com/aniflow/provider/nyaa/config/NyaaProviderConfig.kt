@@ -8,7 +8,7 @@ import com.aniflow.domain.valueobject.UrlValue
  */
 data class NyaaProviderConfig(
     val baseUrl: UrlValue = UrlValue.HttpsUrl("https://nyaa.si/"),
-    val userAgent: String = "AniFlow/1.0.0 (Android; Release Discovery Client)",
+    val userAgent: String = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
     val connectTimeoutMs: Long = 15_000L,
     val readTimeoutMs: Long = 20_000L,
     val writeTimeoutMs: Long = 15_000L,

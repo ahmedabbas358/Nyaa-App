@@ -127,6 +127,11 @@ class NyaaProvider(
             val pageDto = searchParser.parse(response.body, request.page)
             val domainReleases = pageDto.releases.map { mapper.toProviderRelease(it) }
 
+            if (domainReleases.isEmpty() && request.page == 1) {
+                // If HTML returns empty on first page, query RSS feed as fallback
+                return tryRssFallback(request, uploader, null)
+            }
+
             AniFlowResult.Success(
                 ProviderSearchPage(
                     items = domainReleases,
@@ -136,22 +141,19 @@ class NyaaProvider(
                     totalItemsEstimate = pageDto.totalResultsEstimate
                 )
             )
-        } catch (e: ProviderError.ParserStructureChanged) {
-            // Section 26 & 27: Try RSS fallback if HTML parsing failed due to structure change
-            tryRssFallback(request, uploader, e)
-        } catch (e: ProviderError) {
-            handleError(e, startTime)
         } catch (e: Exception) {
-            handleError(ProviderError.Unknown("Search failed: ${e.message}", e), startTime)
+            // Automatic RSS fallback on any network, parsing, or blocking error
+            tryRssFallback(request, uploader, e)
         }
     }
 
     private suspend fun tryRssFallback(
         request: ProviderSearchRequest,
         uploader: String?,
-        originalError: ProviderError.ParserStructureChanged
+        originalError: Throwable?
     ): AniFlowResult<ProviderSearchPage> {
         val rssUrl = urlBuilder.buildRssUrl(request, uploader)
+        val startTime = System.currentTimeMillis()
         return try {
             val response = rateLimiter.execute {
                 retryPolicy.executeWithRetry {
@@ -160,6 +162,9 @@ class NyaaProvider(
             }
             val pageDto = rssParser.parse(response.body)
             val releases = pageDto.releases.map { mapper.toProviderRelease(it) }
+            circuitBreaker.recordSuccess()
+            healthChecker.recordSuccess(System.currentTimeMillis() - startTime, response.statusCode)
+
             AniFlowResult.Success(
                 ProviderSearchPage(
                     items = releases,
@@ -170,10 +175,9 @@ class NyaaProvider(
                 )
             )
         } catch (fallbackError: Exception) {
-            AniFlowResult.Error(
-                error = ErrorType.ParserError("nyaa", "HTML structure changed and RSS fallback failed: ${originalError.message}"),
-                message = "Provider HTML format changed: ${originalError.message}",
-                cause = originalError
+            handleError(
+                ProviderError.Unknown("Search failed: ${originalError?.message ?: fallbackError.message}", fallbackError),
+                startTime
             )
         }
     }
