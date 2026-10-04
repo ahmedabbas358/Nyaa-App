@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.FilterList
@@ -77,6 +78,7 @@ import com.aniflow.core.ui.theme.TextSecondary
 import com.aniflow.domain.search.model.SearchScope
 import com.aniflow.domain.search.model.SearchResultItem
 import com.aniflow.feature.search.components.AdvancedFilterBuilderSheet
+import com.aniflow.feature.search.components.EpisodeBatchSelectionSheet
 import com.aniflow.feature.search.components.ReleaseComparisonSheet
 import com.aniflow.feature.search.components.SearchResultRow
 import com.aniflow.feature.search.components.SearchSuggestionsView
@@ -188,6 +190,60 @@ fun SearchScreen(
                     }
                 }
 
+                // YouTube-style Filter Chips Row (Auto-Batch Grouping & Uploader Selection)
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AppSpacing.md, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    item {
+                        FilterChip(
+                            selected = uiState.isGroupedView,
+                            onClick = { viewModel.onEvent(SearchUiEvent.ToggleGroupedView) },
+                            label = { Text("📦 Grouped Anime", style = AppTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold)) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = PrimaryIndigo.copy(alpha = 0.25f),
+                                selectedLabelColor = PrimaryIndigo,
+                                containerColor = DarkSurface,
+                                labelColor = TextSecondary
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = uiState.isGroupedView,
+                                selectedBorderColor = PrimaryIndigo,
+                                borderColor = DarkCardBorder
+                            ),
+                            shape = RoundedCornerShape(AppShapes.sm)
+                        )
+                    }
+
+                    val popularUploaders = listOf("All Uploaders", "SubsPlease", "Erai-raws", "EMBER", "Judas")
+                    items(popularUploaders) { uploaderName ->
+                        val isSelected = if (uploaderName == "All Uploaders") uiState.selectedUploaderFilter == null else uiState.selectedUploaderFilter == uploaderName
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                viewModel.onEvent(SearchUiEvent.SetUploaderFilter(if (uploaderName == "All Uploaders") null else uploaderName))
+                            },
+                            label = { Text(uploaderName, style = AppTypography.caption.copy(fontSize = 11.sp)) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = PrimaryIndigo.copy(alpha = 0.25f),
+                                selectedLabelColor = PrimaryIndigo,
+                                containerColor = DarkSurface,
+                                labelColor = TextSecondary
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
+                                selectedBorderColor = PrimaryIndigo,
+                                borderColor = DarkCardBorder
+                            ),
+                            shape = RoundedCornerShape(AppShapes.sm)
+                        )
+                    }
+                }
+
                 // Offline Notice Banner (Section 28)
                 if (uiState.isOffline) {
                     Surface(
@@ -254,6 +310,7 @@ fun SearchScreen(
                                 onToggleCompare = { viewModel.onEvent(SearchUiEvent.ToggleCompareSelection(item.id)) },
                                 onClick = {
                                     when (item) {
+                                        is SearchResultItem.GroupedAnimeResult -> viewModel.onEvent(SearchUiEvent.OpenBatchSelectionSheet(item))
                                         is SearchResultItem.AnimeResult -> onAnimeClick(item.id)
                                         is SearchResultItem.ReleaseResult -> onReleaseClick(item.id)
                                         else -> Unit
@@ -321,6 +378,49 @@ fun SearchScreen(
                 },
                 onDismiss = { viewModel.onEvent(SearchUiEvent.CloseCompareSheet) }
             )
+        }
+
+        // Smart Episode Batch Selection Modal (YouTube & 1DM Style)
+        if (uiState.showBatchSelectionSheet && uiState.selectedGroupForBatch != null) {
+            EpisodeBatchSelectionSheet(
+                groupedAnime = uiState.selectedGroupForBatch!!,
+                onQueueBatchDownload = { releases ->
+                    viewModel.onEvent(SearchUiEvent.BatchQueueDownloads(releases))
+                },
+                onDismiss = { viewModel.onEvent(SearchUiEvent.CloseBatchSelectionSheet) }
+            )
+        }
+
+        // Batch Queue Success Notification Toast
+        uiState.batchSuccessNotification?.let { msg ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(AppSpacing.md),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Surface(
+                    color = AppSemanticColors.Success,
+                    shape = RoundedCornerShape(AppShapes.sm),
+                    shadowElevation = 8.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = msg, style = AppTypography.body.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold), color = Color.White)
+                        Spacer(Modifier.width(12.dp))
+                        IconButton(
+                            onClick = { viewModel.onEvent(SearchUiEvent.DismissBatchSuccessNotification) },
+                            modifier = Modifier.size(20.dp)
+                        ) {
+                            Icon(Icons.Default.Clear, contentDescription = "Dismiss", tint = Color.White)
+                        }
+                    }
+                }
+            }
         }
     }
 }

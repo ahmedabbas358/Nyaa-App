@@ -1,6 +1,7 @@
 package com.aniflow.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -53,10 +54,33 @@ fun AniFlowApp(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    val downloadsUiState by downloadsViewModel.uiState.collectAsState()
+    val activeTask = downloadsUiState.rawTasks.firstOrNull { it.state.isActive }
+        ?: downloadsUiState.rawTasks.firstOrNull { it.state == com.aniflow.feature.downloads.model.DownloadStateUi.Queued }
+        ?: downloadsUiState.rawTasks.firstOrNull { it.state == com.aniflow.feature.downloads.model.DownloadStateUi.Paused }
+
+    val activeTitle = activeTask?.title
+    val activeSpeed = activeTask?.speedFormatted ?: downloadsUiState.totalDownloadSpeedFormatted
+    val activeProgress = (activeTask?.progressPercent ?: downloadsUiState.overallProgressPercent) / 100f
+    val isDownloading = activeTask?.state == com.aniflow.feature.downloads.model.DownloadStateUi.Downloading
+
     AppShell(
         navController = navController,
         currentRoute = currentRoute,
-        onQuickImportClick = { navController.navigate(ScreenRoute.ImportLink.route) }
+        onQuickImportClick = { navController.navigate(ScreenRoute.ImportLink.route) },
+        activeDownloadTitle = activeTitle,
+        activeDownloadSpeed = activeSpeed,
+        activeDownloadProgress = activeProgress,
+        isDownloadActive = isDownloading,
+        onTogglePauseResume = {
+            activeTask?.let { task ->
+                if (task.state == com.aniflow.feature.downloads.model.DownloadStateUi.Downloading) {
+                    downloadsViewModel.pauseTask(task.id)
+                } else {
+                    downloadsViewModel.resumeTask(task.id)
+                }
+            }
+        }
     ) { contentModifier ->
         NavHost(
             navController = navController,

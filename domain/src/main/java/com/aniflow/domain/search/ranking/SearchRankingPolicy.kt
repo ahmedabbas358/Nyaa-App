@@ -111,6 +111,7 @@ object SearchRankingPolicy {
             is SearchResultItem.DownloadResult -> item.copy(relevanceScore = score, matchedReasons = reasons)
             is SearchResultItem.CollectionResult -> item.copy(relevanceScore = score, matchedReasons = reasons)
             is SearchResultItem.SavedSearchResult -> item.copy(relevanceScore = score, matchedReasons = reasons)
+            is SearchResultItem.GroupedAnimeResult -> item.copy(relevanceScore = score, matchedReasons = reasons)
         }
     }
 }

@@ -19,6 +19,9 @@ data class NyaaReleaseDto(
     val completedDownloads: Long?,
     val isTrusted: Boolean = false,
     val isRemake: Boolean = false,
+    val isBatch: Boolean = false,
+    val isHidden: Boolean = false,
+    val commentsCount: Int? = null,
     val uploaderName: String? = null,
     val infoHash: String? = null
 )

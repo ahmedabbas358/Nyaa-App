@@ -77,4 +77,29 @@ class EpisodeAndRangeTest {
         val s00 = SeasonNumber.parseOrNull("S00")
         assertEquals(SeasonNumber.Specials, s00)
     }
+
+    @Test
+    fun `EpisodeQueryExpander expands zero-padded and unpadded queries`() {
+        // Query containing "02" expands to include unpadded "2", "Episode 02", etc.
+        val candidates1 = com.aniflow.domain.search.query.EpisodeQueryExpander.expand("One Piece 02")
+        assertTrue("Expected 'One Piece 02', got $candidates1", candidates1.contains("One Piece 02"))
+        assertTrue("Expected 'One Piece 2', got $candidates1", candidates1.contains("One Piece 2"))
+        assertTrue("Expected 'One Piece Episode 02' or 'One Piece Episode 2', got $candidates1", candidates1.contains("One Piece Episode 2") || candidates1.contains("One Piece Episode 02"))
+
+        // Query containing "2" expands to include zero-padded "02"
+        val candidates2 = com.aniflow.domain.search.query.EpisodeQueryExpander.expand("One Piece 2")
+        assertTrue(candidates2.contains("One Piece 2"))
+        assertTrue(candidates2.contains("One Piece 02"))
+
+        // Explicit episode and season expansion
+        val candidates3 = com.aniflow.domain.search.query.EpisodeQueryExpander.expand(
+            baseQuery = "Frieren",
+            season = 1,
+            episode = 4
+        )
+        assertTrue(candidates3.contains("Frieren S01E04"))
+        assertTrue(candidates3.contains("Frieren 04"))
+        assertTrue(candidates3.contains("Frieren 4"))
+    }
 }
+

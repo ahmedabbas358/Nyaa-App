@@ -191,6 +191,24 @@ sealed interface SearchResultItem {
         val posterUrl: String? = null
     ) : SearchResultItem
 
+    data class GroupedAnimeResult(
+        override val id: String,
+        override val title: String,
+        override val source: SearchSource = SearchSource.Hybrid,
+        override val relevanceScore: Int = 98,
+        override val matchedReasons: List<String> = emptyList(),
+        val seasonNumber: Int = 1,
+        val totalEpisodes: Int = 0,
+        val episodeNumbers: List<Int> = emptyList(),
+        val availableUploaders: List<String> = emptyList(),
+        val availableResolutions: List<String> = emptyList(),
+        val totalSizeBytes: Long = 0L,
+        val formattedSize: String = "0 B",
+        val releaseIds: List<String> = emptyList(),
+        val releases: List<ReleaseResult> = emptyList(),
+        val posterUrl: String? = null
+    ) : SearchResultItem
+
     data class SeasonResult(
         override val id: String,
         override val title: String,

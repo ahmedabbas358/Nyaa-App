@@ -44,6 +44,7 @@ object SearchDeduplicator {
             is SearchResultItem.DownloadResult -> "download:${item.id}"
             is SearchResultItem.CollectionResult -> "collection:${item.id}"
             is SearchResultItem.SavedSearchResult -> "savedsearch:${item.queryText.trim().lowercase()}"
+            is SearchResultItem.GroupedAnimeResult -> "grouped:${item.title.trim().lowercase()}_s${item.seasonNumber}"
         }
     }
 

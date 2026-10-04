@@ -49,7 +49,8 @@ class MainActivity : ComponentActivity() {
         val searchViewModel = SearchViewModel(
             searchReleasesUseCase = searchReleasesUseCase,
             searchCoordinatorUseCase = searchReleasesCoordinatorUseCase,
-            preparePlanUseCase = prepareDownloadPlanUseCase
+            preparePlanUseCase = prepareDownloadPlanUseCase,
+            queueDownloadUseCase = queueDownloadUseCase
         )
         val downloadsViewModel = DownloadsViewModel(
             downloadRepository,

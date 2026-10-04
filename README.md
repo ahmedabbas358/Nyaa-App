@@ -193,4 +193,4 @@ Contributions are welcome! Please read:
 
 AniFlow is licensed under the [MIT License](LICENSE).  
 Third-party notices and licenses are documented in [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES).
->>>>>>> da755ba (docs: prepare project documentation and release operations)
+

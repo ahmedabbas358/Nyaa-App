@@ -29,6 +29,9 @@ class NyaaMapper {
         dto.completedDownloads?.let { rawMeta["nyaa_completed_downloads"] = it.toString() }
         rawMeta["nyaa_is_trusted"] = dto.isTrusted.toString()
         rawMeta["nyaa_is_remake"] = dto.isRemake.toString()
+        rawMeta["nyaa_is_batch"] = dto.isBatch.toString()
+        rawMeta["nyaa_is_hidden"] = dto.isHidden.toString()
+        dto.commentsCount?.let { rawMeta["nyaa_comments_count"] = it.toString() }
 
         return ProviderRelease(
             providerReleaseId = dto.id,
@@ -101,12 +104,11 @@ class NyaaMapper {
                 NyaaCategory.AnimeEnglish -> ProviderCategory.Anime.EnglishTranslated
                 NyaaCategory.AnimeNonEnglish -> ProviderCategory.Anime.NonEnglishTranslated
                 NyaaCategory.AnimeRaw -> ProviderCategory.Anime.Raw
-                NyaaCategory.NonEnglishAll -> ProviderCategory.Anime.NonEnglishTranslated
-                NyaaCategory.AudioAll -> ProviderCategory.NonAnime.Audio
-                NyaaCategory.LiteratureAll -> ProviderCategory.NonAnime.Manga
-                NyaaCategory.LiveActionAll -> ProviderCategory.NonAnime.LiveAction
-                NyaaCategory.PicturesAll -> ProviderCategory.NonAnime.Pictures
-                NyaaCategory.SoftwareAll -> ProviderCategory.NonAnime.Software
+                NyaaCategory.AudioAll, NyaaCategory.AudioLossless, NyaaCategory.AudioLossy -> ProviderCategory.NonAnime.Audio
+                NyaaCategory.LiteratureAll, NyaaCategory.LiteratureEnglish, NyaaCategory.LiteratureNonEnglish, NyaaCategory.LiteratureRaw -> ProviderCategory.NonAnime.Manga
+                NyaaCategory.LiveActionAll, NyaaCategory.LiveActionEnglish, NyaaCategory.LiveActionIdolPromo, NyaaCategory.LiveActionNonEnglish, NyaaCategory.LiveActionRaw -> ProviderCategory.NonAnime.LiveAction
+                NyaaCategory.PicturesAll, NyaaCategory.PicturesGraphics, NyaaCategory.PicturesPhotos -> ProviderCategory.NonAnime.Pictures
+                NyaaCategory.SoftwareAll, NyaaCategory.SoftwareApplications, NyaaCategory.SoftwareGames -> ProviderCategory.NonAnime.Software
             }
         }
         return ProviderCategory.All

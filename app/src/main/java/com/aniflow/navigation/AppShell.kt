@@ -36,6 +36,26 @@ import com.aniflow.core.ui.R
 import com.aniflow.core.ui.theme.AniFlowTheme
 import com.aniflow.core.ui.theme.AppElevation
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+
 enum class WindowWidthSize {
     Compact,   // Phones (< 600dp)
     Medium,    // Small Tablets / Foldables (600dp - 840dp)
@@ -48,6 +68,7 @@ enum class WindowWidthSize {
  * Responsive, localized shell adapting between:
  * - Bottom Navigation for compact phones (< 600dp)
  * - Navigation Rail for medium and expanded tablets (>= 600dp)
+ * - YouTube-style Floating Mini-Download Player docked right above bottom navigation.
  *
  * Fully themed for Light/Dark modes, RTL-safe, and listening for global Ctrl+K search shortcut.
  */
@@ -57,6 +78,11 @@ fun AppShell(
     currentRoute: String?,
     windowWidthSize: WindowWidthSize? = null,
     onQuickImportClick: () -> Unit = {},
+    activeDownloadTitle: String? = null,
+    activeDownloadSpeed: String? = null,
+    activeDownloadProgress: Float = 0f,
+    isDownloadActive: Boolean = false,
+    onTogglePauseResume: () -> Unit = {},
     content: @Composable (Modifier) -> Unit
 ) {
     val configuration = LocalConfiguration.current
@@ -83,40 +109,62 @@ fun AppShell(
     }
 
     if (effectiveWindowSize == WindowWidthSize.Compact) {
-        // Phone Layout: Bottom Navigation Bar
+        // Phone Layout: Bottom Navigation Bar + YouTube-style Mini Player
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             bottomBar = {
-                if (isTopLevelRoute) {
-                    NavigationBar(
-                        containerColor = colors.surface,
-                        tonalElevation = AppElevation.card
-                    ) {
-                        mainBottomNavDestinations.forEach { dest ->
-                            val selected = currentRoute == dest.route.route
-                            val title = stringResource(dest.titleRes)
-
-                            NavigationBarItem(
-                                icon = { Icon(dest.icon, contentDescription = title) },
-                                label = { Text(title, style = AniFlowTheme.typography.caption) },
-                                selected = selected,
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = colors.primary,
-                                    selectedTextColor = colors.primary,
-                                    indicatorColor = colors.primary.copy(alpha = 0.15f),
-                                    unselectedIconColor = colors.textSecondary,
-                                    unselectedTextColor = colors.textSecondary
-                                ),
-                                onClick = {
-                                    navController.navigate(dest.route.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
+                Column {
+                    // YouTube-style Floating Mini-Download Player
+                    if (activeDownloadTitle != null) {
+                        YouTubeMiniDownloadPlayer(
+                            title = activeDownloadTitle,
+                            speed = activeDownloadSpeed ?: "0 B/s",
+                            progress = activeDownloadProgress,
+                            isDownloading = isDownloadActive,
+                            onTogglePauseResume = onTogglePauseResume,
+                            onClick = {
+                                navController.navigate(ScreenRoute.Downloads.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
                                     }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                            )
+                            }
+                        )
+                    }
+
+                    if (isTopLevelRoute) {
+                        NavigationBar(
+                            containerColor = colors.surface,
+                            tonalElevation = AppElevation.card
+                        ) {
+                            mainBottomNavDestinations.forEach { dest ->
+                                val selected = currentRoute == dest.route.route
+                                val title = stringResource(dest.titleRes)
+
+                                NavigationBarItem(
+                                    icon = { Icon(dest.icon, contentDescription = title) },
+                                    label = { Text(title, style = AniFlowTheme.typography.caption) },
+                                    selected = selected,
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = colors.primary,
+                                        selectedTextColor = colors.primary,
+                                        indicatorColor = colors.primary.copy(alpha = 0.15f),
+                                        unselectedIconColor = colors.textSecondary,
+                                        unselectedTextColor = colors.textSecondary
+                                    ),
+                                    onClick = {
+                                        navController.navigate(dest.route.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -201,6 +249,97 @@ fun AppShell(
                     content(Modifier.fillMaxSize())
                 }
             }
+        }
+    }
+}
+
+/**
+ * YouTube-style Floating Mini-Download Player.
+ * Docks directly above bottom navigation with real-time speed, progress,
+ * and play/pause controls.
+ */
+@Composable
+fun YouTubeMiniDownloadPlayer(
+    title: String,
+    speed: String,
+    progress: Float,
+    isDownloading: Boolean,
+    onTogglePauseResume: () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        color = AniFlowTheme.colors.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, AniFlowTheme.colors.border)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Mini 16:9 thumbnail preview / glowing icon
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(AniFlowTheme.colors.primary.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = null,
+                        tint = AniFlowTheme.colors.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(Modifier.width(10.dp))
+
+                // Title & Speed
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = AniFlowTheme.typography.body.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+                        color = AniFlowTheme.colors.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(1.dp))
+                    Text(
+                        text = "$speed • ${(progress * 100).toInt()}% • 1DM Parallel Engine",
+                        style = AniFlowTheme.typography.caption.copy(fontSize = 10.sp),
+                        color = AniFlowTheme.colors.textMuted
+                    )
+                }
+
+                // Play / Pause Toggle
+                IconButton(
+                    onClick = onTogglePauseResume,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isDownloading) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isDownloading) "Pause" else "Resume",
+                        tint = AniFlowTheme.colors.textPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            // Crisp bottom progress bar
+            LinearProgressIndicator(
+                progress = { progress.coerceIn(0f, 1f) },
+                color = AniFlowTheme.colors.primary,
+                trackColor = AniFlowTheme.colors.surfaceVariant,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.5.dp)
+            )
         }
     }
 }

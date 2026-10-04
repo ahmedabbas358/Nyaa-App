@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,6 +67,18 @@ fun AutomationSettingsScreen(
     var maxDownloadsPerDay by remember { mutableFloatStateOf(20f) }
     var maxStoragePerDayGb by remember { mutableFloatStateOf(50f) }
     var askConfirmationSizeGb by remember { mutableFloatStateOf(10f) }
+    var syncIntervalSeconds by remember { mutableFloatStateOf(60f) }
+    var autoOrganizeFolders by remember { mutableStateOf(true) }
+    var selectedUploaderPreference by remember { mutableStateOf("Judas (1080p HEVC)") }
+    var notifyOnEpisodeDrop by remember { mutableStateOf(true) }
+
+    val syncIntervalLabel = when (syncIntervalSeconds.toInt()) {
+        30 -> "30 Seconds (Ultra-Fast Realtime)"
+        60 -> "60 Seconds (1 Minute)"
+        120 -> "2 Minutes"
+        300 -> "5 Minutes"
+        else -> "${syncIntervalSeconds.toInt()}s"
+    }
 
     Scaffold(
         topBar = {
@@ -167,6 +180,91 @@ fun AutomationSettingsScreen(
                     steps = 13,
                     valueDisplay = "${askConfirmationSizeGb.toInt()} GB",
                     onValueChange = { askConfirmationSizeGb = it }
+                )
+            }
+
+            item {
+                SectionHeader("Real-Time Periodic Sync (Nyaa.si Live Tracker)")
+            }
+
+            item {
+                SliderSettingCard(
+                    title = "Periodic Sync Frequency",
+                    subtitle = "How often AniFlow polls Nyaa.si feeds for new releases (sub-minute to minutes).",
+                    value = syncIntervalSeconds,
+                    valueRange = 30f..300f,
+                    steps = 4,
+                    valueDisplay = syncIntervalLabel,
+                    onValueChange = { syncIntervalSeconds = it }
+                )
+            }
+
+            item {
+                ToggleSettingCard(
+                    title = "New Episode Notification",
+                    subtitle = "Send high-priority notifications with instant 'Download' action when a tracked anime drops.",
+                    checked = notifyOnEpisodeDrop,
+                    onCheckedChange = { notifyOnEpisodeDrop = it }
+                )
+            }
+
+            item {
+                SectionHeader("Uploader Intelligence & Preference")
+            }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                    shape = RoundedCornerShape(AppShapes.sm),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
+                ) {
+                    Column(modifier = Modifier.padding(AppSpacing.md)) {
+                        Text(
+                            text = "Preferred Release Group / Uploader",
+                            style = AppTypography.headline.copy(fontSize = 15.sp),
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "When multiple uploaders release the same episode, AniFlow prioritizes your preference based on file size and video encoding.",
+                            style = AppTypography.caption,
+                            color = TextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(AppSpacing.sm))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            listOf("Judas (1080p HEVC)", "SubsPlease", "Erai-raws", "EMBER").forEach { uploader ->
+                                val isSelected = selectedUploaderPreference == uploader
+                                androidx.compose.material3.FilterChip(
+                                    selected = isSelected,
+                                    onClick = { selectedUploaderPreference = uploader },
+                                    label = { Text(uploader, style = AppTypography.caption) },
+                                    colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = PrimaryIndigo,
+                                        selectedLabelColor = Color.White,
+                                        containerColor = DarkBackground,
+                                        labelColor = TextSecondary
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                SectionHeader("Automated Directory & Storage Organization")
+            }
+
+            item {
+                ToggleSettingCard(
+                    title = "Auto-Organize Anime Folders",
+                    subtitle = "Automatically route downloads to Anime/<Title>/Season <N>/ with clean standardized file names.",
+                    checked = autoOrganizeFolders,
+                    onCheckedChange = { autoOrganizeFolders = it }
                 )
             }
         }

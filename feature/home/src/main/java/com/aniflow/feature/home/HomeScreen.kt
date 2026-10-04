@@ -173,7 +173,7 @@ class HomeViewModel(
                     queuedCount = queued,
                     failedCount = failed,
                     completedCount = completed,
-                    speedFormatted = if (active > 0) "12.4 MB/s" else "0 KB/s",
+                    speedFormatted = if (active > 0) "$active downloading" else "0 KB/s",
                     aggregateProgress = progress
                 )
             } else null

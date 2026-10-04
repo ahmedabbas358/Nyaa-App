@@ -37,6 +37,9 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.util.UUID
 
+import com.aniflow.domain.usecase.QueueDownloadUseCase
+import com.aniflow.feature.search.components.AnimeReleaseGrouper
+
 /**
  * Universal SearchViewModel.
  * Connected directly to real SearchUseCases, ProviderSearchCoordinator, and SearchHistoryManager.
@@ -47,7 +50,8 @@ class SearchViewModel(
     private val searchCoordinatorUseCase: SearchReleasesCoordinatorUseCase? = null,
     private val coordinator: SearchCoordinator? = null,
     private val historyManager: SearchHistoryManager? = null,
-    private val preparePlanUseCase: PrepareDownloadPlanUseCase? = null
+    private val preparePlanUseCase: PrepareDownloadPlanUseCase? = null,
+    private val queueDownloadUseCase: QueueDownloadUseCase? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -55,6 +59,7 @@ class SearchViewModel(
 
     private var debounceJob: Job? = null
     private var searchJob: Job? = null
+    private var rawResults: List<SearchResultItem> = emptyList()
 
     init {
         // Observe real persisted search history
@@ -90,6 +95,92 @@ class SearchViewModel(
                 _uiState.value = _uiState.value.copy(query = event.text)
                 executeSearch(page = 1)
             }
+            SearchUiEvent.ToggleGroupedView -> {
+                val newGrouped = !_uiState.value.isGroupedView
+                _uiState.value = _uiState.value.copy(
+                    isGroupedView = newGrouped,
+                    results = applyGroupingAndFilters(rawResults, isGrouped = newGrouped)
+                )
+            }
+            is SearchUiEvent.OpenBatchSelectionSheet -> {
+                _uiState.value = _uiState.value.copy(
+                    selectedGroupForBatch = event.groupedAnime,
+                    showBatchSelectionSheet = true
+                )
+            }
+            SearchUiEvent.CloseBatchSelectionSheet -> {
+                _uiState.value = _uiState.value.copy(
+                    showBatchSelectionSheet = false,
+                    selectedGroupForBatch = null
+                )
+            }
+            is SearchUiEvent.SetUploaderFilter -> {
+                _uiState.value = _uiState.value.copy(
+                    selectedUploaderFilter = event.uploader,
+                    results = applyGroupingAndFilters(rawResults, uploader = event.uploader)
+                )
+            }
+            is SearchUiEvent.BatchQueueDownloads -> {
+                batchQueueReleases(event.releases)
+            }
+            SearchUiEvent.DismissBatchSuccessNotification -> {
+                _uiState.value = _uiState.value.copy(batchSuccessNotification = null)
+            }
+        }
+    }
+
+    private fun applyGroupingAndFilters(
+        items: List<SearchResultItem>,
+        isGrouped: Boolean = _uiState.value.isGroupedView,
+        uploader: String? = _uiState.value.selectedUploaderFilter
+    ): List<SearchResultItem> {
+        val filtered = if (!uploader.isNullOrBlank()) {
+            items.filter { item ->
+                when (item) {
+                    is SearchResultItem.ReleaseResult -> item.uploader.equals(uploader, ignoreCase = true)
+                    is SearchResultItem.GroupedAnimeResult -> item.availableUploaders.any { it.equals(uploader, ignoreCase = true) }
+                    else -> true
+                }
+            }
+        } else {
+            items
+        }
+
+        return if (isGrouped) {
+            AnimeReleaseGrouper.groupReleases(filtered)
+        } else {
+            filtered
+        }
+    }
+
+    private fun batchQueueReleases(releases: List<SearchResultItem.ReleaseResult>) {
+        val group = _uiState.value.selectedGroupForBatch
+        val destinationFolder = if (group != null) {
+            val safeTitle = group.title.replace(Regex("""[\\/:*?"<>|]"""), "_").trim()
+            "Anime/$safeTitle/Season ${group.seasonNumber}"
+        } else {
+            "Anime/Downloads"
+        }
+
+        viewModelScope.launch {
+            var queuedCount = 0
+            for (release in releases) {
+                val magnet = release.magnetUri
+                if (!magnet.isNullOrBlank()) {
+                    queueDownloadUseCase?.queueTorrent(
+                        title = release.title,
+                        magnetUri = magnet,
+                        releaseId = release.id,
+                        destinationFolder = destinationFolder
+                    )
+                    queuedCount++
+                }
+            }
+            _uiState.value = _uiState.value.copy(
+                showBatchSelectionSheet = false,
+                selectedGroupForBatch = null,
+                batchSuccessNotification = "Queued $queuedCount episodes into $destinationFolder"
+            )
         }
     }
 
@@ -183,7 +274,8 @@ class SearchViewModel(
                         }
                         is AniFlowResult.Success -> {
                             val newItems = result.data.items.map { it.toSearchResultItem() }
-                            val combinedItems = if (page > 1) _uiState.value.results + newItems else newItems
+                            rawResults = if (page > 1) rawResults + newItems else newItems
+                            val combinedItems = applyGroupingAndFilters(rawResults)
                             _uiState.value = _uiState.value.copy(
                                 results = combinedItems,
                                 hasNextPage = result.data.hasNextPage,
@@ -202,7 +294,8 @@ class SearchViewModel(
                 try {
                     val res = searchReleasesUseCase(searchReq)
                     val newItems = res.items.map { it.toSearchResultItem() }
-                    val combinedItems = if (page > 1) _uiState.value.results + newItems else newItems
+                    rawResults = if (page > 1) rawResults + newItems else newItems
+                    val combinedItems = applyGroupingAndFilters(rawResults)
                     _uiState.value = _uiState.value.copy(
                         results = combinedItems,
                         hasNextPage = res.hasNextPage,
@@ -219,7 +312,8 @@ class SearchViewModel(
                 try {
                     val resp = coordinator.search(q, page = page, isOffline = _uiState.value.isOffline)
                     val newItems = resp.results
-                    val combinedItems = if (page > 1) _uiState.value.results + newItems else newItems
+                    rawResults = if (page > 1) rawResults + newItems else newItems
+                    val combinedItems = applyGroupingAndFilters(rawResults)
                     _uiState.value = _uiState.value.copy(
                         results = combinedItems,
                         sourceStates = resp.sourceStates,
@@ -232,6 +326,7 @@ class SearchViewModel(
                     )
                 }
             } else {
+                rawResults = emptyList()
                 _uiState.value = _uiState.value.copy(status = SearchStatus.Empty(q))
             }
         }

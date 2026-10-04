@@ -121,6 +121,17 @@ class NyaaHtmlSearchParser(
         val leechers = NyaaParserSupport.safeToInt(cells[6].text())
         val downloads = NyaaParserSupport.safeToLong(cells[7].text())
 
+        val commentsLink = nameCell.selectFirst("a.comments") ?: nameCell.selectFirst("a[href*='#comments']")
+        val commentsCount = commentsLink?.text()?.trim()?.toIntOrNull()
+
+        val isBatch = title.contains("Batch", ignoreCase = true) ||
+                title.contains("01-", ignoreCase = true) ||
+                title.contains("01~", ignoreCase = true) ||
+                title.contains("01 - ", ignoreCase = true) ||
+                title.contains("Complete", ignoreCase = true)
+
+        val isHidden = rowClass.contains("hidden")
+
         // InfoHash if extractable from magnet
         val infoHash = magnetUri?.let { NyaaParserSupport.parseMagnet(it)?.infoHash?.hexString }
 
@@ -140,6 +151,9 @@ class NyaaHtmlSearchParser(
             completedDownloads = downloads,
             isTrusted = isTrusted,
             isRemake = isRemake,
+            isBatch = isBatch,
+            isHidden = isHidden,
+            commentsCount = commentsCount,
             uploaderName = null,
             infoHash = infoHash
         )
