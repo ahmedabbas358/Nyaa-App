@@ -1,6 +1,7 @@
 package com.aniflow.feature.home
 
 import android.content.res.Configuration
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,8 +22,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.NotificationsNone
@@ -30,6 +34,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,6 +42,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -63,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aniflow.core.common.result.AniFlowResult
 import com.aniflow.core.ui.R
 import com.aniflow.core.ui.components.AniEmptyState
 import com.aniflow.core.ui.components.AniErrorState
@@ -79,13 +87,31 @@ import com.aniflow.core.ui.theme.AppTypography
 import com.aniflow.core.ui.theme.DarkBackground
 import com.aniflow.core.ui.theme.ThemeMode
 import com.aniflow.core.ui.util.BidiFormatter
+import com.aniflow.core.ui.util.UiFormatters
+import com.aniflow.domain.controlplane.models.ComparisonExpression
+import com.aniflow.domain.controlplane.models.ComparisonOperator
+import com.aniflow.domain.controlplane.models.SearchExpression
+import com.aniflow.domain.controlplane.models.SearchField
 import com.aniflow.domain.library.model.ContinueWatchingItem
 import com.aniflow.domain.library.repository.WatchProgressRepository
+import com.aniflow.domain.valueobject.SearchFilters
+import com.aniflow.domain.model.SearchRequest
 import com.aniflow.domain.model.aggregate.download.DownloadTask
+import com.aniflow.domain.model.aggregate.release.Release
+import com.aniflow.domain.model.aggregate.release.ReleaseSource
 import com.aniflow.domain.repository.DownloadRepository
 import com.aniflow.domain.repository.ReleaseRepository
+import com.aniflow.domain.search.model.SearchResultItem
 import com.aniflow.domain.state.DownloadState
+import com.aniflow.domain.usecase.QueueDownloadUseCase
+import com.aniflow.domain.usecase.SearchReleasesCoordinatorUseCase
 import com.aniflow.domain.valueobject.SearchQuery
+import com.aniflow.feature.automation.scheduler.NyaaRealtimeSyncScheduler
+import com.aniflow.feature.automation.scheduler.NyaaSyncEvent
+import com.aniflow.feature.automation.scheduler.SyncInterval
+import com.aniflow.feature.search.components.AnimeReleaseGrouper
+import com.aniflow.feature.search.components.EpisodeBatchSelectionSheet
+import com.aniflow.feature.search.components.GroupedAnimeCard
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -119,10 +145,18 @@ data class UpgradeHomeItem(
 
 /**
  * UI State for AniFlow Home Screen (Section 17, 157).
- * Pure presentation model, zero DAO / OkHttp leaks.
+ * Real-time synchronization and live YouTube-style anime discovery from Nyaa.si.
  */
 data class HomeUiState(
     val isLoading: Boolean = false,
+    val isSyncing: Boolean = false,
+    val isLiveSyncActive: Boolean = true,
+    val syncCountdownSeconds: Long = 60L,
+    val syncInterval: SyncInterval = SyncInterval.FAST_1M,
+    val groupedAnime: List<SearchResultItem.GroupedAnimeResult> = emptyList(),
+    val selectedGroupForBatch: SearchResultItem.GroupedAnimeResult? = null,
+    val showBatchSelectionSheet: Boolean = false,
+    val batchSuccessNotification: String? = null,
     val continueWatching: List<ContinueWatchingItem> = emptyList(),
     val recentReleases: List<ReleaseUiModel> = emptyList(),
     val downloadSummary: DownloadHomeSummary? = null,
@@ -132,12 +166,15 @@ data class HomeUiState(
 
 /**
  * HomeViewModel (Section 156: ViewModel Contract).
- * Observes domain repositories via reactive Flows. Never stores fake data in production.
+ * Connected to live Nyaa SearchCoordinator, Realtime SyncScheduler, and 1DM/FDM Queue Engine.
  */
 class HomeViewModel(
     private val releaseRepository: ReleaseRepository? = null,
     private val downloadRepository: DownloadRepository? = null,
-    private val watchProgressRepository: WatchProgressRepository? = null
+    private val watchProgressRepository: WatchProgressRepository? = null,
+    private val searchCoordinatorUseCase: SearchReleasesCoordinatorUseCase? = null,
+    private val queueDownloadUseCase: QueueDownloadUseCase? = null,
+    private val syncScheduler: NyaaRealtimeSyncScheduler? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
@@ -145,6 +182,89 @@ class HomeViewModel(
 
     init {
         observeDomainStreams()
+        setupRealtimeSync()
+        fetchLiveNyaaReleases()
+    }
+
+    private fun setupRealtimeSync() {
+        if (syncScheduler != null) {
+            syncScheduler.start()
+
+            viewModelScope.launch {
+                syncScheduler.countdownSeconds.collect { sec ->
+                    _uiState.value = _uiState.value.copy(syncCountdownSeconds = sec)
+                }
+            }
+
+            viewModelScope.launch {
+                syncScheduler.engineState.collect { state ->
+                    _uiState.value = _uiState.value.copy(
+                        isLiveSyncActive = state.isRunning,
+                        syncInterval = state.interval
+                    )
+                }
+            }
+
+            viewModelScope.launch {
+                syncScheduler.events.collect { event ->
+                    when (event) {
+                        is NyaaSyncEvent.NewReleaseFound,
+                        is NyaaSyncEvent.SyncCycleCompleted -> {
+                            fetchLiveNyaaReleases()
+                        }
+                        else -> Unit
+                    }
+                }
+            }
+        }
+    }
+
+    fun fetchLiveNyaaReleases(query: String = "") {
+        if (searchCoordinatorUseCase == null) {
+            _uiState.value = _uiState.value.copy(isLoading = false, isSyncing = false)
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSyncing = true)
+            val searchExpr = SearchExpression(
+                root = ComparisonExpression(
+                    field = SearchField.Anime,
+                    operator = ComparisonOperator.Contains,
+                    value = query
+                )
+            )
+            val searchReq = SearchRequest(
+                query = searchExpr,
+                page = 1,
+                filters = SearchFilters(trustedOnly = false, excludeRemakes = false)
+            )
+
+            searchCoordinatorUseCase(searchReq).collect { result ->
+                when (result) {
+                    is AniFlowResult.Loading -> {
+                        _uiState.value = _uiState.value.copy(isSyncing = true)
+                    }
+                    is AniFlowResult.Success -> {
+                        val releaseItems = result.data.items.map { it.toSearchResultItem() }
+                        val grouped = AnimeReleaseGrouper.groupReleases(releaseItems)
+                            .filterIsInstance<SearchResultItem.GroupedAnimeResult>()
+
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            isSyncing = false,
+                            groupedAnime = grouped
+                        )
+                    }
+                    is AniFlowResult.Error -> {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            isSyncing = false
+                        )
+                    }
+                }
+            }
+        }
     }
 
     private fun observeDomainStreams() {
@@ -181,7 +301,7 @@ class HomeViewModel(
             val releasesUi = releasesResult?.getOrNull()?.items?.map { it.toUiModel() }
                 ?: emptyList()
 
-            HomeUiState(
+            _uiState.value.copy(
                 isLoading = false,
                 continueWatching = continueList,
                 recentReleases = releasesUi,
@@ -202,6 +322,90 @@ class HomeViewModel(
     fun onRefresh() {
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         observeDomainStreams()
+        fetchLiveNyaaReleases()
+    }
+
+    fun onTriggerImmediateSync() {
+        if (syncScheduler != null) {
+            syncScheduler.triggerImmediateSync()
+        }
+        fetchLiveNyaaReleases()
+    }
+
+    fun onSetSyncInterval(interval: SyncInterval) {
+        syncScheduler?.setSyncInterval(interval)
+        _uiState.value = _uiState.value.copy(syncInterval = interval)
+    }
+
+    fun onOpenBatchSelection(group: SearchResultItem.GroupedAnimeResult) {
+        _uiState.value = _uiState.value.copy(
+            selectedGroupForBatch = group,
+            showBatchSelectionSheet = true
+        )
+    }
+
+    fun onCloseBatchSelection() {
+        _uiState.value = _uiState.value.copy(
+            showBatchSelectionSheet = false,
+            selectedGroupForBatch = null
+        )
+    }
+
+    fun onQueueBatchDownloads(releases: List<SearchResultItem.ReleaseResult>) {
+        val group = _uiState.value.selectedGroupForBatch
+        val destinationFolder = if (group != null) {
+            val safeTitle = group.title.replace(Regex("""[\\/:*?"<>|]"""), "_").trim()
+            "Anime/$safeTitle/Season ${group.seasonNumber}"
+        } else {
+            "Anime/Downloads"
+        }
+
+        viewModelScope.launch {
+            var queuedCount = 0
+            for (release in releases) {
+                val magnet = release.magnetUri
+                if (!magnet.isNullOrBlank()) {
+                    queueDownloadUseCase?.queueTorrent(
+                        title = release.title,
+                        magnetUri = magnet,
+                        releaseId = release.id,
+                        destinationFolder = destinationFolder
+                    )
+                    queuedCount++
+                }
+            }
+            _uiState.value = _uiState.value.copy(
+                showBatchSelectionSheet = false,
+                selectedGroupForBatch = null,
+                batchSuccessNotification = "Queued $queuedCount episodes into $destinationFolder"
+            )
+        }
+    }
+
+    fun onDismissBatchSuccessNotification() {
+        _uiState.value = _uiState.value.copy(batchSuccessNotification = null)
+    }
+
+    private fun Release.toSearchResultItem(): SearchResultItem.ReleaseResult {
+        val magnet = (source as? ReleaseSource.Torrent)?.magnetUri?.rawValue
+        val sizeBytes = availability.size?.bytes ?: 0L
+        val sizeStr = if (sizeBytes > 0) UiFormatters.formatBytes(sizeBytes) else "—"
+        return SearchResultItem.ReleaseResult(
+            id = id.value,
+            title = title,
+            animeTitle = animeIdentity?.rawTitle ?: title,
+            resolution = technical.resolution?.displayName ?: "Unknown",
+            codec = technical.videoCodec?.displayName ?: "Unknown",
+            uploader = uploader?.name ?: "Unknown",
+            releaseGroup = releaseGroup?.name,
+            sizeFormatted = sizeStr,
+            seeders = availability.seeders ?: 0,
+            leechers = availability.leechers ?: 0,
+            magnetUri = magnet,
+            isBatch = isBatch,
+            isDownloaded = false,
+            isDownloading = false
+        )
     }
 }
 
@@ -209,13 +413,13 @@ class HomeViewModel(
  * HomeScreen (Section 17, 18, 19, 20, 21, 22, 23).
  *
  * Central personalized dashboard:
- * - Editorial Top Bar with title, quick search trigger, notifications
+ * - Realtime Periodic Sync Header (Minutes and Seconds Countdown + Sync Now)
+ * - YouTube-style 16:9 Anime & Season Discovery cards
+ * - 1DM/FDM Multi-Episode Download Selection Sheet
  * - "Continue Watching" horizontal carousel with real progress
  * - "Downloads" overview card (automatically hidden when empty)
  * - "New Releases" list with 8-level information hierarchy badges
- * - "Upgrades" actionable alerts
  * - Full localization (Arabic RTL + English)
- * - Light and Dark theme responsiveness
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -255,12 +459,20 @@ fun HomeScreen(
                             tint = colors.textPrimary
                         )
                     }
-                    IconButton(onClick = { /* Notifications */ }) {
-                        Icon(
-                            imageVector = Icons.Default.NotificationsNone,
-                            contentDescription = stringResource(R.string.cd_notifications),
-                            tint = colors.textSecondary
-                        )
+                    IconButton(onClick = viewModel::onTriggerImmediateSync) {
+                        if (state.isSyncing) {
+                            CircularProgressIndicator(
+                                color = colors.primary,
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Sync,
+                                contentDescription = "Sync Nyaa",
+                                tint = colors.primary
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -272,7 +484,7 @@ fun HomeScreen(
         modifier = modifier
     ) { paddingValues ->
         when {
-            state.isLoading -> {
+            state.isLoading && state.groupedAnime.isEmpty() -> {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
@@ -285,7 +497,7 @@ fun HomeScreen(
                     )
                 }
             }
-            state.error != null -> {
+            state.error != null && state.groupedAnime.isEmpty() -> {
                 AniErrorState(
                     title = stringResource(R.string.state_error),
                     reason = state.error.orEmpty(),
@@ -302,9 +514,22 @@ fun HomeScreen(
                     onNavigateToDownloads = onNavigateToDownloads,
                     onReleaseClick = onReleaseClick,
                     onMediaPlayClick = onMediaPlayClick,
+                    onTriggerSync = viewModel::onTriggerImmediateSync,
+                    onSetSyncInterval = viewModel::onSetSyncInterval,
+                    onOpenBatchSelection = viewModel::onOpenBatchSelection,
+                    onDismissBatchSuccess = viewModel::onDismissBatchSuccessNotification,
                     contentPadding = paddingValues
                 )
             }
+        }
+
+        // Mount EpisodeBatchSelectionSheet when requested
+        if (state.showBatchSelectionSheet && state.selectedGroupForBatch != null) {
+            EpisodeBatchSelectionSheet(
+                groupedAnime = state.selectedGroupForBatch!!,
+                onQueueBatchDownload = viewModel::onQueueBatchDownloads,
+                onDismiss = viewModel::onCloseBatchSelection
+            )
         }
     }
 }
@@ -316,16 +541,21 @@ private fun HomeDashboardContent(
     onNavigateToDownloads: () -> Unit,
     onReleaseClick: (String) -> Unit,
     onMediaPlayClick: (String) -> Unit,
+    onTriggerSync: () -> Unit,
+    onSetSyncInterval: (SyncInterval) -> Unit,
+    onOpenBatchSelection: (SearchResultItem.GroupedAnimeResult) -> Unit,
+    onDismissBatchSuccess: () -> Unit,
     contentPadding: PaddingValues
 ) {
     val colors = AniFlowTheme.colors
     val hasContent = state.continueWatching.isNotEmpty() ||
         state.downloadSummary != null ||
         state.recentReleases.isNotEmpty() ||
-        state.actionableUpgrades.isNotEmpty()
+        state.actionableUpgrades.isNotEmpty() ||
+        state.groupedAnime.isNotEmpty() ||
+        state.isSyncing
 
     if (!hasContent) {
-        // Deliberate Empty State (Section 102)
         AniEmptyState(
             title = stringResource(R.string.state_empty),
             message = stringResource(R.string.downloads_empty_desc),
@@ -344,17 +574,65 @@ private fun HomeDashboardContent(
             top = AppSpacing.sm,
             bottom = AppSpacing.massive
         ),
-        verticalArrangement = Arrangement.spacedBy(AppSpacing.xl),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.md),
         modifier = Modifier
             .fillMaxSize()
             .padding(contentPadding)
     ) {
-        // 1. Search Bar Trigger
+        // 1. Real-time Periodic Sync Status Bar (Minutes and Seconds Countdown)
+        item(key = "home_live_sync_status") {
+            LiveSyncStatusBar(
+                isActive = state.isLiveSyncActive,
+                isSyncing = state.isSyncing,
+                countdownSeconds = state.syncCountdownSeconds,
+                currentInterval = state.syncInterval,
+                onTriggerSync = onTriggerSync,
+                onSetInterval = onSetSyncInterval
+            )
+        }
+
+        // 2. Batch Download Success Notification Toast / Banner
+        if (state.batchSuccessNotification != null) {
+            item(key = "home_batch_success_banner") {
+                BatchSuccessBanner(
+                    message = state.batchSuccessNotification,
+                    onDismiss = onDismissBatchSuccess
+                )
+            }
+        }
+
+        // 3. Search Bar Trigger
         item(key = "home_search_trigger") {
             HomeSearchTrigger(onClick = onNavigateToSearch)
         }
 
-        // 2. Continue Watching Carousel (Section 19)
+        // 4. YouTube-style Trending / Live Anime Releases (Grouped by Anime & Season)
+        if (state.groupedAnime.isNotEmpty()) {
+            item(key = "home_live_anime_section_header") {
+                Column(modifier = Modifier.padding(horizontal = AppSpacing.md)) {
+                    AniSectionHeader(
+                        title = "Live Anime Releases (Nyaa.si)",
+                        subtitle = "Auto-grouped complete seasons with multi-download",
+                        actionText = stringResource(R.string.home_see_all),
+                        onActionClick = onNavigateToSearch
+                    )
+                }
+            }
+
+            items(
+                items = state.groupedAnime,
+                key = { "grp_${it.id}" }
+            ) { group ->
+                Box(modifier = Modifier.padding(horizontal = AppSpacing.md)) {
+                    GroupedAnimeCard(
+                        item = group,
+                        onClick = { onOpenBatchSelection(group) }
+                    )
+                }
+            }
+        }
+
+        // 5. Continue Watching Carousel (Section 19)
         if (state.continueWatching.isNotEmpty()) {
             item(key = "home_continue_watching") {
                 Column {
@@ -384,7 +662,7 @@ private fun HomeDashboardContent(
             }
         }
 
-        // 3. Active Downloads Overview Widget (Section 22)
+        // 6. Active Downloads Overview Widget (Section 22)
         state.downloadSummary?.let { summary ->
             if (summary.activeCount > 0 || summary.queuedCount > 0 || summary.failedCount > 0) {
                 item(key = "home_downloads_widget") {
@@ -396,7 +674,7 @@ private fun HomeDashboardContent(
             }
         }
 
-        // 4. Actionable Upgrades Widget (Section 23)
+        // 7. Actionable Upgrades Widget (Section 23)
         if (state.actionableUpgrades.isNotEmpty()) {
             item(key = "home_upgrades_widget") {
                 HomeUpgradesWidget(
@@ -406,7 +684,7 @@ private fun HomeDashboardContent(
             }
         }
 
-        // 5. New Releases Section (Section 21)
+        // 8. Individual New Releases (Section 21)
         if (state.recentReleases.isNotEmpty()) {
             item(key = "home_new_releases_header") {
                 AniSectionHeader(
@@ -437,6 +715,175 @@ private fun HomeDashboardContent(
                         onDownloadClick = { onReleaseClick(release.id) }
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Real-time Live Sync Status Bar with Minute & Second Countdown and Quick Interval Selection.
+ */
+@Composable
+private fun LiveSyncStatusBar(
+    isActive: Boolean,
+    isSyncing: Boolean,
+    countdownSeconds: Long,
+    currentInterval: SyncInterval,
+    onTriggerSync: () -> Unit,
+    onSetInterval: (SyncInterval) -> Unit
+) {
+    val colors = AniFlowTheme.colors
+    val minutes = countdownSeconds / 60
+    val seconds = countdownSeconds % 60
+    val formattedTime = String.format("%02d:%02d", minutes, seconds)
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
+        shape = AppShapes.medium,
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.border),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppSpacing.md)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(
+                                color = if (isActive) colors.success else colors.textMuted,
+                                shape = CircleShape
+                            )
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = if (isSyncing) "Syncing Nyaa..." else "Nyaa Live Sync: Active",
+                        style = AppTypography.BodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = if (isSyncing) colors.primary else colors.textPrimary
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "• $formattedTime",
+                        style = AppTypography.Caption.copy(fontWeight = FontWeight.SemiBold),
+                        color = colors.primary
+                    )
+                }
+
+                IconButton(
+                    onClick = onTriggerSync,
+                    enabled = !isSyncing,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    if (isSyncing) {
+                        CircularProgressIndicator(
+                            color = colors.primary,
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Sync Now",
+                            tint = colors.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // Sub-minute & minute intervals chips
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items(SyncInterval.values()) { interval ->
+                    val isSelected = currentInterval == interval
+                    Surface(
+                        color = if (isSelected) colors.primary.copy(alpha = 0.2f) else colors.surfaceElevated,
+                        shape = AppShapes.small,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (isSelected) colors.primary else colors.border
+                        ),
+                        modifier = Modifier.clickable { onSetInterval(interval) }
+                    ) {
+                        Text(
+                            text = when (interval) {
+                                SyncInterval.ULTRA_FAST_30S -> "30s"
+                                SyncInterval.FAST_1M -> "1m"
+                                SyncInterval.STANDARD_2M -> "2m"
+                                SyncInterval.RELAXED_5M -> "5m"
+                                SyncInterval.POWER_SAVER_15M -> "15m"
+                            },
+                            style = AppTypography.Caption.copy(
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 11.sp
+                            ),
+                            color = if (isSelected) colors.primary else colors.textSecondary,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Batch Download Queued Notification Banner.
+ */
+@Composable
+private fun BatchSuccessBanner(
+    message: String,
+    onDismiss: () -> Unit
+) {
+    val colors = AniFlowTheme.colors
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = colors.success.copy(alpha = 0.15f)),
+        shape = AppShapes.medium,
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.success.copy(alpha = 0.5f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppSpacing.md)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = colors.success,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = message,
+                    style = AppTypography.BodySmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.textPrimary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Dismiss",
+                    tint = colors.textMuted,
+                    modifier = Modifier.size(14.dp)
+                )
             }
         }
     }

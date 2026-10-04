@@ -45,7 +45,19 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val homeViewModel = HomeViewModel(releaseRepository, downloadRepository, watchProgressRepository)
+        val realtimeSyncScheduler = com.aniflow.feature.automation.scheduler.NyaaRealtimeSyncScheduler(
+            searchCoordinatorUseCase = searchReleasesCoordinatorUseCase,
+            queueDownloadUseCase = queueDownloadUseCase
+        )
+
+        val homeViewModel = HomeViewModel(
+            releaseRepository = releaseRepository,
+            downloadRepository = downloadRepository,
+            watchProgressRepository = watchProgressRepository,
+            searchCoordinatorUseCase = searchReleasesCoordinatorUseCase,
+            queueDownloadUseCase = queueDownloadUseCase,
+            syncScheduler = realtimeSyncScheduler
+        )
         val searchViewModel = SearchViewModel(
             searchReleasesUseCase = searchReleasesUseCase,
             searchCoordinatorUseCase = searchReleasesCoordinatorUseCase,

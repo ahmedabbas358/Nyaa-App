@@ -28,6 +28,9 @@ android {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":provider:core"))
+    implementation(project(":feature:search"))
+    implementation(project(":feature:automation"))
     implementation(project(":core:common"))
     implementation(project(":core:ui"))
 

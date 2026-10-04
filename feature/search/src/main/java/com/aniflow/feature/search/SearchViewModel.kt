@@ -70,6 +70,8 @@ class SearchViewModel(
                 }
             }
         }
+        // Auto-fetch latest releases from Nyaa so search screen is never blank
+        executeSearch(page = 1)
     }
 
     fun onEvent(event: SearchUiEvent) {
@@ -231,7 +233,6 @@ class SearchViewModel(
 
     private fun executeSearch(page: Int = 1) {
         val q = _uiState.value.query.trim()
-        if (q.isBlank()) return
 
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
@@ -240,14 +241,16 @@ class SearchViewModel(
                 currentPage = page
             )
 
-            // Save to real search history
-            val newEntry = SearchHistoryEntry(
-                id = SearchHistoryId("hist_${UUID.randomUUID().toString().take(8)}"),
-                query = q,
-                scope = _uiState.value.scope,
-                timestamp = Instant.now()
-            )
-            historyManager?.saveEntry(newEntry)
+            // Save to real search history if user typed a query
+            if (q.isNotBlank()) {
+                val newEntry = SearchHistoryEntry(
+                    id = SearchHistoryId("hist_${UUID.randomUUID().toString().take(8)}"),
+                    query = q,
+                    scope = _uiState.value.scope,
+                    timestamp = Instant.now()
+                )
+                historyManager?.saveEntry(newEntry)
+            }
 
             val searchExpr = SearchExpression(
                 root = ComparisonExpression(
