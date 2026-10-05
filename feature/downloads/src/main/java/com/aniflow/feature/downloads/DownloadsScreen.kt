@@ -109,6 +109,7 @@ fun DownloadsScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel?.uiState?.collectAsState() ?: remember { mutableStateOf(DownloadsUiState()) }
+    val context = LocalContext.current
 
     var isSearchVisible by remember { mutableStateOf(false) }
     var selectedTaskForDetail by remember { mutableStateOf<DownloadTaskUiModel?>(null) }
@@ -215,7 +216,6 @@ fun DownloadsScreen(
                     SummaryDashboardCard(summary = summary)
 
                     // Multi-Select Action Bar
-                    val context = LocalContext.current
                     AnimatedVisibility(visible = isSelectionMode, enter = fadeIn(), exit = fadeOut()) {
                         BulkActionsBar(
                             selectedCount = selectedBulkTasks.size,

@@ -27,9 +27,7 @@ class NyaaMapper {
         } ?: extractedGroup?.let {
             ProviderIdentity(providerId = null, displayName = it)
         }
-        val releaseGroup = extractedGroup?.let {
-            ProviderIdentity(providerId = null, displayName = it)
-        }
+        val releaseGroup = extractedGroup
 
         val publishedAt = dto.timestampSeconds?.let { Instant.ofEpochSecond(it) }
 
@@ -84,9 +82,7 @@ class NyaaMapper {
         } ?: extractedGroup?.let {
             ProviderIdentity(providerId = null, displayName = it)
         }
-        val releaseGroup = extractedGroup?.let {
-            ProviderIdentity(providerId = null, displayName = it)
-        }
+        val releaseGroup = extractedGroup
 
         val publishedAt = dto.timestampSeconds?.let { Instant.ofEpochSecond(it) }
 
