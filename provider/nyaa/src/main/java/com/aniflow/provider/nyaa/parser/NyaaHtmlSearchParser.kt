@@ -34,7 +34,7 @@ class NyaaHtmlSearchParser(
             throw ProviderError.ParserFailure("HTML parsing failed: ${e.message}", e)
         }
 
-        val table = document.selectFirst("table.torrent-list")
+        val table = document.selectFirst("table.torrent-list") ?: document.selectFirst("table")
         if (table == null) {
             // Check if page legitimately has zero results
             val isZeroResults = document.body().text().contains("No results found", ignoreCase = true) ||
@@ -49,7 +49,7 @@ class NyaaHtmlSearchParser(
                 )
             } else {
                 throw ProviderError.ParserStructureChanged(
-                    "Table 'table.torrent-list' not found and no 'No results found' indicator present"
+                    "Table 'table.torrent-list' or 'table' not found and no 'No results found' indicator present"
                 )
             }
         }
@@ -105,10 +105,14 @@ class NyaaHtmlSearchParser(
             val href = a.attr("href")
             when {
                 href.startsWith("magnet:?", ignoreCase = true) -> magnetUri = href
-                href.contains(".torrent", ignoreCase = true) -> {
+                href.contains("/download/", ignoreCase = true) || href.contains(".torrent", ignoreCase = true) -> {
                     torrentUrl = if (href.startsWith("http")) href else "$baseUrl$href"
                 }
             }
+        }
+
+        if (torrentUrl == null && id.isNotBlank() && id.all { it.isDigit() }) {
+            torrentUrl = "$baseUrl/download/$id.torrent"
         }
 
         // Cell 3: File Size

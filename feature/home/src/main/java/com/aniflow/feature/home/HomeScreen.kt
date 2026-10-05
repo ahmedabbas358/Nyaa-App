@@ -387,6 +387,30 @@ class HomeViewModel(
         _uiState.value = _uiState.value.copy(batchSuccessNotification = null)
     }
 
+    fun onDownloadRelease(release: ReleaseUiModel) {
+        val effectiveUri = release.magnetUrl?.takeIf { it.isNotBlank() }
+            ?: release.torrentUrl?.takeIf { it.isNotBlank() }
+            ?: "https://nyaa.si/download/${release.id}.torrent"
+
+        viewModelScope.launch {
+            val destinationFolder = if (release.seasonNumber != null) {
+                val safeTitle = release.animeTitle.replace(Regex("""[\\/:*?"<>|]"""), "_").trim()
+                "Anime/$safeTitle/Season ${release.seasonNumber}"
+            } else {
+                "Anime/Downloads"
+            }
+            queueDownloadUseCase?.queueFromLink(
+                link = effectiveUri,
+                customTitle = release.title,
+                releaseId = release.id,
+                destinationFolder = destinationFolder
+            )
+            _uiState.value = _uiState.value.copy(
+                batchSuccessNotification = "Queued for download: ${release.title}"
+            )
+        }
+    }
+
     private fun Release.toSearchResultItem(): SearchResultItem.ReleaseResult {
         val torrentSource = source as? ReleaseSource.Torrent
         val magnet = torrentSource?.magnetUri?.rawValue
@@ -522,6 +546,7 @@ fun HomeScreen(
                     onSetSyncInterval = viewModel::onSetSyncInterval,
                     onOpenBatchSelection = viewModel::onOpenBatchSelection,
                     onDismissBatchSuccess = viewModel::onDismissBatchSuccessNotification,
+                    onDownloadRelease = viewModel::onDownloadRelease,
                     contentPadding = paddingValues
                 )
             }
@@ -549,6 +574,7 @@ private fun HomeDashboardContent(
     onSetSyncInterval: (SyncInterval) -> Unit,
     onOpenBatchSelection: (SearchResultItem.GroupedAnimeResult) -> Unit,
     onDismissBatchSuccess: () -> Unit,
+    onDownloadRelease: (ReleaseUiModel) -> Unit = {},
     contentPadding: PaddingValues
 ) {
     val colors = AniFlowTheme.colors
@@ -716,7 +742,7 @@ private fun HomeDashboardContent(
                         uploader = release.uploader,
                         isPreferred = release.isPreferred,
                         onClick = { onReleaseClick(release.id) },
-                        onDownloadClick = { onReleaseClick(release.id) }
+                        onDownloadClick = { onDownloadRelease(release) }
                     )
                 }
             }

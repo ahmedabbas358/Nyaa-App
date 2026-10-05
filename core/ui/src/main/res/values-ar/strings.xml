@@ -470,8 +470,8 @@
     <!-- Formats -->
     <string name="speed_format">%1$s/ث</string>
     <string name="size_format">%1$s</string>
-    <string name="seeds_format">بذور: %1$d</string>
-    <string name="peers_format">أقران: %1$d</string>
+    <string name="seeds_format">سيدرز: %1$d</string>
+    <string name="peers_format">ليتشرز: %1$d</string>
     <string name="episodes_count">%1$d حلقات</string>
     <string name="time_just_now">الآن</string>
     <string name="time_minutes_ago">قبل %1$d دقيقة</string>

@@ -35,7 +35,8 @@ data class ReleaseUiModel(
     val isDownloaded: Boolean = false,
     val isDownloading: Boolean = false,
     val badges: List<UiBadge> = emptyList(),
-    val magnetUrl: String? = null
+    val magnetUrl: String? = null,
+    val torrentUrl: String? = null
 )
 
 data class EpisodeUiModel(
@@ -194,6 +195,10 @@ fun com.aniflow.domain.model.aggregate.release.Release.toUiModel(): ReleaseUiMod
         publishedDateFormatted = publishedAt?.toString()?.take(10) ?: "",
         isTrusted = uploader != null,
         badges = badgesList,
-        magnetUrl = magnet
+        magnetUrl = magnet,
+        torrentUrl = when (val src = source) {
+            is com.aniflow.domain.model.aggregate.release.ReleaseSource.Torrent -> src.torrentUrl?.rawValue
+            else -> null
+        } ?: "https://nyaa.si/download/${id.value}.torrent"
     )
 }

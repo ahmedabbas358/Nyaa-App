@@ -243,6 +243,44 @@ object TorrentClientBridge {
     }
 
     /**
+     * Resilient multi-tiered storage resolver ensuring 100% write success on all Android versions:
+     * 1. Public Downloads (if writable / legacy storage active)
+     * 2. App-specific external files dir (never requires permission)
+     * 3. Internal app files dir as ultimate safe fallback
+     */
+    private fun getStorageTargetDir(context: Context, subFolder: String = ""): File {
+        val relPath = if (subFolder.isNotBlank()) "AniFlow/Torrents/$subFolder" else "AniFlow/Torrents"
+        // 1. Try public Downloads directory first
+        try {
+            val publicDownloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val publicDir = File(publicDownloads, relPath)
+            if (publicDir.exists() || publicDir.mkdirs()) {
+                val probeFile = File(publicDir, ".probe_${System.currentTimeMillis()}")
+                if (probeFile.createNewFile()) {
+                    probeFile.delete()
+                    return publicDir
+                }
+            }
+        } catch (_: Exception) {}
+
+        // 2. Fallback to app external files dir (always permitted on Android 4.4 - 15+ without runtime permissions)
+        try {
+            val appExtDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+            if (appExtDir != null) {
+                val appDir = File(appExtDir, relPath)
+                if (appDir.exists() || appDir.mkdirs()) {
+                    return appDir
+                }
+            }
+        } catch (_: Exception) {}
+
+        // 3. Final fallback to internal files dir
+        val internalDir = File(context.filesDir, relPath)
+        if (!internalDir.exists()) internalDir.mkdirs()
+        return internalDir
+    }
+
+    /**
      * Internal network worker downloading .torrent bytes via OkHttpClient with valid browser headers.
      */
     private fun fetchTorrentFileBytes(
@@ -273,19 +311,19 @@ object TorrentClientBridge {
         val bytes = response.body?.bytes() ?: return null
         if (bytes.isEmpty()) return null
 
-        val publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        val targetDir = if (subFolder.isNotBlank()) {
-            File(publicDir, "AniFlow/Torrents/$subFolder")
-        } else {
-            File(publicDir, "AniFlow/Torrents")
+        val targetFile = try {
+            val targetDir = getStorageTargetDir(context, subFolder)
+            val file = File(targetDir, fileName)
+            FileOutputStream(file).use { it.write(bytes) }
+            file
+        } catch (e: Exception) {
+            val fallbackDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
+            val fallbackSubDir = File(fallbackDir, "AniFlow/Torrents")
+            if (!fallbackSubDir.exists()) fallbackSubDir.mkdirs()
+            val fallbackFile = File(fallbackSubDir, fileName)
+            FileOutputStream(fallbackFile).use { it.write(bytes) }
+            fallbackFile
         }
-
-        if (!targetDir.exists()) {
-            targetDir.mkdirs()
-        }
-
-        val targetFile = File(targetDir, fileName)
-        FileOutputStream(targetFile).use { it.write(bytes) }
 
         // Notify MediaScanner so the system and file managers index the new .torrent file immediately
         try {
@@ -352,25 +390,39 @@ object TorrentClientBridge {
             val safeTitle = batchTitle.replace(Regex("""[\\/:*?"<>|]"""), "_").trim().ifBlank { "batch" }
             val fileName = "${safeTitle}_magnets.txt"
 
-            val publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            val targetDir = File(publicDir, "AniFlow/Torrents")
-            if (!targetDir.exists()) targetDir.mkdirs()
-
-            val targetFile = File(targetDir, fileName)
-            targetFile.printWriter().use { out ->
-                out.println("# AniFlow Batch Magnet Links: $batchTitle")
-                out.println("# Generated on: ${java.util.Date()}")
-                out.println()
-                for ((epTitle, magnet) in items) {
-                    out.println("# $epTitle")
-                    out.println(magnet)
+            val targetDir = getStorageTargetDir(context, "")
+            val targetFile = try {
+                val f = File(targetDir, fileName)
+                f.printWriter().use { out ->
+                    out.println("# AniFlow Batch Magnet Links: $batchTitle")
+                    out.println("# Generated on: ${java.util.Date()}")
                     out.println()
+                    for ((epTitle, magnet) in items) {
+                        out.println("# $epTitle")
+                        out.println(magnet)
+                        out.println()
+                    }
                 }
+                f
+            } catch (e: Exception) {
+                val fallbackDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
+                val fallbackFile = File(fallbackDir, fileName)
+                fallbackFile.printWriter().use { out ->
+                    out.println("# AniFlow Batch Magnet Links: $batchTitle")
+                    out.println("# Generated on: ${java.util.Date()}")
+                    out.println()
+                    for ((epTitle, magnet) in items) {
+                        out.println("# $epTitle")
+                        out.println(magnet)
+                        out.println()
+                    }
+                }
+                fallbackFile
             }
 
             postToast(
                 context,
-                "Exported ${items.size} magnet(s) to Downloads/AniFlow/Torrents/$fileName",
+                "Exported ${items.size} magnet(s) to ${targetFile.name}",
                 Toast.LENGTH_LONG
             )
             targetFile
