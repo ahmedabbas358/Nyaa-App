@@ -42,10 +42,14 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
+import com.aniflow.core.ui.components.TorrentClientDispatchModal
 import com.aniflow.core.ui.util.TorrentClientBridge
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -156,6 +160,7 @@ fun ReleaseDetailScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val release = state.release
+    var showClientDispatchModal by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -299,14 +304,7 @@ fun ReleaseDetailScreen(
                             }
 
                             OutlinedButton(
-                                onClick = {
-                                    TorrentClientBridge.openInExternalTorrentClient(
-                                        context = context,
-                                        magnetUri = magnetUri,
-                                        torrentUrl = torrentUrl,
-                                        title = release.title
-                                    )
-                                },
+                                onClick = { showClientDispatchModal = true },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
@@ -362,6 +360,16 @@ fun ReleaseDetailScreen(
                 }
             }
         }
+    }
+
+    if (showClientDispatchModal && release != null) {
+        val t = release.source as? ReleaseSource.Torrent
+        val uri = t?.magnetUri?.rawValue ?: t?.torrentUrl?.rawValue ?: "https://nyaa.si/download/${release.providerReleaseId}.torrent"
+        TorrentClientDispatchModal(
+            batchTitle = release.title,
+            items = listOf(release.title to uri),
+            onDismiss = { showClientDispatchModal = false }
+        )
     }
 }
 

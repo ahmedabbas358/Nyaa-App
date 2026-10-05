@@ -56,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aniflow.core.ui.components.AniEmptyState
+import com.aniflow.core.ui.components.TorrentClientDispatchModal
 import com.aniflow.core.ui.theme.AppSemanticColors
 import com.aniflow.core.ui.theme.DarkBackground
 import com.aniflow.core.ui.theme.DarkCardBorder
@@ -121,6 +122,7 @@ fun BatchDetailScreen(
     }
 
     var showRangeDialog by remember { mutableStateOf(false) }
+    var showClientDispatchModal by remember { mutableStateOf(false) }
     var rangeStart by remember { mutableStateOf("1") }
     var rangeEnd by remember { mutableStateOf("${uiState.coveredEpisodes.size.coerceAtLeast(1)}") }
 
@@ -178,14 +180,7 @@ fun BatchDetailScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             OutlinedButton(
-                                onClick = {
-                                    TorrentClientBridge.openInExternalTorrentClient(
-                                        context = context,
-                                        magnetUri = effectiveMagnet,
-                                        torrentUrl = effectiveTorrentUrl,
-                                        title = uiState.batchTitle
-                                    )
-                                },
+                                onClick = { showClientDispatchModal = true },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(8.dp),
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
@@ -501,6 +496,24 @@ fun BatchDetailScreen(
                 }
             },
             containerColor = DarkSurface
+        )
+    }
+
+    if (showClientDispatchModal && uiState.releaseId.isNotBlank()) {
+        val selectedEpisodes = uiState.coveredEpisodes.filter { selectionMap[it.episodeNumber] == true }
+        val items = if (selectedEpisodes.isNotEmpty()) {
+            selectedEpisodes.map { ep ->
+                val epTitle = "${uiState.batchTitle} - EP ${String.format("%02d", ep.episodeNumber)}"
+                val uri = effectiveMagnet ?: effectiveTorrentUrl
+                epTitle to uri
+            }
+        } else {
+            listOf(uiState.batchTitle to (effectiveMagnet ?: effectiveTorrentUrl))
+        }
+        TorrentClientDispatchModal(
+            batchTitle = uiState.batchTitle,
+            items = items,
+            onDismiss = { showClientDispatchModal = false }
         )
     }
 }

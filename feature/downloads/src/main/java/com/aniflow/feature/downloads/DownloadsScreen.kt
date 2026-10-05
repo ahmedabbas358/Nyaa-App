@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
+import com.aniflow.core.ui.components.TorrentClientDispatchModal
 import com.aniflow.core.ui.util.TorrentClientBridge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -112,6 +113,7 @@ fun DownloadsScreen(
     var isSearchVisible by remember { mutableStateOf(false) }
     var selectedTaskForDetail by remember { mutableStateOf<DownloadTaskUiModel?>(null) }
     var isSpeedMenuExpanded by remember { mutableStateOf(false) }
+    var showClientDispatchModal by remember { mutableStateOf(false) }
 
     val selectedBulkTasks = remember { mutableStateListOf<DownloadTaskId>() }
     val isSelectionMode = selectedBulkTasks.isNotEmpty()
@@ -228,20 +230,7 @@ fun DownloadsScreen(
                                 selectedBulkTasks.clear()
                             },
                             onExport1DM = {
-                                val selectedModels = uiState.rawTasks.filter { selectedBulkTasks.contains(it.id) }
-                                val items = selectedModels.mapNotNull { model ->
-                                    val uri = model.sourceUrlOrMagnet?.takeIf { it.isNotBlank() }
-                                    if (uri != null) model.title to uri else null
-                                }
-                                if (items.isNotEmpty()) {
-                                    TorrentClientBridge.openBatchInExternalTorrentClient(
-                                        context = context,
-                                        items = items,
-                                        batchTitle = "AniFlow_Downloads_Batch"
-                                    )
-                                } else {
-                                    Toast.makeText(context, "No download links found in selected items", Toast.LENGTH_SHORT).show()
-                                }
+                                showClientDispatchModal = true
                             },
                             onSaveTorrents = {
                                 val selectedModels = uiState.rawTasks.filter { selectedBulkTasks.contains(it.id) }
@@ -348,6 +337,24 @@ fun DownloadsScreen(
                         }
                     }
                 }
+            }
+        }
+
+        if (showClientDispatchModal && selectedBulkTasks.isNotEmpty()) {
+            val selectedModels = uiState.rawTasks.filter { selectedBulkTasks.contains(it.id) }
+            val items = selectedModels.mapNotNull { model ->
+                val uri = model.sourceUrlOrMagnet?.takeIf { it.isNotBlank() }
+                if (uri != null) model.title to uri else null
+            }
+            if (items.isNotEmpty()) {
+                TorrentClientDispatchModal(
+                    batchTitle = "AniFlow Downloads (${items.size} tasks)",
+                    items = items,
+                    onDismiss = { showClientDispatchModal = false }
+                )
+            } else {
+                Toast.makeText(context, "No download links found in selected items", Toast.LENGTH_SHORT).show()
+                showClientDispatchModal = false
             }
         }
     }

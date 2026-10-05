@@ -10,6 +10,27 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
 
     <queries>
+        <!-- Package queries for torrent and download clients (Android 11-15+ Scoped Visibility) -->
+        <package android:name="idm.internet.download.manager" />
+        <package android:name="idm.internet.download.manager.plus" />
+        <package android:name="idm.internet.download.manager.lite" />
+        <package android:name="com.delphicoder.flud" />
+        <package android:name="com.delphicoder.flud.paid" />
+        <package android:name="org.proninyaroslav.libretorrent" />
+        <package android:name="org.fdm.android" />
+        <package android:name="com.utorrent.client" />
+        <package android:name="com.utorrent.client.pro" />
+        <package android:name="com.bittorrent.client" />
+        <package android:name="com.bittorrent.client.pro" />
+        <package android:name="com.biglybt.android.client" />
+        <package android:name="com.tau.torrse" />
+        <package android:name="hu.tagsoft.ttorrent.lite" />
+        <package android:name="hu.tagsoft.ttorrent.pro" />
+        <package android:name="com.gianlu.aria2app" />
+        <package android:name="com.teeon.zed" />
+        <package android:name="com.dv.adm" />
+        <package android:name="com.dv.adm.pay" />
+
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="magnet" />
@@ -17,6 +38,14 @@
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="application/x-bittorrent" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="text/plain" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="*/*" />
         </intent>
     </queries>
 

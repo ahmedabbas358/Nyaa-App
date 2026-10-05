@@ -42,7 +42,12 @@ object AnimeReleaseGrouper {
                 .distinct()
                 .sorted()
 
-            val uploaders = groupReleases.map { it.uploader.ifBlank { "Nyaa" } }.distinct().sorted()
+            val uploaders = groupReleases.map { rel ->
+                rel.uploader.takeIf { it.isNotBlank() && it != "Unknown" }
+                    ?: rel.releaseGroup?.takeIf { it.isNotBlank() }
+                    ?: Regex("""^\[([^\]]+)\]""").find(rel.title)?.groupValues?.get(1)?.trim()
+                    ?: "Nyaa"
+            }.distinct().sorted()
             val resolutions = groupReleases.map { it.resolution }.distinct().filter { it.isNotBlank() && it != "Unknown" }
 
             // Estimate total size
@@ -74,10 +79,18 @@ object AnimeReleaseGrouper {
     }
 
     private fun extractAnimeIdentity(rawTitle: String, fallbackAnime: String?): Pair<String, Int> {
+        val partMatch = partRegex.find(rawTitle)
+        val part = partMatch?.groupValues?.get(1)?.toIntOrNull()
+
         if (!fallbackAnime.isNullOrBlank() && fallbackAnime != rawTitle) {
             val seasonMatch = seasonRegex.find(rawTitle) ?: ordinalSeasonRegex.find(rawTitle)
             val season = seasonMatch?.groupValues?.get(1)?.toIntOrNull() ?: 1
-            return fallbackAnime.trim() to season
+            val titleWithPart = if (part != null && !fallbackAnime.contains("Part", true) && !fallbackAnime.contains("Cour", true)) {
+                "${fallbackAnime.trim()} (Part $part)"
+            } else {
+                fallbackAnime.trim()
+            }
+            return titleWithPart to season
         }
 
         // Strip uploader tag like [SubsPlease]
@@ -94,12 +107,20 @@ object AnimeReleaseGrouper {
         cleaned = cleaned.replace(tagsRegex, "")
             .replace(seasonRegex, "")
             .replace(ordinalSeasonRegex, "")
+            .replace(partRegex, "")
             .trim()
         if (cleaned.endsWith("-")) {
             cleaned = cleaned.dropLast(1).trim()
         }
 
-        return (if (cleaned.isNotBlank()) cleaned else rawTitle) to season
+        val baseTitle = if (cleaned.isNotBlank()) cleaned else rawTitle
+        val finalTitle = if (part != null && !baseTitle.contains("Part", true) && !baseTitle.contains("Cour", true)) {
+            "$baseTitle (Part $part)"
+        } else {
+            baseTitle
+        }
+
+        return finalTitle to season
     }
 
     fun extractEpisodeNumber(rawTitle: String): Int? {

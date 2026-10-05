@@ -16,7 +16,18 @@ class NyaaMapper {
 
     fun toProviderRelease(dto: NyaaReleaseDto): ProviderRelease {
         val category = mapCategory(dto.categoryCode, dto.categoryName)
+        val extractedGroup = Regex("""^\[([^\]]+)\]""").find(dto.title)?.groupValues?.get(1)?.trim()?.takeIf {
+            val lower = it.lowercase()
+            !lower.contains("1080p") && !lower.contains("720p") && !lower.contains("480p") &&
+            !lower.contains("hevc") && !lower.contains("x264") && !lower.contains("x265") &&
+            !lower.contains("av1") && !lower.contains("aac") && !lower.contains("flac")
+        }
         val uploader = dto.uploaderName?.let {
+            ProviderIdentity(providerId = null, displayName = it)
+        } ?: extractedGroup?.let {
+            ProviderIdentity(providerId = null, displayName = it)
+        }
+        val releaseGroup = extractedGroup?.let {
             ProviderIdentity(providerId = null, displayName = it)
         }
 
@@ -32,6 +43,9 @@ class NyaaMapper {
         rawMeta["nyaa_is_batch"] = dto.isBatch.toString()
         rawMeta["nyaa_is_hidden"] = dto.isHidden.toString()
         dto.commentsCount?.let { rawMeta["nyaa_comments_count"] = it.toString() }
+        if (extractedGroup != null) {
+            rawMeta["nyaa_extracted_group"] = extractedGroup
+        }
 
         return ProviderRelease(
             providerReleaseId = dto.id,
@@ -46,7 +60,7 @@ class NyaaMapper {
             publishedAt = publishedAt,
             category = category,
             uploader = uploader,
-            releaseGroup = null, // Extracted in Step 6 Release Parser
+            releaseGroup = releaseGroup,
             isTrusted = dto.isTrusted,
             isRemake = dto.isRemake,
             description = null,
@@ -56,11 +70,22 @@ class NyaaMapper {
 
     fun toProviderRelease(dto: NyaaDetailsDto): ProviderRelease {
         val category = mapCategory(dto.categoryCode, dto.categoryName)
+        val extractedGroup = Regex("""^\[([^\]]+)\]""").find(dto.title)?.groupValues?.get(1)?.trim()?.takeIf {
+            val lower = it.lowercase()
+            !lower.contains("1080p") && !lower.contains("720p") && !lower.contains("480p") &&
+            !lower.contains("hevc") && !lower.contains("x264") && !lower.contains("x265") &&
+            !lower.contains("av1") && !lower.contains("aac") && !lower.contains("flac")
+        }
         val uploader = dto.uploaderName?.let {
             ProviderIdentity(
                 providerId = dto.uploaderUrl?.substringAfterLast("/user/"),
                 displayName = it
             )
+        } ?: extractedGroup?.let {
+            ProviderIdentity(providerId = null, displayName = it)
+        }
+        val releaseGroup = extractedGroup?.let {
+            ProviderIdentity(providerId = null, displayName = it)
         }
 
         val publishedAt = dto.timestampSeconds?.let { Instant.ofEpochSecond(it) }
@@ -72,6 +97,9 @@ class NyaaMapper {
         dto.infoHash?.let { rawMeta["nyaa_info_hash"] = it }
         dto.completedDownloads?.let { rawMeta["nyaa_completed_downloads"] = it.toString() }
         rawMeta["nyaa_comments_count"] = dto.commentsCount.toString()
+        if (extractedGroup != null) {
+            rawMeta["nyaa_extracted_group"] = extractedGroup
+        }
 
         return ProviderRelease(
             providerReleaseId = dto.id,
@@ -86,7 +114,7 @@ class NyaaMapper {
             publishedAt = publishedAt,
             category = category,
             uploader = uploader,
-            releaseGroup = null,
+            releaseGroup = releaseGroup,
             isTrusted = false, // Full details page doesn't mark row color
             isRemake = false,
             description = dto.descriptionMarkdown ?: dto.descriptionHtml,

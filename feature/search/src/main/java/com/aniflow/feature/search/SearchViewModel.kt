@@ -425,14 +425,22 @@ class SearchViewModel(
         val torrentUrl = torrentSource?.torrentUrl?.rawValue ?: "https://nyaa.si/download/${id.value}.torrent"
         val sizeBytes = availability.size?.bytes ?: 0L
         val sizeStr = if (sizeBytes > 0) UiFormatters.formatBytes(sizeBytes) else "—"
+        val effectiveUploader = uploader?.name?.takeIf { it.isNotBlank() && it != "Unknown" }
+            ?: releaseGroup?.name?.takeIf { it.isNotBlank() }
+            ?: Regex("""^\[([^\]]+)\]""").find(title)?.groupValues?.get(1)?.trim()?.takeIf {
+                val l = it.lowercase()
+                !l.contains("1080p") && !l.contains("720p") && !l.contains("hevc")
+            }
+            ?: "Nyaa"
+
         return SearchResultItem.ReleaseResult(
             id = id.value,
             title = title,
             animeTitle = animeIdentity?.rawTitle ?: title,
             resolution = technical.resolution?.displayName ?: "Unknown",
             codec = technical.videoCodec?.displayName ?: "Unknown",
-            uploader = uploader?.name ?: "Unknown",
-            releaseGroup = releaseGroup?.name,
+            uploader = effectiveUploader,
+            releaseGroup = releaseGroup?.name ?: effectiveUploader.takeIf { it != "Nyaa" },
             sizeFormatted = sizeStr,
             seeders = availability.seeders ?: 0,
             leechers = availability.leechers ?: 0,

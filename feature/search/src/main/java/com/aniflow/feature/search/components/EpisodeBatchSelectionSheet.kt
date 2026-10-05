@@ -63,6 +63,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.aniflow.core.ui.components.TorrentClientDispatchModal
 import com.aniflow.core.ui.util.TorrentClientBridge
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -161,6 +162,7 @@ fun EpisodeBatchSelectionSheet(
 
     var isAscending by remember { mutableStateOf(true) }
     var showRangeDialog by remember { mutableStateOf(false) }
+    var showClientDispatchModal by remember { mutableStateOf(false) }
     var rangeStartText by remember { mutableStateOf("1") }
     var rangeEndText by remember { mutableStateOf("12") }
 
@@ -391,19 +393,7 @@ fun EpisodeBatchSelectionSheet(
                     ) {
                         // 1. Open in External App (1DM/Flud/LibreTorrent)
                         OutlinedButton(
-                            onClick = {
-                                val items = selectedReleases.map { rel ->
-                                    val uri = rel.magnetUri?.takeIf { it.isNotBlank() }
-                                        ?: rel.torrentUrl?.takeIf { it.isNotBlank() }
-                                        ?: "https://nyaa.si/download/${rel.id}.torrent"
-                                    rel.title to uri
-                                }
-                                TorrentClientBridge.openBatchInExternalTorrentClient(
-                                    context = context,
-                                    items = items,
-                                    batchTitle = "${groupedAnime.title}_S${groupedAnime.seasonNumber}"
-                                )
-                            },
+                            onClick = { showClientDispatchModal = true },
                             enabled = selectedCount > 0,
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
@@ -543,6 +533,20 @@ fun EpisodeBatchSelectionSheet(
                     }
                 },
                 containerColor = DarkSurface
+            )
+        }
+
+        if (showClientDispatchModal) {
+            val items = selectedReleases.map { rel ->
+                val uri = rel.magnetUri?.takeIf { it.isNotBlank() }
+                    ?: rel.torrentUrl?.takeIf { it.isNotBlank() }
+                    ?: "https://nyaa.si/download/${rel.id}.torrent"
+                rel.title to uri
+            }
+            TorrentClientDispatchModal(
+                batchTitle = "${groupedAnime.title} Season ${groupedAnime.seasonNumber}",
+                items = items,
+                onDismiss = { showClientDispatchModal = false }
             )
         }
     }
