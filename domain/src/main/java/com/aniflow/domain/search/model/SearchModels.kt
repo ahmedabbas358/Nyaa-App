@@ -246,6 +246,7 @@ sealed interface SearchResultItem {
         val seeders: Int = 0,
         val leechers: Int = 0,
         val magnetUri: String? = null,
+        val torrentUrl: String? = null,
         val isBatch: Boolean = false,
         val isDownloaded: Boolean = false,
         val isDownloading: Boolean = false,

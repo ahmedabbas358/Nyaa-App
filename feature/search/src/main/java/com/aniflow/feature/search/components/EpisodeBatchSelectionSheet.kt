@@ -84,14 +84,14 @@ import com.aniflow.core.ui.theme.TextSecondary
 import com.aniflow.domain.search.model.SearchResultItem
 
 /**
- * YouTube & 1DM-style Smart Episode Selection & Multi-Download Bottom Sheet.
+ * Smart Episode Selection & Multi-Download Bottom Sheet.
  *
  * Enables users to:
  * - Select specific uploaders (e.g., SubsPlease, Erai-raws, EMBER, Judas) with size/codec trade-offs.
  * - View fragmented individual episodes unified into a structured Season/Anime episode checklist.
  * - Perform fast bulk selection: "Select All", "Select Missing Only", "Deselect All", and Episode Range.
  * - View real-time aggregated batch size and seeder health.
- * - 1-Click Multi-Download queuing directly into the 1DM/FDM parallel engine.
+ * - 1-Click Multi-Download queuing into AniFlow internal engine or export for external managers (1DM/Flud).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -411,7 +411,7 @@ fun EpisodeBatchSelectionSheet(
                             color = TextPrimary
                         )
                         Text(
-                            text = "Parallel 1DM Engine Queue",
+                            text = "AniFlow Batch Engine",
                             style = AppTypography.caption,
                             color = TextMuted
                         )
@@ -427,7 +427,9 @@ fun EpisodeBatchSelectionSheet(
                             OutlinedButton(
                                 onClick = {
                                     val items = selectedReleases.map {
-                                        it.title to "https://nyaa.si/download/${it.id}.torrent"
+                                        val url = it.torrentUrl?.takeIf { u -> u.isNotBlank() }
+                                            ?: "https://nyaa.si/download/${it.id}.torrent"
+                                        it.title to url
                                     }
                                     val safeTitle = groupedAnime.title.replace(Regex("""[\\/:*?"<>|]"""), "_").trim()
                                     TorrentClientBridge.batchDownloadTorrentFiles(
@@ -447,8 +449,9 @@ fun EpisodeBatchSelectionSheet(
 
                             OutlinedButton(
                                 onClick = {
-                                    val magnetItems = selectedReleases.mapNotNull { rel ->
+                                    val magnetItems = selectedReleases.map { rel ->
                                         val uri = rel.magnetUri?.takeIf { it.isNotBlank() }
+                                            ?: rel.torrentUrl?.takeIf { it.isNotBlank() }
                                             ?: "https://nyaa.si/download/${rel.id}.torrent"
                                         rel.title to uri
                                     }
@@ -470,7 +473,7 @@ fun EpisodeBatchSelectionSheet(
                             ) {
                                 Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("1DM / Export", fontSize = 11.sp)
+                                Text("Export (1DM)", fontSize = 11.sp)
                             }
 
                             Button(

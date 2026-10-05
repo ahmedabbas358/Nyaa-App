@@ -28,6 +28,7 @@ android {
 
 dependencies {
     implementation(project(":core:common"))
+    implementation(project(":core:network"))
     implementation(project(":domain"))
     implementation(libs.okhttp)
     implementation(libs.androidx.core.ktx)

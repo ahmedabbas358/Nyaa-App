@@ -87,6 +87,7 @@ class QueueDownloadUseCase(
     suspend fun queueFromLink(
         link: String,
         customTitle: String? = null,
+        releaseId: String? = null,
         destinationFolder: String = "Anime/Downloads"
     ): DownloadTaskId {
         val trimmed = link.trim()
@@ -110,12 +111,12 @@ class QueueDownloadUseCase(
         }
 
         return if (trimmed.startsWith("magnet:?", ignoreCase = true)) {
-            queueTorrent(title = title, magnetUri = trimmed, destinationFolder = destinationFolder)
+            queueTorrent(title = title, magnetUri = trimmed, releaseId = releaseId, destinationFolder = destinationFolder)
         } else if (trimmed.endsWith(".torrent", ignoreCase = true) || trimmed.contains("nyaa.si/download/")) {
             val taskId = DownloadTaskId("task-${UUID.randomUUID().toString().take(8)}")
             val task = DownloadTask(
                 id = taskId,
-                releaseId = null,
+                releaseId = releaseId?.let { ReleaseId(it) },
                 source = DownloadSource.TorrentSource(
                     infoHash = InfoHash("0000000000000000000000000000000000000000"),
                     torrentFileUrl = UrlValue.TorrentUrl(trimmed),
@@ -133,7 +134,7 @@ class QueueDownloadUseCase(
             val taskId = DownloadTaskId("task-${UUID.randomUUID().toString().take(8)}")
             val task = DownloadTask(
                 id = taskId,
-                releaseId = null,
+                releaseId = releaseId?.let { ReleaseId(it) },
                 source = DownloadSource.DirectSource(
                     url = UrlValue.HttpsUrl(if (trimmed.startsWith("http")) trimmed else "https://$trimmed"),
                     fileName = if (title.contains(".")) title else "$title.mp4"

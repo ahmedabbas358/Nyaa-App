@@ -179,20 +179,12 @@ fun BatchDetailScreen(
                         ) {
                             OutlinedButton(
                                 onClick = {
-                                    if (!effectiveMagnet.isNullOrBlank()) {
-                                        TorrentClientBridge.openInExternalTorrentClient(
-                                            context,
-                                            effectiveMagnet,
-                                            uiState.batchTitle
-                                        )
-                                    } else {
-                                        TorrentClientBridge.downloadTorrentFileDirectly(
-                                            context,
-                                            effectiveTorrentUrl,
-                                            uiState.batchTitle,
-                                            openAfterDownload = true
-                                        )
-                                    }
+                                    TorrentClientBridge.openInExternalTorrentClient(
+                                        context = context,
+                                        magnetUri = effectiveMagnet,
+                                        torrentUrl = effectiveTorrentUrl,
+                                        title = uiState.batchTitle
+                                    )
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(8.dp),

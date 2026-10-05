@@ -168,11 +168,12 @@ class SearchViewModel(
             var queuedCount = 0
             for (release in releases) {
                 val effectiveUri: String = release.magnetUri?.takeIf { it.isNotBlank() }
+                    ?: release.torrentUrl?.takeIf { it.isNotBlank() }
                     ?: "https://nyaa.si/download/${release.id}.torrent"
 
-                queueDownloadUseCase?.queueTorrent(
-                    title = release.title,
-                    magnetUri = effectiveUri,
+                queueDownloadUseCase?.queueFromLink(
+                    link = effectiveUri,
+                    customTitle = release.title,
                     releaseId = release.id,
                     destinationFolder = destinationFolder
                 )
@@ -419,7 +420,9 @@ class SearchViewModel(
     }
 
     private fun Release.toSearchResultItem(): SearchResultItem.ReleaseResult {
-        val magnet = (source as? ReleaseSource.Torrent)?.magnetUri?.rawValue
+        val torrentSource = source as? ReleaseSource.Torrent
+        val magnet = torrentSource?.magnetUri?.rawValue
+        val torrentUrl = torrentSource?.torrentUrl?.rawValue ?: "https://nyaa.si/download/${id.value}.torrent"
         val sizeBytes = availability.size?.bytes ?: 0L
         val sizeStr = if (sizeBytes > 0) UiFormatters.formatBytes(sizeBytes) else "—"
         return SearchResultItem.ReleaseResult(
@@ -434,6 +437,7 @@ class SearchViewModel(
             seeders = availability.seeders ?: 0,
             leechers = availability.leechers ?: 0,
             magnetUri = magnet,
+            torrentUrl = torrentUrl,
             isBatch = releaseType == ReleaseType.Batch,
             isDownloaded = false,
             isDownloading = false

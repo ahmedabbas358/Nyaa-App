@@ -300,11 +300,12 @@ fun ReleaseDetailScreen(
 
                             OutlinedButton(
                                 onClick = {
-                                    if (!magnetUri.isNullOrBlank()) {
-                                        TorrentClientBridge.openInExternalTorrentClient(context, magnetUri, release.title)
-                                    } else {
-                                        TorrentClientBridge.openWebPage(context, detailsWebUrl)
-                                    }
+                                    TorrentClientBridge.openInExternalTorrentClient(
+                                        context = context,
+                                        magnetUri = magnetUri,
+                                        torrentUrl = torrentUrl,
+                                        title = release.title
+                                    )
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(8.dp)

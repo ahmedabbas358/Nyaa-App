@@ -494,4 +494,12 @@
     <string name="title_notifications">التنبيهات</string>
     <string name="title_rule_history">سجل تنفيذ القواعد</string>
     <string name="title_activity_history">سجل النشاطات</string>
+
+    <!-- Batch & Live Sync -->
+    <string name="home_live_anime_title">إصدارات الأنمي المباشرة (Nyaa Tracker)</string>
+    <string name="home_live_anime_subtitle">مواسم مجمعة تلقائياً مع تحميل جماعي للحلقات</string>
+    <string name="batch_select_and_download">تحديد وتحميل جماعي</string>
+    <string name="batch_queue_aniflow">إضافة لقائمة أنيفلو</string>
+    <string name="batch_save_torrents">حفظ ملفات التورنت</string>
+    <string name="batch_export_external">تصدير لبرامج التحميل (1DM / Flud)</string>
 </resources>

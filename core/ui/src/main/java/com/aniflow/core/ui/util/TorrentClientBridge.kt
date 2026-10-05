@@ -37,6 +37,7 @@ object TorrentClientBridge {
 
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dns(com.aniflow.core.network.resilience.ResilientNyaaDns())
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .followRedirects(true)
@@ -85,7 +86,16 @@ object TorrentClientBridge {
     }
 
     /**
-     * Dispatches magnet link to external BitTorrent client (e.g. 1DM, LibreTorrent, Flud).
+     * Convenience 3-arg overload to prevent accidental binding of title to torrentUrl.
+     */
+    fun openInExternalTorrentClient(
+        context: Context,
+        magnetUri: String?,
+        title: String?
+    ): Boolean = openInExternalTorrentClient(context = context, magnetUri = magnetUri, torrentUrl = null, title = title)
+
+    /**
+     * Dispatches magnet link or .torrent to external BitTorrent client (e.g. 1DM, LibreTorrent, Flud).
      * If an external client exists, launches standard chooser; otherwise safely copies magnet and advises the user.
      */
     fun openInExternalTorrentClient(
@@ -94,9 +104,12 @@ object TorrentClientBridge {
         torrentUrl: String? = null,
         title: String? = null
     ): Boolean {
-        if (!magnetUri.isNullOrBlank()) {
+        val cleanMagnet = magnetUri?.trim()?.takeIf { it.isNotBlank() }
+        val cleanTorrentUrl = torrentUrl?.trim()?.takeIf { it.isNotBlank() }
+
+        if (cleanMagnet != null) {
             return try {
-                val uri = Uri.parse(magnetUri)
+                val uri = Uri.parse(cleanMagnet)
                 val intent = Intent(Intent.ACTION_VIEW, uri).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
@@ -107,18 +120,27 @@ object TorrentClientBridge {
                 context.startActivity(chooser)
                 true
             } catch (e: Exception) {
-                copyToClipboard(
-                    context = context,
-                    text = magnetUri,
-                    toastMessage = "No external torrent app found. Magnet copied to clipboard!"
-                )
-                false
+                // If launching magnet failed, check if torrentUrl is available as fallback
+                if (cleanTorrentUrl != null) {
+                    downloadTorrentFileDirectly(context, cleanTorrentUrl, title ?: "release", openAfterDownload = true)
+                    true
+                } else {
+                    copyToClipboard(
+                        context = context,
+                        text = cleanMagnet,
+                        toastMessage = "No external torrent app found. Magnet copied to clipboard!"
+                    )
+                    false
+                }
             }
         }
-        if (!torrentUrl.isNullOrBlank()) {
-            downloadTorrentFileDirectly(context, torrentUrl, title ?: "release", openAfterDownload = true)
+
+        if (cleanTorrentUrl != null) {
+            downloadTorrentFileDirectly(context, cleanTorrentUrl, title ?: "release", openAfterDownload = true)
             return true
         }
+
+        postToast(context, "No download link or magnet available for this release")
         return false
     }
 
@@ -229,8 +251,16 @@ object TorrentClientBridge {
         fileName: String,
         subFolder: String = ""
     ): File? {
+        val trimmed = torrentUrl.trim()
+        val normalizedUrl = when {
+            trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true) -> trimmed
+            trimmed.startsWith("/") -> "https://nyaa.si$trimmed"
+            trimmed.all { it.isDigit() } -> "https://nyaa.si/download/$trimmed.torrent"
+            else -> "https://nyaa.si/download/$trimmed"
+        }
+
         val request = Request.Builder()
-            .url(torrentUrl)
+            .url(normalizedUrl)
             .header("User-Agent", DEFAULT_USER_AGENT)
             .header("Accept", "application/x-bittorrent, text/html, */*")
             .header("Referer", "https://nyaa.si/")

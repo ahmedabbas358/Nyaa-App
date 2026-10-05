@@ -494,4 +494,12 @@
     <string name="title_notifications">Notifications</string>
     <string name="title_rule_history">Rule Execution History</string>
     <string name="title_activity_history">Activity History</string>
+
+    <!-- Batch & Live Sync -->
+    <string name="home_live_anime_title">Live Anime Releases (Nyaa Tracker)</string>
+    <string name="home_live_anime_subtitle">Complete season batches &amp; episode selector</string>
+    <string name="batch_select_and_download">Batch Select &amp; Download</string>
+    <string name="batch_queue_aniflow">Queue in AniFlow</string>
+    <string name="batch_save_torrents">Save .torrents</string>
+    <string name="batch_export_external">Export (1DM / Flud)</string>
 </resources>

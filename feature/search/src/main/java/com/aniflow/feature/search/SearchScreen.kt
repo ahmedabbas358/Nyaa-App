@@ -190,7 +190,7 @@ fun SearchScreen(
                     }
                 }
 
-                // YouTube-style Filter Chips Row (Auto-Batch Grouping & Uploader Selection)
+                // Filter Chips Row (Auto-Batch Grouping & Uploader Selection)
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -201,7 +201,7 @@ fun SearchScreen(
                         FilterChip(
                             selected = uiState.isGroupedView,
                             onClick = { viewModel.onEvent(SearchUiEvent.ToggleGroupedView) },
-                            label = { Text("📦 Grouped Anime", style = AppTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold)) },
+                            label = { Text("📦 Season Batches", style = AppTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold)) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = PrimaryIndigo.copy(alpha = 0.25f),
                                 selectedLabelColor = PrimaryIndigo,
@@ -380,7 +380,7 @@ fun SearchScreen(
             )
         }
 
-        // Smart Episode Batch Selection Modal (YouTube & 1DM Style)
+        // Smart Episode Batch Selection Modal
         if (uiState.showBatchSelectionSheet && uiState.selectedGroupForBatch != null) {
             EpisodeBatchSelectionSheet(
                 groupedAnime = uiState.selectedGroupForBatch!!,

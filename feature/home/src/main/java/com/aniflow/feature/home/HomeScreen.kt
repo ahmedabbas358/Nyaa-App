@@ -363,21 +363,22 @@ class HomeViewModel(
         viewModelScope.launch {
             var queuedCount = 0
             for (release in releases) {
-                val magnet = release.magnetUri
-                if (!magnet.isNullOrBlank()) {
-                    queueDownloadUseCase?.queueTorrent(
-                        title = release.title,
-                        magnetUri = magnet,
-                        releaseId = release.id,
-                        destinationFolder = destinationFolder
-                    )
-                    queuedCount++
-                }
+                val effectiveUri = release.magnetUri?.takeIf { it.isNotBlank() }
+                    ?: release.torrentUrl?.takeIf { it.isNotBlank() }
+                    ?: "https://nyaa.si/download/${release.id}.torrent"
+
+                queueDownloadUseCase?.queueFromLink(
+                    link = effectiveUri,
+                    customTitle = release.title,
+                    releaseId = release.id,
+                    destinationFolder = destinationFolder
+                )
+                queuedCount++
             }
             _uiState.value = _uiState.value.copy(
                 showBatchSelectionSheet = false,
                 selectedGroupForBatch = null,
-                batchSuccessNotification = "Queued $queuedCount episodes into $destinationFolder"
+                batchSuccessNotification = "Queued $queuedCount episode(s) into $destinationFolder"
             )
         }
     }
@@ -387,7 +388,9 @@ class HomeViewModel(
     }
 
     private fun Release.toSearchResultItem(): SearchResultItem.ReleaseResult {
-        val magnet = (source as? ReleaseSource.Torrent)?.magnetUri?.rawValue
+        val torrentSource = source as? ReleaseSource.Torrent
+        val magnet = torrentSource?.magnetUri?.rawValue
+        val torrentUrl = torrentSource?.torrentUrl?.rawValue ?: "https://nyaa.si/download/${id.value}.torrent"
         val sizeBytes = availability.size?.bytes ?: 0L
         val sizeStr = if (sizeBytes > 0) UiFormatters.formatBytes(sizeBytes) else "—"
         return SearchResultItem.ReleaseResult(
@@ -402,6 +405,7 @@ class HomeViewModel(
             seeders = availability.seeders ?: 0,
             leechers = availability.leechers ?: 0,
             magnetUri = magnet,
+            torrentUrl = torrentUrl,
             isBatch = isBatch,
             isDownloaded = false,
             isDownloading = false
@@ -606,13 +610,13 @@ private fun HomeDashboardContent(
             HomeSearchTrigger(onClick = onNavigateToSearch)
         }
 
-        // 4. YouTube-style Trending / Live Anime Releases (Grouped by Anime & Season)
+        // 4. Trending & Live Anime Releases (Grouped by Anime & Season)
         if (state.groupedAnime.isNotEmpty()) {
             item(key = "home_live_anime_section_header") {
                 Column(modifier = Modifier.padding(horizontal = AppSpacing.md)) {
                     AniSectionHeader(
-                        title = "Live Anime Releases (Nyaa.si)",
-                        subtitle = "Auto-grouped complete seasons with multi-download",
+                        title = stringResource(R.string.home_live_anime_title),
+                        subtitle = stringResource(R.string.home_live_anime_subtitle),
                         actionText = stringResource(R.string.home_see_all),
                         onActionClick = onNavigateToSearch
                     )

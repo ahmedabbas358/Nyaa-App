@@ -142,8 +142,8 @@ fun SearchResultRow(
 }
 
 /**
- * YouTube-style Anime & Season media card with 16:9 thumbnail preview,
- * overlay episode counter badge, uploader tags, and 1DM batch action button.
+ * Authentic Anime & Season Batch card with rich atmospheric backdrop,
+ * season badge, episode counter, uploader pills, and quick batch selector.
  */
 @Composable
 fun GroupedAnimeCard(
@@ -154,101 +154,130 @@ fun GroupedAnimeCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = DarkSurface),
-        shape = RoundedCornerShape(AppShapes.sm),
+        shape = RoundedCornerShape(14.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
     ) {
         Column {
-            // YouTube-style media preview box with overlay episode pill
+            // Elegant Atmospheric Anime Banner with glowing gradient & season tag
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(110.dp)
-                    .background(DarkSurfaceVariant)
+                    .height(96.dp)
+                    .background(
+                        androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            listOf(
+                                Color(0xFF1E1B4B), // Deep indigo
+                                Color(0xFF2E1065), // Deep purple
+                                Color(0xFF0F172A)  // Deep slate
+                            )
+                        )
+                    )
             ) {
-                // Subtle Anime monogram artwork
+                // Subtle decorative film icon on background
                 Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
+                    contentAlignment = Alignment.CenterEnd,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(end = 16.dp)
                 ) {
-                    Text(
-                        text = item.title.take(3).uppercase(),
-                        style = AppTypography.headline.copy(fontSize = 32.sp, fontWeight = FontWeight.Black),
-                        color = PrimaryIndigo.copy(alpha = 0.25f)
+                    Icon(
+                        imageVector = Icons.Default.Movie,
+                        contentDescription = null,
+                        tint = PrimaryIndigo.copy(alpha = 0.15f),
+                        modifier = Modifier.size(72.dp)
                     )
                 }
 
-                // Top-Left Season Tag
+                // Top-Left Season Pill
                 Surface(
-                    color = PrimaryIndigo,
-                    shape = RoundedCornerShape(bottomEnd = 6.dp),
+                    color = PrimaryIndigo.copy(alpha = 0.25f),
+                    shape = RoundedCornerShape(bottomEnd = 10.dp, topStart = 14.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryIndigo.copy(alpha = 0.5f)),
                     modifier = Modifier.align(Alignment.TopStart)
                 ) {
                     Text(
                         text = "SEASON ${item.seasonNumber}",
-                        style = AppTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                        style = AppTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.ExtraBold),
                         color = Color.White,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
                 }
 
-                // Bottom-Right YouTube-style Episode Count Badge
+                // Bottom-Right Episode Count Glass Badge
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(6.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color.Black.copy(alpha = 0.85f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color.Black.copy(alpha = 0.75f))
+                        .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.PlayCircle,
+                            contentDescription = null,
+                            tint = PrimaryIndigo,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "${item.totalEpisodes} EPISODES",
+                            style = AppTypography.caption.copy(
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        )
+                    }
+                }
+
+                // Title Overlay preview in banner
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 12.dp, bottom = 8.dp, end = 120.dp)
                 ) {
                     Text(
-                        text = "${item.totalEpisodes} EPISODES",
-                        style = AppTypography.caption.copy(
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                        text = item.title,
+                        style = AppTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
             }
 
-            // Body: Title, Uploaders, Size, and Batch Button
+            // Body: Metadata, Uploaders, and Action Button
             Column(modifier = Modifier.padding(AppSpacing.md)) {
-                Text(
-                    text = item.title,
-                    style = AppTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
-                    color = TextPrimary,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-
-                Spacer(Modifier.height(4.dp))
-
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "${item.formattedSize} • ${item.releases.size} torrents",
-                        style = AppTypography.caption,
-                        color = TextMuted
+                        text = "${item.formattedSize} • ${item.releases.size} releases",
+                        style = AppTypography.caption.copy(fontWeight = FontWeight.Medium),
+                        color = TextSecondary
                     )
 
-                    // Uploaders snippet
+                    // Uploaders pills
                     if (item.availableUploaders.isNotEmpty()) {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            item.availableUploaders.take(2).forEach { uploader ->
+                            item.availableUploaders.take(3).forEach { uploader ->
                                 Surface(
-                                    color = DarkCardBorder,
-                                    shape = RoundedCornerShape(3.dp)
+                                    color = DarkSurfaceVariant,
+                                    shape = RoundedCornerShape(4.dp),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
                                 ) {
                                     Text(
                                         text = uploader,
-                                        style = AppTypography.caption.copy(fontSize = 9.sp, fontWeight = FontWeight.SemiBold),
-                                        color = TextSecondary,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                        style = AppTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                                        color = TextPrimary,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                     )
                                 }
                             }
@@ -262,9 +291,9 @@ fun GroupedAnimeCard(
                 androidx.compose.material3.Button(
                     onClick = onClick,
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
-                    shape = RoundedCornerShape(AppShapes.sm),
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    contentPadding = PaddingValues(vertical = 10.dp)
                 ) {
                     Icon(
                         Icons.Default.Download,
@@ -272,10 +301,10 @@ fun GroupedAnimeCard(
                         modifier = Modifier.size(16.dp),
                         tint = Color.White
                     )
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
                         text = "Batch Select & Download (${item.totalEpisodes} Episodes)",
-                        style = AppTypography.caption.copy(fontWeight = FontWeight.Bold, color = Color.White)
+                        style = AppTypography.caption.copy(fontWeight = FontWeight.Bold, color = Color.White, fontSize = 12.sp)
                     )
                 }
             }
