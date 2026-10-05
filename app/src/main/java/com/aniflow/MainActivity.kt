@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.aniflow.core.ui.theme.AniFlowTheme
 import com.aniflow.domain.repository.DownloadRepository
 import com.aniflow.domain.repository.LibraryRepository
@@ -48,7 +50,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         // Sync Nyaa mirror preference to active network config
-        androidx.lifecycle.lifecycleScope.launch {
+        lifecycleScope.launch {
             settingsRepository.observeNyaaMirror().collect { mirrorUrl ->
                 nyaaProviderConfig.setMirror(mirrorUrl)
             }
