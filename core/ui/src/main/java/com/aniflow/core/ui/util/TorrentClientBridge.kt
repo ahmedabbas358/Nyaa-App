@@ -88,31 +88,51 @@ object TorrentClientBridge {
      * Dispatches magnet link to external BitTorrent client (e.g. 1DM, LibreTorrent, Flud).
      * If an external client exists, launches standard chooser; otherwise safely copies magnet and advises the user.
      */
+     */
     fun openInExternalTorrentClient(
         context: Context,
-        magnetUri: String,
+        magnetUri: String? = null,
+        torrentUrl: String? = null,
         title: String? = null
     ): Boolean {
-        return try {
-            val uri = Uri.parse(magnetUri)
-            val intent = Intent(Intent.ACTION_VIEW, uri).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
+        if (!magnetUri.isNullOrBlank()) {
+            return try {
+                val uri = Uri.parse(magnetUri)
+                val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
 
-            val chooser = Intent.createChooser(intent, "Open with BitTorrent App (1DM / Flud / LibreTorrent)").apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                val chooser = Intent.createChooser(intent, "Open with BitTorrent App (1DM / Flud / LibreTorrent)").apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(chooser)
+                true
+            } catch (e: Exception) {
+                copyToClipboard(
+                    context = context,
+                    text = magnetUri,
+                    toastMessage = "No external torrent app found. Magnet copied to clipboard!"
+                )
+                false
             }
-            context.startActivity(chooser)
-            true
-        } catch (e: Exception) {
-            copyToClipboard(
-                context = context,
-                text = magnetUri,
-                toastMessage = "No external torrent app found. Magnet copied to clipboard!"
-            )
-            false
         }
+        if (!torrentUrl.isNullOrBlank()) {
+            downloadTorrentFileDirectly(context, torrentUrl, title ?: "release", openAfterDownload = true)
+            return true
+        }
+        return false
     }
+
+    /**
+     * Alias for downloadTorrentFileDirectly.
+     */
+    fun downloadTorrentFile(
+        context: Context,
+        torrentUrl: String,
+        title: String,
+        openAfterDownload: Boolean = false,
+        onComplete: ((File?) -> Unit)? = null
+    ) = downloadTorrentFileDirectly(context, torrentUrl, title, openAfterDownload, onComplete)
 
     /**
      * Downloads .torrent file directly from Nyaa using OkHttpClient with proper browser User-Agent
@@ -164,10 +184,12 @@ object TorrentClientBridge {
         context: Context,
         items: List<Pair<String, String>>, // title to torrentUrl
         destinationSubFolder: String = "",
+        subfolderName: String = destinationSubFolder,
         onProgress: (completed: Int, total: Int) -> Unit = { _, _ -> },
         onFinished: (successCount: Int) -> Unit = {}
     ) {
         if (items.isEmpty()) return
+        val folder = if (subfolderName.isNotBlank()) subfolderName else destinationSubFolder
 
         CoroutineScope(Dispatchers.IO).launch {
             postToast(context, "Starting batch download of ${items.size} .torrent file(s)…")
@@ -180,7 +202,7 @@ object TorrentClientBridge {
                     try {
                         val safeTitle = title.replace(Regex("""[\\/:*?"<>|]"""), "_").trim().ifBlank { "episode" }
                         val fileName = if (safeTitle.endsWith(".torrent", ignoreCase = true)) safeTitle else "$safeTitle.torrent"
-                        val file = fetchTorrentFileBytes(context, url, fileName, destinationSubFolder)
+                        val file = fetchTorrentFileBytes(context, url, fileName, folder)
                         if (file != null && file.exists() && file.length() > 0) {
                             successCount++
                         }
@@ -192,7 +214,7 @@ object TorrentClientBridge {
 
             postToast(
                 context,
-                "Batch complete: saved $successCount of ${items.size} .torrent file(s) in Downloads/AniFlow/Torrents/$destinationSubFolder",
+                "Batch complete: saved $successCount of ${items.size} .torrent file(s) in Downloads/AniFlow/Torrents/$folder",
                 Toast.LENGTH_LONG
             )
             onFinished(successCount)
@@ -274,6 +296,18 @@ object TorrentClientBridge {
             postToast(context, "No app found to open .torrent file. File saved to: ${file.name}")
             false
         }
+    }
+
+    /**
+     * Overload for exporting a simple list of magnet URI strings.
+     */
+    fun exportBatchMagnetsToTextFile(
+        context: Context,
+        title: String,
+        magnets: List<String>
+    ): File? {
+        val pairs = magnets.mapIndexed { index, m -> "Episode ${index + 1}" to m }
+        return exportBatchMagnetsToTextFile(context, title, pairs)
     }
 
     /**

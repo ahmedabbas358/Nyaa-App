@@ -188,7 +188,7 @@ class DownloadExecutionCoordinator(
         activeJobs[taskIdStr] = job
     }
 
-    suspend fun pauseTask(taskId: DownloadTaskId) {
+    override suspend fun pauseTask(taskId: DownloadTaskId) {
         mutex.withLock {
             val handle = activeHandles[taskId.value]
             handle?.pause()
@@ -200,12 +200,12 @@ class DownloadExecutionCoordinator(
         triggerQueueProcessing()
     }
 
-    suspend fun resumeTask(taskId: DownloadTaskId) {
+    override suspend fun resumeTask(taskId: DownloadTaskId) {
         downloadRepository.updateTaskState(taskId, DownloadState.Queued)
         triggerQueueProcessing()
     }
 
-    suspend fun cancelTask(taskId: DownloadTaskId) {
+    override suspend fun cancelTask(taskId: DownloadTaskId) {
         mutex.withLock {
             val handle = activeHandles[taskId.value]
             handle?.cancel()
@@ -222,14 +222,14 @@ class DownloadExecutionCoordinator(
         triggerQueueProcessing()
     }
 
-    suspend fun pauseAll() {
+    override suspend fun pauseAll() {
         val runningIds = activeJobs.keys().toList()
         for (id in runningIds) {
             pauseTask(DownloadTaskId(id))
         }
     }
 
-    suspend fun resumeAll() {
+    override suspend fun resumeAll() {
         val allTasks = downloadRepository.getAllTasks()
         for (task in allTasks) {
             if (task.state == DownloadState.Paused) {
@@ -239,7 +239,7 @@ class DownloadExecutionCoordinator(
         triggerQueueProcessing()
     }
 
-    suspend fun clearCompleted() {
+    override suspend fun clearCompleted() {
         val allTasks = downloadRepository.getAllTasks()
         for (task in allTasks) {
             if (task.state == DownloadState.Completed || task.state == DownloadState.Cancelled) {
