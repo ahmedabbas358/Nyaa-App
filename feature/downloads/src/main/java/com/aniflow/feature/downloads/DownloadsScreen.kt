@@ -229,16 +229,18 @@ fun DownloadsScreen(
                             },
                             onExport1DM = {
                                 val selectedModels = uiState.rawTasks.filter { selectedBulkTasks.contains(it.id) }
-                                val magnets = selectedModels.mapNotNull { it.sourceUrlOrMagnet?.takeIf { u -> u.startsWith("magnet:") } }
-                                if (magnets.isNotEmpty()) {
-                                    TorrentClientBridge.exportBatchMagnetsToTextFile(
+                                val items = selectedModels.mapNotNull { model ->
+                                    val uri = model.sourceUrlOrMagnet?.takeIf { it.isNotBlank() }
+                                    if (uri != null) model.title to uri else null
+                                }
+                                if (items.isNotEmpty()) {
+                                    TorrentClientBridge.openBatchInExternalTorrentClient(
                                         context = context,
-                                        title = "AniFlow_Downloads_Batch",
-                                        magnets = magnets
+                                        items = items,
+                                        batchTitle = "AniFlow_Downloads_Batch"
                                     )
-                                    TorrentClientBridge.copyBatchMagnets(context, magnets)
                                 } else {
-                                    Toast.makeText(context, "No magnet links found in selected items", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "No download links found in selected items", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             onSaveTorrents = {

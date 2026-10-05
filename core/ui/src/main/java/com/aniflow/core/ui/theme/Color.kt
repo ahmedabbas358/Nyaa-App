@@ -4,68 +4,68 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
 /**
- * AniFlow Refined Palette (Section 5: Visual Identity).
+ * AniFlow Color Palette v2 — Warm, Human-crafted Design.
  *
- * Restrained, content-first aesthetic:
- * - Single subdued deep blue-violet accent used deliberately.
- * - Multi-tiered dark surface hierarchy (no pure black OLED smearing).
- * - Clear, high-contrast light surface hierarchy.
- * - Semantic status colors tailored for high readability.
+ * Design philosophy:
+ * - Warm amber-gold accent paired with cool slate backgrounds
+ * - Multi-tiered dark surfaces with subtle blue undertones (not pure black)
+ * - Organic feel: warmer neutrals, softer contrasts, no harsh neon
+ * - Light theme with cream/ivory warmth instead of clinical white
  */
 
-// Accent - Deep Blue-Violet (Restrained, Editorial)
-val AccentBlueViolet = Color(0xFF505CB8)
-val AccentBlueVioletHover = Color(0xFF4551A6)
-val AccentBlueVioletSubtle = Color(0xFF1E2342)
-val AccentBlueVioletLight = Color(0xFF4854B0)
-val AccentBlueVioletSubtleLight = Color(0xFFEEF0FA)
+// Primary Accent — Warm Amber-Gold (distinctive, not generic)
+val AccentBlueViolet = Color(0xFFD4A857)        // Warm amber-gold primary
+val AccentBlueVioletHover = Color(0xFFC49A4B)    // Hover: slightly deeper
+val AccentBlueVioletSubtle = Color(0xFF2A2419)   // Subtle dark tint
+val AccentBlueVioletLight = Color(0xFFBF8F3A)    // Light theme primary
+val AccentBlueVioletSubtleLight = Color(0xFFFBF5E9) // Light subtle bg
 
 // Legacy alias compatibility so other screens compile seamlessly
 val PrimaryIndigo = AccentBlueViolet
-val PrimaryIndigoVariant = Color(0xFF424DA1)
-val SecondaryTeal = Color(0xFF0D9488)
-val AccentCyan = Color(0xFF0284C7)
+val PrimaryIndigoVariant = Color(0xFFC49A4B)
+val SecondaryTeal = Color(0xFF5BA89D)            // Muted sage-teal
+val AccentCyan = Color(0xFF6BA3BE)               // Dusty sky blue
 
-// Dark Theme Surfaces
-val DarkBackground = Color(0xFF0B0F17)      // Deep charcoal/obsidian
-val DarkSurface = Color(0xFF121824)         // Base elevated surface
-val DarkSurfaceElevated = Color(0xFF1A2234) // Cards, sheets, dialogs
-val DarkSurfaceVariant = Color(0xFF232D42)  // Chips, inset wells
-val DarkCardBorder = Color(0xFF28344B)      // Clean structural divider (1dp)
-val DarkCardBorderSubtle = Color(0xFF1D2637)
+// Dark Theme Surfaces — warm undertones, no pure black
+val DarkBackground = Color(0xFF111318)           // Very dark slate with warmth
+val DarkSurface = Color(0xFF181B22)              // Base card surface
+val DarkSurfaceElevated = Color(0xFF1F232D)      // Elevated cards/sheets
+val DarkSurfaceVariant = Color(0xFF262B38)       // Chips, inset areas
+val DarkCardBorder = Color(0xFF2E3444)           // Structural divider
+val DarkCardBorderSubtle = Color(0xFF232834)
 
-// Light Theme Surfaces
-val LightBackground = Color(0xFFF7F8FA)
-val LightSurface = Color(0xFFFFFFFF)
-val LightSurfaceElevated = Color(0xFFFFFFFF)
-val LightSurfaceVariant = Color(0xFFEEF1F6)
-val LightCardBorder = Color(0xFFDCE1EA)
-val LightCardBorderSubtle = Color(0xFFE9ECF2)
+// Light Theme Surfaces — warm ivory, not clinical white
+val LightBackground = Color(0xFFF8F6F2)          // Warm off-white
+val LightSurface = Color(0xFFFFFEFB)             // Cream white
+val LightSurfaceElevated = Color(0xFFFFFEFB)
+val LightSurfaceVariant = Color(0xFFF0ECE5)      // Warm light grey
+val LightCardBorder = Color(0xFFE2DDD4)          // Warm border
+val LightCardBorderSubtle = Color(0xFFEBE7E0)
 
-// Status Colors (Subtle & High Contrast)
-val SuccessGreen = Color(0xFF10B981)        // Emerald 500
-val WarningAmber = Color(0xFFF59E0B)        // Amber 500
-val ErrorRose = Color(0xFFEF4444)           // Red 500
-val InfoBlue = Color(0xFF38BDF8)            // Sky 400
+// Status Colors — slightly desaturated for elegance
+val SuccessGreen = Color(0xFF3DA87A)             // Sage green
+val WarningAmber = Color(0xFFE8A84C)             // Warm amber
+val ErrorRose = Color(0xFFD4574B)                // Brick red (not neon)
+val InfoBlue = Color(0xFF5B9FCA)                 // Dusty blue
 
-// Quality Badges
-val Badge1080p = Color(0xFF505CB8)
-val Badge720p = Color(0xFF2563EB)
-val Badge4K = Color(0xFF7C3AED)
-val BadgeHevc = Color(0xFF059669)
-val BadgeAv1 = Color(0xFF0284C7)
-val BadgeTrusted = Color(0xFF16A34A)
-val BadgeRemake = Color(0xFFEA580C)
+// Quality Badges — muted, cohesive palette
+val Badge1080p = Color(0xFFD4A857)               // Gold (matches primary)
+val Badge720p = Color(0xFF6B8EC4)                // Steel blue
+val Badge4K = Color(0xFF9B7AC4)                  // Dusty purple
+val BadgeHevc = Color(0xFF4D9E7D)                // Muted emerald
+val BadgeAv1 = Color(0xFF5B9FCA)                 // Dusty sky
+val BadgeTrusted = Color(0xFF4D9E7D)             // Same as HEVC for coherence
+val BadgeRemake = Color(0xFFCB7644)              // Terracotta
 
-// Text Colors - Dark
-val TextPrimary = Color(0xFFF1F5F9)
-val TextSecondary = Color(0xFF94A3B8)
-val TextMuted = Color(0xFF64748B)
+// Text Colors - Dark — warmer, not blue-grey
+val TextPrimary = Color(0xFFF0EBE3)              // Warm off-white
+val TextSecondary = Color(0xFF9E978C)            // Warm grey
+val TextMuted = Color(0xFF6B6560)                // Muted warm grey
 
-// Text Colors - Light
-val TextPrimaryLight = Color(0xFF0F172A)
-val TextSecondaryLight = Color(0xFF475569)
-val TextMutedLight = Color(0xFF8290A4)
+// Text Colors - Light — deep ink, not pure black
+val TextPrimaryLight = Color(0xFF1A1714)         // Deep warm black
+val TextSecondaryLight = Color(0xFF56504A)        // Warm charcoal
+val TextMutedLight = Color(0xFF8A8279)           // Muted warm
 
 /**
  * Immutable Color Scheme for AniFlow's Design System.

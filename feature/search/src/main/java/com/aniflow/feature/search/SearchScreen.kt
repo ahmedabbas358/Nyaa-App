@@ -84,13 +84,14 @@ import com.aniflow.feature.search.components.SearchResultRow
 import com.aniflow.feature.search.components.SearchSuggestionsView
 
 /**
- * Universal SearchScreen (Sections 7, 15, 23, 28, 30, 31, 32, 40, 41).
- * High-performance Discovery interface uniting Local FTS and Remote Providers with:
+ * SearchScreen — Discovery interface for Nyaa releases.
+ *
+ * Features:
  * - Smart suggestions and recency ranking
- * - Advanced filter builder with AST translation
- * - Multi-release comparison modal
- * - Multi-source state transparency (Local vs Nyaa vs Offline fallback)
- * - Adaptive layout for Phone and Tablet landscape
+ * - Advanced filter builder
+ * - Multi-release comparison
+ * - Batch episode download
+ * - Adaptive layout (phone + tablet)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,7 +104,7 @@ fun SearchScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     val scopes = listOf(
-        "Universal" to SearchScope.Universal,
+        "All" to SearchScope.Universal,
         "Anime" to SearchScope.Anime(),
         "Library" to SearchScope.Library,
         "Downloads" to SearchScope.Downloads
@@ -120,7 +121,13 @@ fun SearchScreen(
                         OutlinedTextField(
                             value = uiState.query,
                             onValueChange = { viewModel.onEvent(SearchUiEvent.QueryChanged(it)) },
-                            placeholder = { Text("Search anime, episodes, uploader, library…", style = AppTypography.caption) },
+                            placeholder = {
+                                Text(
+                                    "Search anime, episodes, uploader…",
+                                    style = AppTypography.Caption,
+                                    color = TextMuted
+                                )
+                            },
                             leadingIcon = {
                                 Icon(Icons.Default.Search, contentDescription = "Search", tint = PrimaryIndigo)
                             },
@@ -132,7 +139,7 @@ fun SearchScreen(
                                 }
                             },
                             singleLine = true,
-                            shape = RoundedCornerShape(AppShapes.sm),
+                            shape = RoundedCornerShape(8.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = PrimaryIndigo,
                                 unfocusedBorderColor = DarkCardBorder,
@@ -141,12 +148,12 @@ fun SearchScreen(
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(50.dp)
+                                .height(48.dp)
                         )
                     },
                     actions = {
                         IconButton(onClick = { viewModel.onEvent(SearchUiEvent.SetFilterSheetVisible(true)) }) {
-                            Icon(Icons.Default.FilterList, contentDescription = "Advanced Filters", tint = PrimaryIndigo)
+                            Icon(Icons.Default.FilterList, contentDescription = "Filters", tint = TextSecondary)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
@@ -159,7 +166,7 @@ fun SearchScreen(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                // Scope Filter Tabs (Section 2)
+                // Scope tabs
                 TabRow(
                     selectedTabIndex = selectedScopeIndex,
                     containerColor = DarkSurface,
@@ -167,7 +174,8 @@ fun SearchScreen(
                     indicator = { tabPositions ->
                         TabRowDefaults.SecondaryIndicator(
                             Modifier.tabIndicatorOffset(tabPositions[selectedScopeIndex]),
-                            color = PrimaryIndigo
+                            color = PrimaryIndigo,
+                            height = 2.dp
                         )
                     }
                 ) {
@@ -181,7 +189,7 @@ fun SearchScreen(
                             text = {
                                 Text(
                                     text = title,
-                                    style = AppTypography.body.copy(fontSize = 12.sp),
+                                    style = AppTypography.Caption.copy(fontSize = 12.sp),
                                     fontWeight = if (selectedScopeIndex == index) FontWeight.Bold else FontWeight.Normal,
                                     color = if (selectedScopeIndex == index) PrimaryIndigo else TextMuted
                                 )
@@ -190,20 +198,25 @@ fun SearchScreen(
                     }
                 }
 
-                // Filter Chips Row (Auto-Batch Grouping & Uploader Selection)
+                // Filter chips: Batch grouping + Uploader selection
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = AppSpacing.md, vertical = 6.dp),
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     item {
                         FilterChip(
                             selected = uiState.isGroupedView,
                             onClick = { viewModel.onEvent(SearchUiEvent.ToggleGroupedView) },
-                            label = { Text("📦 Season Batches", style = AppTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold)) },
+                            label = {
+                                Text(
+                                    "Season Batches",
+                                    style = AppTypography.Caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                                )
+                            },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = PrimaryIndigo.copy(alpha = 0.25f),
+                                selectedContainerColor = PrimaryIndigo.copy(alpha = 0.15f),
                                 selectedLabelColor = PrimaryIndigo,
                                 containerColor = DarkSurface,
                                 labelColor = TextSecondary
@@ -211,10 +224,10 @@ fun SearchScreen(
                             border = FilterChipDefaults.filterChipBorder(
                                 enabled = true,
                                 selected = uiState.isGroupedView,
-                                selectedBorderColor = PrimaryIndigo,
+                                selectedBorderColor = PrimaryIndigo.copy(alpha = 0.4f),
                                 borderColor = DarkCardBorder
                             ),
-                            shape = RoundedCornerShape(AppShapes.sm)
+                            shape = RoundedCornerShape(6.dp)
                         )
                     }
 
@@ -226,9 +239,14 @@ fun SearchScreen(
                             onClick = {
                                 viewModel.onEvent(SearchUiEvent.SetUploaderFilter(if (uploaderName == "All Uploaders") null else uploaderName))
                             },
-                            label = { Text(uploaderName, style = AppTypography.caption.copy(fontSize = 11.sp)) },
+                            label = {
+                                Text(
+                                    uploaderName,
+                                    style = AppTypography.Caption.copy(fontSize = 11.sp)
+                                )
+                            },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = PrimaryIndigo.copy(alpha = 0.25f),
+                                selectedContainerColor = PrimaryIndigo.copy(alpha = 0.15f),
                                 selectedLabelColor = PrimaryIndigo,
                                 containerColor = DarkSurface,
                                 labelColor = TextSecondary
@@ -236,37 +254,37 @@ fun SearchScreen(
                             border = FilterChipDefaults.filterChipBorder(
                                 enabled = true,
                                 selected = isSelected,
-                                selectedBorderColor = PrimaryIndigo,
+                                selectedBorderColor = PrimaryIndigo.copy(alpha = 0.4f),
                                 borderColor = DarkCardBorder
                             ),
-                            shape = RoundedCornerShape(AppShapes.sm)
+                            shape = RoundedCornerShape(6.dp)
                         )
                     }
                 }
 
-                // Offline Notice Banner (Section 28)
+                // Offline banner
                 if (uiState.isOffline) {
                     Surface(
-                        color = AppSemanticColors.Warning.copy(alpha = 0.15f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, AppSemanticColors.Warning),
+                        color = AppSemanticColors.Warning.copy(alpha = 0.1f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AppSemanticColors.Warning.copy(alpha = 0.3f)),
+                        shape = RoundedCornerShape(6.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(AppSpacing.sm)
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(AppSpacing.sm),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.WifiOff, contentDescription = null, tint = AppSemanticColors.Warning, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.WifiOff, contentDescription = null, tint = AppSemanticColors.Warning, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("Offline Mode: Showing local library and cache results.", style = AppTypography.caption, color = TextPrimary)
+                            Text("Offline — showing cached results", style = AppTypography.Caption, color = TextSecondary)
                         }
                     }
                 }
 
-                // Content View: Suggestions vs Results
+                // Content: Suggestions vs Results
                 if (uiState.status is SearchStatus.Suggesting || uiState.query.isBlank()) {
-                    // Smart Suggestions & Recent Searches View (Sections 8, 9, 10)
                     SearchSuggestionsView(
                         suggestions = uiState.suggestions,
                         recentHistory = uiState.history,
@@ -276,31 +294,33 @@ fun SearchScreen(
                         onConvertToSavedSearch = { viewModel.onEvent(SearchUiEvent.ConvertToSavedSearch(it)) }
                     )
                 } else if (uiState.status is SearchStatus.SearchingLocal || uiState.status is SearchStatus.SearchingProvider) {
-                    // Loading State
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = PrimaryIndigo, modifier = Modifier.size(36.dp))
-                            Spacer(Modifier.height(AppSpacing.md))
-                            Text("Searching local & provider indices…", style = AppTypography.caption, color = TextMuted)
+                            CircularProgressIndicator(
+                                color = PrimaryIndigo,
+                                modifier = Modifier.size(32.dp),
+                                strokeWidth = 2.5.dp
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            Text("Searching…", style = AppTypography.Caption, color = TextMuted)
                         }
                     }
                 } else if (uiState.status is SearchStatus.Empty) {
-                    // Empty Results State
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("No Results Found", style = AppTypography.headline.copy(fontSize = 16.sp), color = TextPrimary)
+                            Text("No results", style = AppTypography.Title, color = TextPrimary)
                             Spacer(Modifier.height(4.dp))
-                            Text("Try adjusting your spelling or relaxing filters.", style = AppTypography.caption, color = TextMuted)
+                            Text("Try different keywords or relax filters", style = AppTypography.Caption, color = TextMuted)
                         }
                     }
                 } else {
-                    // Search Results List (Section 16, 30, 31)
+                    // Results list
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f),
-                        contentPadding = PaddingValues(AppSpacing.md),
-                        verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(uiState.results, key = { it.id }) { item ->
                             SearchResultRow(
@@ -320,36 +340,37 @@ fun SearchScreen(
                         }
                     }
 
-                    // Floating Comparison Action Bar (Section 32)
+                    // Compare bar
                     if (uiState.selectedForCompareIds.size >= 2) {
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(AppSpacing.md),
+                                .padding(12.dp),
                             color = DarkSurfaceVariant,
-                            shape = RoundedCornerShape(AppShapes.sm),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryIndigo)
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryIndigo.copy(alpha = 0.4f))
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(AppSpacing.sm),
+                                    .padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "${uiState.selectedForCompareIds.size} releases selected",
-                                    style = AppTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                                    text = "${uiState.selectedForCompareIds.size} selected",
+                                    style = AppTypography.BodySmall.copy(fontWeight = FontWeight.SemiBold),
                                     color = PrimaryIndigo
                                 )
                                 Button(
                                     onClick = { viewModel.onEvent(SearchUiEvent.OpenCompareSheet) },
                                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
-                                    shape = RoundedCornerShape(AppShapes.sm)
+                                    shape = RoundedCornerShape(6.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                                 ) {
-                                    Icon(Icons.Default.CompareArrows, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.CompareArrows, contentDescription = null, modifier = Modifier.size(14.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text("Compare Releases", style = AppTypography.caption)
+                                    Text("Compare", style = AppTypography.Caption.copy(fontWeight = FontWeight.SemiBold))
                                 }
                             }
                         }
@@ -358,7 +379,7 @@ fun SearchScreen(
             }
         }
 
-        // Advanced Filter Builder Modal (Section 23, 24, 25)
+        // Advanced Filter Builder Modal
         if (uiState.showFilterSheet) {
             AdvancedFilterBuilderSheet(
                 initialSelection = uiState.filterSelection,
@@ -368,7 +389,7 @@ fun SearchScreen(
             )
         }
 
-        // Release Comparison Modal (Section 32)
+        // Release Comparison Modal
         if (uiState.showCompareSheet && uiState.comparisonResult != null) {
             ReleaseComparisonSheet(
                 comparisonResult = uiState.comparisonResult!!,
@@ -380,7 +401,7 @@ fun SearchScreen(
             )
         }
 
-        // Smart Episode Batch Selection Modal
+        // Batch Selection Modal
         if (uiState.showBatchSelectionSheet && uiState.selectedGroupForBatch != null) {
             EpisodeBatchSelectionSheet(
                 groupedAnime = uiState.selectedGroupForBatch!!,
@@ -391,32 +412,36 @@ fun SearchScreen(
             )
         }
 
-        // Batch Queue Success Notification Toast
+        // Batch success toast
         uiState.batchSuccessNotification?.let { msg ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(AppSpacing.md),
+                    .padding(16.dp),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 Surface(
                     color = AppSemanticColors.Success,
-                    shape = RoundedCornerShape(AppShapes.sm),
-                    shadowElevation = 8.dp
+                    shape = RoundedCornerShape(8.dp),
+                    shadowElevation = 4.dp
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(text = msg, style = AppTypography.body.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold), color = Color.White)
+                        Text(
+                            text = msg,
+                            style = AppTypography.Caption.copy(fontWeight = FontWeight.SemiBold),
+                            color = Color.White
+                        )
                         Spacer(Modifier.width(12.dp))
                         IconButton(
                             onClick = { viewModel.onEvent(SearchUiEvent.DismissBatchSuccessNotification) },
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         ) {
-                            Icon(Icons.Default.Clear, contentDescription = "Dismiss", tint = Color.White)
+                            Icon(Icons.Default.Clear, contentDescription = "Dismiss", tint = Color.White, modifier = Modifier.size(14.dp))
                         }
                     }
                 }

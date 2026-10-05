@@ -13,6 +13,8 @@ object AnimeReleaseGrouper {
     private val uploaderPrefixRegex = Regex("""^\[([^\]]+)\]\s*""")
     private val tagsRegex = Regex("""\[[^\]]*\]|\([^\)]*\)""")
     private val seasonRegex = Regex("""(?i)(?:season|\bs)\s*([0-9]{1,2})""")
+    private val ordinalSeasonRegex = Regex("""(?i)\b([0-9]{1,2})(?:st|nd|rd|th)\s+season\b""")
+    private val partRegex = Regex("""(?i)\b(?:part|cour)\s*([0-9]{1,2})\b""")
     private val episodeRegex = Regex("""(?i)(?:-\s*|\bep|\be|\bepisode|\b#)\s*([0-9]{1,4}(?:\.[0-9])?)\b""")
 
     fun groupReleases(items: List<SearchResultItem>): List<SearchResultItem> {
@@ -73,15 +75,15 @@ object AnimeReleaseGrouper {
 
     private fun extractAnimeIdentity(rawTitle: String, fallbackAnime: String?): Pair<String, Int> {
         if (!fallbackAnime.isNullOrBlank() && fallbackAnime != rawTitle) {
-            val seasonMatch = seasonRegex.find(rawTitle)
+            val seasonMatch = seasonRegex.find(rawTitle) ?: ordinalSeasonRegex.find(rawTitle)
             val season = seasonMatch?.groupValues?.get(1)?.toIntOrNull() ?: 1
             return fallbackAnime.trim() to season
         }
 
         // Strip uploader tag like [SubsPlease]
         var cleaned = rawTitle.replace(uploaderPrefixRegex, "")
-        // Find season
-        val seasonMatch = seasonRegex.find(cleaned)
+        // Find season (e.g. S02 or 2nd Season)
+        val seasonMatch = seasonRegex.find(cleaned) ?: ordinalSeasonRegex.find(cleaned)
         val season = seasonMatch?.groupValues?.get(1)?.toIntOrNull() ?: 1
 
         // Strip everything after episode number or bracketed tags
@@ -89,7 +91,10 @@ object AnimeReleaseGrouper {
         if (episodeMatch != null) {
             cleaned = cleaned.substring(0, episodeMatch.range.first)
         }
-        cleaned = cleaned.replace(tagsRegex, "").replace(seasonRegex, "").trim()
+        cleaned = cleaned.replace(tagsRegex, "")
+            .replace(seasonRegex, "")
+            .replace(ordinalSeasonRegex, "")
+            .trim()
         if (cleaned.endsWith("-")) {
             cleaned = cleaned.dropLast(1).trim()
         }

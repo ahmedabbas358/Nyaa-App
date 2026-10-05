@@ -2,13 +2,16 @@ package com.aniflow.core.ui.util
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.media.MediaScannerConnection
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.CoroutineScope
@@ -243,6 +246,48 @@ object TorrentClientBridge {
     }
 
     /**
+     * Writes content directly into public Downloads via MediaStore on Android 10+ (API 29+).
+     * This bypasses Scoped Storage permission denials completely.
+     */
+    private fun writeToMediaStoreDownloads(
+        context: Context,
+        fileName: String,
+        mimeType: String,
+        subFolder: String,
+        writeBlock: (java.io.OutputStream) -> Unit
+    ): Uri? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+        return try {
+            val relativePath = if (subFolder.isNotBlank()) {
+                "${Environment.DIRECTORY_DOWNLOADS}/AniFlow/Torrents/$subFolder"
+            } else {
+                "${Environment.DIRECTORY_DOWNLOADS}/AniFlow/Torrents"
+            }
+
+            val values = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+
+            val resolver = context.contentResolver
+            val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            if (uri != null) {
+                resolver.openOutputStream(uri)?.use { out ->
+                    writeBlock(out)
+                }
+                values.clear()
+                values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+            }
+            uri
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
      * Resilient multi-tiered storage resolver ensuring 100% write success on all Android versions:
      * 1. Public Downloads (if writable / legacy storage active)
      * 2. App-specific external files dir (never requires permission)
@@ -311,6 +356,12 @@ object TorrentClientBridge {
         val bytes = response.body?.bytes() ?: return null
         if (bytes.isEmpty()) return null
 
+        // 1. Write to public Downloads via MediaStore on Android 10+
+        writeToMediaStoreDownloads(context, fileName, "application/x-bittorrent", subFolder) { out ->
+            out.write(bytes)
+        }
+
+        // 2. Also ensure local file exists for FileProvider sharing
         val targetFile = try {
             val targetDir = getStorageTargetDir(context, subFolder)
             val file = File(targetDir, fileName)
@@ -318,7 +369,7 @@ object TorrentClientBridge {
             file
         } catch (e: Exception) {
             val fallbackDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
-            val fallbackSubDir = File(fallbackDir, "AniFlow/Torrents")
+            val fallbackSubDir = File(fallbackDir, if (subFolder.isNotBlank()) "AniFlow/Torrents/$subFolder" else "AniFlow/Torrents")
             if (!fallbackSubDir.exists()) fallbackSubDir.mkdirs()
             val fallbackFile = File(fallbackSubDir, fileName)
             FileOutputStream(fallbackFile).use { it.write(bytes) }
@@ -380,6 +431,7 @@ object TorrentClientBridge {
 
     /**
      * Exports a list of magnet links with their episode titles to a text file for batch import into 1DM / FDM.
+     * Writes to public Downloads via MediaStore on Android 10+ and saves for FileProvider sharing.
      */
     fun exportBatchMagnetsToTextFile(
         context: Context,
@@ -390,45 +442,138 @@ object TorrentClientBridge {
             val safeTitle = batchTitle.replace(Regex("""[\\/:*?"<>|]"""), "_").trim().ifBlank { "batch" }
             val fileName = "${safeTitle}_magnets.txt"
 
+            val textBuilder = StringBuilder()
+            textBuilder.appendLine("# AniFlow Batch Magnet Links: $batchTitle")
+            textBuilder.appendLine("# Generated on: ${java.util.Date()}")
+            textBuilder.appendLine("# Compatible with 1DM, LibreTorrent, Flud, BiglyBT, and μTorrent")
+            textBuilder.appendLine()
+            for ((epTitle, magnet) in items) {
+                textBuilder.appendLine("# $epTitle")
+                textBuilder.appendLine(magnet)
+                textBuilder.appendLine()
+            }
+            val textBytes = textBuilder.toString().toByteArray(Charsets.UTF_8)
+
+            // 1. Write to public Downloads via MediaStore on Android 10+
+            writeToMediaStoreDownloads(context, fileName, "text/plain", "") { out ->
+                out.write(textBytes)
+            }
+
+            // 2. Write to local file for FileProvider sharing
             val targetDir = getStorageTargetDir(context, "")
             val targetFile = try {
                 val f = File(targetDir, fileName)
-                f.printWriter().use { out ->
-                    out.println("# AniFlow Batch Magnet Links: $batchTitle")
-                    out.println("# Generated on: ${java.util.Date()}")
-                    out.println()
-                    for ((epTitle, magnet) in items) {
-                        out.println("# $epTitle")
-                        out.println(magnet)
-                        out.println()
-                    }
-                }
+                FileOutputStream(f).use { it.write(textBytes) }
                 f
             } catch (e: Exception) {
                 val fallbackDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
                 val fallbackFile = File(fallbackDir, fileName)
-                fallbackFile.printWriter().use { out ->
-                    out.println("# AniFlow Batch Magnet Links: $batchTitle")
-                    out.println("# Generated on: ${java.util.Date()}")
-                    out.println()
-                    for ((epTitle, magnet) in items) {
-                        out.println("# $epTitle")
-                        out.println(magnet)
-                        out.println()
-                    }
-                }
+                FileOutputStream(fallbackFile).use { it.write(textBytes) }
                 fallbackFile
             }
 
+            try {
+                MediaScannerConnection.scanFile(
+                    context.applicationContext,
+                    arrayOf(targetFile.absolutePath),
+                    arrayOf("text/plain"),
+                    null
+                )
+            } catch (_: Exception) {}
+
             postToast(
                 context,
-                "Exported ${items.size} magnet(s) to ${targetFile.name}",
+                "Exported ${items.size} magnet(s) to Downloads/AniFlow/Torrents/${targetFile.name}",
                 Toast.LENGTH_LONG
             )
             targetFile
         } catch (e: Exception) {
             postToast(context, "Export failed: ${e.message}")
             null
+        }
+    }
+
+    /**
+     * Seamlessly dispatches a batch of episodes to external apps (1DM, LibreTorrent, Flud, etc.):
+     * - If single episode: opens external client directly
+     * - If multiple episodes:
+     *   1. Exports .txt file with all magnet links into public Downloads
+     *   2. Copies all links to clipboard (triggers 1DM clipboard monitor instantly)
+     *   3. Presents system share/open chooser to send the entire batch to 1DM, LibreTorrent, or any app
+     */
+    fun openBatchInExternalTorrentClient(
+        context: Context,
+        items: List<Pair<String, String>>, // title to (magnet or torrentUrl)
+        batchTitle: String
+    ) {
+        if (items.isEmpty()) {
+            postToast(context, "No episodes selected")
+            return
+        }
+
+        if (items.size == 1) {
+            val (title, uri) = items.first()
+            val isMagnet = uri.startsWith("magnet:", ignoreCase = true)
+            openInExternalTorrentClient(
+                context = context,
+                magnetUri = if (isMagnet) uri else null,
+                torrentUrl = if (!isMagnet) uri else null,
+                title = title
+            )
+            return
+        }
+
+        // Export text file
+        val file = exportBatchMagnetsToTextFile(context, batchTitle, items)
+
+        // Copy all links separated by newlines
+        val allLinks = items.map { it.second }.filter { it.isNotBlank() }.joinToString("\n")
+        copyToClipboard(
+            context = context,
+            text = allLinks,
+            label = "AniFlow Batch Links ($batchTitle)",
+            toastMessage = "Copied ${items.size} links to clipboard! Opening batch dialog…"
+        )
+
+        // Launch Share Sheet / Chooser
+        if (file != null) {
+            shareFile(
+                context = context,
+                file = file,
+                mimeType = "text/plain",
+                chooserTitle = "Send Batch (${items.size} episodes) to 1DM / Downloader"
+            )
+        } else {
+            shareText(
+                context = context,
+                title = batchTitle,
+                text = allLinks
+            )
+        }
+    }
+
+    /**
+     * Shares a file with external applications via FileProvider.
+     */
+    fun shareFile(
+        context: Context,
+        file: File,
+        mimeType: String = "*/*",
+        chooserTitle: String = "Share file via…"
+    ) {
+        try {
+            val contentUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = mimeType
+                putExtra(Intent.EXTRA_STREAM, contentUri)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
+            val chooser = Intent.createChooser(intent, chooserTitle).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(chooser)
+        } catch (e: Exception) {
+            postToast(context, "Cannot share file: ${e.message}")
         }
     }
 

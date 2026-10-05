@@ -25,10 +25,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.SwapVert
@@ -84,14 +86,14 @@ import com.aniflow.core.ui.theme.TextSecondary
 import com.aniflow.domain.search.model.SearchResultItem
 
 /**
- * Smart Episode Selection & Multi-Download Bottom Sheet.
+ * Episode Selection & Multi-Download Bottom Sheet.
  *
  * Enables users to:
- * - Select specific uploaders (e.g., SubsPlease, Erai-raws, EMBER, Judas) with size/codec trade-offs.
- * - View fragmented individual episodes unified into a structured Season/Anime episode checklist.
- * - Perform fast bulk selection: "Select All", "Select Missing Only", "Deselect All", and Episode Range.
- * - View real-time aggregated batch size and seeder health.
- * - 1-Click Multi-Download queuing into AniFlow internal engine or export for external managers (1DM/Flud).
+ * - Filter by uploader (SubsPlease, Erai-raws, EMBER, Judas)
+ * - Select specific episodes from a unified checklist
+ * - Bulk selection: Select All, Deselect, and Range
+ * - View total size estimate and seeder health
+ * - Download via: Internal queue, .torrent files, magnet export, or open in external apps
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,6 +104,7 @@ fun EpisodeBatchSelectionSheet(
     modifier: Modifier = Modifier
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val context = LocalContext.current
 
     // Distinct uploaders present in this group
     val availableUploaders = remember(groupedAnime) {
@@ -179,7 +182,7 @@ fun EpisodeBatchSelectionSheet(
             Box(
                 modifier = Modifier
                     .padding(vertical = 10.dp)
-                    .width(40.dp)
+                    .width(36.dp)
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp))
                     .background(DarkCardBorder)
@@ -192,40 +195,40 @@ fun EpisodeBatchSelectionSheet(
                 .fillMaxWidth()
                 .fillMaxHeight()
         ) {
-            // Header Section: Anime Title, Season, and Badge
+            // Header: Title + Close
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = groupedAnime.title,
-                        style = AppTypography.headline.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
+                        style = AppTypography.Title.copy(fontSize = 16.sp),
                         color = TextPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            color = PrimaryIndigo.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(AppShapes.sm),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryIndigo.copy(alpha = 0.35f))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(PrimaryIndigo.copy(alpha = 0.12f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = "Season ${groupedAnime.seasonNumber}",
-                                style = AppTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
-                                color = PrimaryIndigo,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                style = AppTypography.Caption.copy(fontWeight = FontWeight.SemiBold),
+                                color = PrimaryIndigo
                             )
                         }
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "${groupedAnime.releases.size} Episode Releases Available",
-                            style = AppTypography.caption,
+                            text = "${groupedAnime.releases.size} releases",
+                            style = AppTypography.Caption,
                             color = TextMuted
                         )
                     }
@@ -236,139 +239,106 @@ fun EpisodeBatchSelectionSheet(
                 }
             }
 
-            // Target Storage Folder Display
-            Surface(
-                color = DarkSurfaceVariant,
-                shape = RoundedCornerShape(AppShapes.sm),
-                border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
+            // Storage path indicator
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = AppSpacing.md, vertical = 2.dp)
+                    .padding(horizontal = 16.dp, vertical = 2.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(DarkSurfaceVariant)
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.Folder, contentDescription = null, tint = PrimaryIndigo, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = "Auto-organize: $targetFolder",
-                        style = AppTypography.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
-                        color = TextSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                Icon(Icons.Default.Folder, contentDescription = null, tint = PrimaryIndigo, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = targetFolder,
+                    style = AppTypography.Caption.copy(fontSize = 10.sp),
+                    color = TextSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Uploader Filter Chips
+            LazyRow(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items(availableUploaders) { uploader ->
+                    val isSelected = selectedUploader == uploader
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = {
+                            selectedUploader = uploader
+                            if (uploader != "All") {
+                                groupedAnime.releases.forEach { rel ->
+                                    selectionMap[rel.id] = rel.uploader.equals(uploader, ignoreCase = true)
+                                }
+                            }
+                        },
+                        label = {
+                            Text(
+                                text = uploader,
+                                style = AppTypography.Caption.copy(
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = DarkSurface,
+                            labelColor = TextSecondary,
+                            selectedContainerColor = PrimaryIndigo.copy(alpha = 0.15f),
+                            selectedLabelColor = PrimaryIndigo
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            borderColor = DarkCardBorder,
+                            selectedBorderColor = PrimaryIndigo.copy(alpha = 0.5f)
+                        ),
+                        shape = RoundedCornerShape(6.dp)
                     )
                 }
             }
 
-            // Uploader Filter Chips (SubsPlease, Erai-raws, EMBER, etc.)
-            Column(modifier = Modifier.padding(horizontal = AppSpacing.md, vertical = 4.dp)) {
-                Text(
-                    text = "Preferred Uploader / Quality Group:",
-                    style = AppTypography.caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
-                    color = TextSecondary
-                )
-                Spacer(Modifier.height(6.dp))
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs),
-                    contentPadding = PaddingValues(end = AppSpacing.md)
-                ) {
-                    items(availableUploaders) { uploader ->
-                        val isSelected = selectedUploader == uploader
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = {
-                                selectedUploader = uploader
-                                if (uploader != "All") {
-                                    groupedAnime.releases.forEach { rel ->
-                                        selectionMap[rel.id] = rel.uploader.equals(uploader, ignoreCase = true)
-                                    }
-                                }
-                            },
-                            label = {
-                                Text(
-                                    text = uploader,
-                                    style = AppTypography.caption.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                containerColor = DarkSurface,
-                                labelColor = TextSecondary,
-                                selectedContainerColor = PrimaryIndigo.copy(alpha = 0.25f),
-                                selectedLabelColor = PrimaryIndigo
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = isSelected,
-                                borderColor = DarkCardBorder,
-                                selectedBorderColor = PrimaryIndigo
-                            ),
-                            shape = RoundedCornerShape(AppShapes.sm)
-                        )
-                    }
-                }
-            }
-
-            // Fast 1DM-style Selection Action Bar with Sorting and Range Chips
+            // Selection Actions Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = AppSpacing.md, vertical = 6.dp),
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedButton(
-                        onClick = {
-                            filteredReleases.forEach { rel -> selectionMap[rel.id] = true }
-                        },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
-                        shape = RoundedCornerShape(AppShapes.sm),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Text("Select All", style = AppTypography.caption.copy(fontSize = 11.sp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    SelectionActionChip("All") {
+                        filteredReleases.forEach { rel -> selectionMap[rel.id] = true }
                     }
-
-                    OutlinedButton(
-                        onClick = {
-                            filteredReleases.forEach { rel -> selectionMap[rel.id] = false }
-                        },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextMuted),
-                        shape = RoundedCornerShape(AppShapes.sm),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("Deselect", style = AppTypography.caption.copy(fontSize = 11.sp))
+                    SelectionActionChip("None") {
+                        filteredReleases.forEach { rel -> selectionMap[rel.id] = false }
                     }
-
-                    OutlinedButton(
-                        onClick = { showRangeDialog = true },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
-                        shape = RoundedCornerShape(AppShapes.sm),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("Range", style = AppTypography.caption.copy(fontSize = 11.sp))
+                    SelectionActionChip("Range…") {
+                        showRangeDialog = true
                     }
 
                     IconButton(
                         onClick = { isAscending = !isAscending },
-                        modifier = Modifier.size(30.dp)
+                        modifier = Modifier.size(28.dp)
                     ) {
                         Icon(
                             Icons.Default.SwapVert,
-                            contentDescription = "Toggle Sort Order",
+                            contentDescription = "Sort",
                             tint = PrimaryIndigo,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
 
                 Text(
-                    text = "$selectedCount / ${groupedAnime.releases.size} selected",
-                    style = AppTypography.caption.copy(fontWeight = FontWeight.Bold),
-                    color = AccentCyan
+                    text = "$selectedCount selected",
+                    style = AppTypography.Caption.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (selectedCount > 0) PrimaryIndigo else TextMuted
                 )
             }
 
@@ -377,9 +347,9 @@ fun EpisodeBatchSelectionSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = AppSpacing.md),
-                contentPadding = PaddingValues(vertical = AppSpacing.xs),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                    .padding(horizontal = 12.dp),
+                contentPadding = PaddingValues(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 items(sortedReleases, key = { it.id }) { release ->
                     val isChecked = selectionMap[release.id] == true
@@ -391,112 +361,138 @@ fun EpisodeBatchSelectionSheet(
                 }
             }
 
-            // Floating Bottom 1DM-style Batch Download CTA
+            // Bottom Action Bar — multi-destination download
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = DarkSurface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(AppSpacing.md),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    // Status line
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
                         Text(
-                            text = if (selectedCount > 0) "$selectedCount Episodes (~$selectedEstimatedSize)" else "No episodes selected",
-                            style = AppTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
+                            text = if (selectedCount > 0) "$selectedCount episodes · ~$selectedEstimatedSize" else "No episodes selected",
+                            style = AppTypography.BodySmall.copy(fontWeight = FontWeight.SemiBold),
                             color = TextPrimary
-                        )
-                        Text(
-                            text = "AniFlow Batch Engine",
-                            style = AppTypography.caption,
-                            color = TextMuted
                         )
                     }
 
-                    val context = LocalContext.current
+                    Spacer(Modifier.height(8.dp))
 
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    // Action buttons row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedButton(
-                                onClick = {
-                                    val items = selectedReleases.map {
-                                        val url = it.torrentUrl?.takeIf { u -> u.isNotBlank() }
-                                            ?: "https://nyaa.si/download/${it.id}.torrent"
-                                        it.title to url
-                                    }
-                                    val safeTitle = groupedAnime.title.replace(Regex("""[\\/:*?"<>|]"""), "_").trim()
-                                    TorrentClientBridge.batchDownloadTorrentFiles(
-                                        context = context,
-                                        items = items,
-                                        destinationSubFolder = "$safeTitle/Season_${groupedAnime.seasonNumber}"
-                                    )
-                                },
-                                enabled = selectedCount > 0,
-                                shape = RoundedCornerShape(AppShapes.sm),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Save .torrents ($selectedCount)", fontSize = 11.sp)
-                            }
-
-                            OutlinedButton(
-                                onClick = {
-                                    val magnetItems = selectedReleases.map { rel ->
-                                        val uri = rel.magnetUri?.takeIf { it.isNotBlank() }
-                                            ?: rel.torrentUrl?.takeIf { it.isNotBlank() }
-                                            ?: "https://nyaa.si/download/${rel.id}.torrent"
-                                        rel.title to uri
-                                    }
-                                    TorrentClientBridge.exportBatchMagnetsToTextFile(
-                                        context = context,
-                                        batchTitle = "${groupedAnime.title}_S${groupedAnime.seasonNumber}",
-                                        items = magnetItems
-                                    )
-                                    val allMagnets = magnetItems.map { it.second }.joinToString("\n")
-                                    TorrentClientBridge.copyToClipboard(
-                                        context,
-                                        allMagnets,
-                                        toastMessage = "Copied $selectedCount links & exported file for 1DM"
-                                    )
-                                },
-                                enabled = selectedCount > 0,
-                                shape = RoundedCornerShape(AppShapes.sm),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Export (1DM)", fontSize = 11.sp)
-                            }
-
-                            Button(
-                                onClick = {
-                                    if (selectedReleases.isNotEmpty()) {
-                                        onQueueBatchDownload(selectedReleases)
-                                    }
-                                },
-                                enabled = selectedCount > 0,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = PrimaryIndigo,
-                                    disabledContainerColor = DarkCardBorder
-                                ),
-                                shape = RoundedCornerShape(AppShapes.sm),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                            ) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = "Queue ($selectedCount)",
-                                    style = AppTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        // 1. Open in External App (1DM/Flud/LibreTorrent)
+                        OutlinedButton(
+                            onClick = {
+                                val items = selectedReleases.map { rel ->
+                                    val uri = rel.magnetUri?.takeIf { it.isNotBlank() }
+                                        ?: rel.torrentUrl?.takeIf { it.isNotBlank() }
+                                        ?: "https://nyaa.si/download/${rel.id}.torrent"
+                                    rel.title to uri
+                                }
+                                TorrentClientBridge.openBatchInExternalTorrentClient(
+                                    context = context,
+                                    items = items,
+                                    batchTitle = "${groupedAnime.title}_S${groupedAnime.seasonNumber}"
                                 )
-                            }
+                            },
+                            enabled = selectedCount > 0,
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Open App", fontSize = 10.sp, maxLines = 1)
+                        }
+
+                        // 2. Save .torrent files
+                        OutlinedButton(
+                            onClick = {
+                                val items = selectedReleases.map {
+                                    val url = it.torrentUrl?.takeIf { u -> u.isNotBlank() }
+                                        ?: "https://nyaa.si/download/${it.id}.torrent"
+                                    it.title to url
+                                }
+                                val safeTitle = groupedAnime.title.replace(Regex("""[\\/:*?"<>|]"""), "_").trim()
+                                TorrentClientBridge.batchDownloadTorrentFiles(
+                                    context = context,
+                                    items = items,
+                                    destinationSubFolder = "$safeTitle/Season_${groupedAnime.seasonNumber}"
+                                )
+                            },
+                            enabled = selectedCount > 0,
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(".torrent", fontSize = 10.sp, maxLines = 1)
+                        }
+
+                        // 3. Copy magnets for 1DM
+                        OutlinedButton(
+                            onClick = {
+                                val magnetItems = selectedReleases.map { rel ->
+                                    val uri = rel.magnetUri?.takeIf { it.isNotBlank() }
+                                        ?: rel.torrentUrl?.takeIf { it.isNotBlank() }
+                                        ?: "https://nyaa.si/download/${rel.id}.torrent"
+                                    rel.title to uri
+                                }
+                                // Export text file + copy to clipboard
+                                TorrentClientBridge.exportBatchMagnetsToTextFile(
+                                    context = context,
+                                    batchTitle = "${groupedAnime.title}_S${groupedAnime.seasonNumber}",
+                                    items = magnetItems
+                                )
+                                val allMagnets = magnetItems.map { it.second }.joinToString("\n")
+                                TorrentClientBridge.copyToClipboard(
+                                    context,
+                                    allMagnets,
+                                    toastMessage = "Copied $selectedCount links & exported file"
+                                )
+                            },
+                            enabled = selectedCount > 0,
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Copy", fontSize = 10.sp, maxLines = 1)
+                        }
+
+                        // 4. Queue internally
+                        Button(
+                            onClick = {
+                                if (selectedReleases.isNotEmpty()) {
+                                    onQueueBatchDownload(selectedReleases)
+                                }
+                            },
+                            enabled = selectedCount > 0,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PrimaryIndigo,
+                                disabledContainerColor = DarkCardBorder
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                            modifier = Modifier.weight(1.2f)
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = "Queue ($selectedCount)",
+                                style = AppTypography.Caption.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            )
                         }
                     }
                 }
@@ -506,7 +502,7 @@ fun EpisodeBatchSelectionSheet(
         if (showRangeDialog) {
             AlertDialog(
                 onDismissRequest = { showRangeDialog = false },
-                title = { Text("Select Episode Range", style = AppTypography.headline.copy(fontSize = 16.sp), color = TextPrimary) },
+                title = { Text("Episode Range", style = AppTypography.Title, color = TextPrimary) },
                 text = {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
@@ -515,7 +511,7 @@ fun EpisodeBatchSelectionSheet(
                             label = { Text("From") },
                             modifier = Modifier.weight(1f)
                         )
-                        Text("to", color = TextSecondary)
+                        Text("—", color = TextSecondary)
                         OutlinedTextField(
                             value = rangeEndText,
                             onValueChange = { rangeEndText = it },
@@ -538,7 +534,7 @@ fun EpisodeBatchSelectionSheet(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo)
                     ) {
-                        Text("Apply Range")
+                        Text("Apply")
                     }
                 },
                 dismissButton = {
@@ -549,6 +545,31 @@ fun EpisodeBatchSelectionSheet(
                 containerColor = DarkSurface
             )
         }
+    }
+}
+
+/**
+ * Small action chip for selection controls.
+ */
+@Composable
+private fun SelectionActionChip(
+    label: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick),
+        color = DarkSurfaceVariant,
+        shape = RoundedCornerShape(6.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
+    ) {
+        Text(
+            text = label,
+            style = AppTypography.Caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
+            color = TextSecondary,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+        )
     }
 }
 
@@ -565,16 +586,16 @@ private fun EpisodeItemRow(
         colors = CardDefaults.cardColors(
             containerColor = if (isChecked) DarkSurfaceVariant else DarkSurface
         ),
-        shape = RoundedCornerShape(AppShapes.sm),
+        shape = RoundedCornerShape(8.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            if (isChecked) PrimaryIndigo.copy(alpha = 0.6f) else DarkCardBorder
+            if (isChecked) PrimaryIndigo.copy(alpha = 0.4f) else DarkCardBorder
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = AppSpacing.sm, vertical = 8.dp),
+                .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
@@ -584,10 +605,10 @@ private fun EpisodeItemRow(
                     checkedColor = PrimaryIndigo,
                     uncheckedColor = TextMuted
                 ),
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(22.dp)
             )
 
-            Spacer(Modifier.width(AppSpacing.sm))
+            Spacer(Modifier.width(8.dp))
 
             val epNum = remember(release.title) {
                 AnimeReleaseGrouper.extractEpisodeNumber(release.title)
@@ -596,22 +617,26 @@ private fun EpisodeItemRow(
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (epNum != null) {
-                        Surface(
-                            color = PrimaryIndigo,
-                            shape = RoundedCornerShape(3.dp),
-                            modifier = Modifier.padding(end = 6.dp)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(PrimaryIndigo.copy(alpha = 0.15f))
+                                .padding(horizontal = 5.dp, vertical = 1.dp)
                         ) {
                             Text(
-                                text = "EP %02d".format(epNum),
-                                style = AppTypography.caption.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                color = Color.White,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                text = "%02d".format(epNum),
+                                style = AppTypography.Caption.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = PrimaryIndigo
                             )
                         }
+                        Spacer(Modifier.width(6.dp))
                     }
                     Text(
                         text = release.title,
-                        style = AppTypography.body.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
+                        style = AppTypography.BodySmall.copy(fontWeight = FontWeight.Medium),
                         color = TextPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -622,60 +647,39 @@ private fun EpisodeItemRow(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    // Uploader Pill
-                    Surface(
-                        color = DarkCardBorder,
-                        shape = RoundedCornerShape(3.dp)
-                    ) {
-                        Text(
-                            text = release.uploader.ifBlank { "Nyaa" },
-                            style = AppTypography.caption.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
-                            color = TextSecondary,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                        )
-                    }
+                    // Uploader
+                    Text(
+                        text = release.uploader.ifBlank { "Nyaa" },
+                        style = AppTypography.Caption.copy(fontSize = 9.sp, fontWeight = FontWeight.Medium),
+                        color = TextMuted
+                    )
 
-                    // Resolution Pill
+                    Text("·", style = AppTypography.Caption, color = TextMuted)
+
+                    // Resolution
                     Text(
                         text = release.resolution,
-                        style = AppTypography.caption.copy(fontSize = 10.sp),
+                        style = AppTypography.Caption.copy(fontSize = 9.sp),
                         color = AccentCyan
                     )
 
-                    Text(
-                        text = "•",
-                        style = AppTypography.caption.copy(fontSize = 10.sp),
-                        color = TextMuted
-                    )
+                    Text("·", style = AppTypography.Caption, color = TextMuted)
 
                     // Size
                     Text(
                         text = release.sizeFormatted,
-                        style = AppTypography.caption.copy(fontSize = 10.sp),
+                        style = AppTypography.Caption.copy(fontSize = 9.sp),
                         color = TextMuted
                     )
 
-                    Text(
-                        text = "•",
-                        style = AppTypography.caption.copy(fontSize = 10.sp),
-                        color = TextMuted
-                    )
+                    Text("·", style = AppTypography.Caption, color = TextMuted)
 
                     // Seeders
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Speed,
-                            contentDescription = null,
-                            tint = AppSemanticColors.Success,
-                            modifier = Modifier.size(11.dp)
-                        )
-                        Spacer(Modifier.width(2.dp))
-                        Text(
-                            text = "${release.seeders} seeds",
-                            style = AppTypography.caption.copy(fontSize = 10.sp),
-                            color = AppSemanticColors.Success
-                        )
-                    }
+                    Text(
+                        text = "${release.seeders}S",
+                        style = AppTypography.Caption.copy(fontSize = 9.sp),
+                        color = AppSemanticColors.Success
+                    )
                 }
             }
         }

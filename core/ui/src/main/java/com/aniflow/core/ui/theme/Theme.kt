@@ -20,11 +20,11 @@ private val LocalAniFlowColorScheme = staticCompositionLocalOf { DarkAniFlowColo
 
 private val MaterialDarkColorScheme = darkColorScheme(
     primary = AccentBlueViolet,
-    onPrimary = Color.White,
+    onPrimary = Color(0xFF1A1714),
     primaryContainer = PrimaryIndigoVariant,
-    onPrimaryContainer = Color.White,
+    onPrimaryContainer = Color(0xFF1A1714),
     secondary = SecondaryTeal,
-    onSecondary = Color.Black,
+    onSecondary = Color(0xFF1A1714),
     background = DarkBackground,
     onBackground = TextPrimary,
     surface = DarkSurface,
