@@ -58,7 +58,8 @@ class DownloadsViewModel(
     private val pauseDownloadUseCase: PauseDownloadUseCase,
     private val resumeDownloadUseCase: ResumeDownloadUseCase,
     private val cancelDownloadUseCase: CancelDownloadUseCase,
-    private val queueDownloadUseCase: QueueDownloadUseCase? = null
+    private val queueDownloadUseCase: QueueDownloadUseCase? = null,
+    private val downloadController: com.aniflow.domain.usecase.DownloadController? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DownloadsUiState())
@@ -149,44 +150,72 @@ class DownloadsViewModel(
 
     fun pauseTask(taskId: DownloadTaskId) {
         viewModelScope.launch {
-            pauseDownloadUseCase(taskId)
+            if (downloadController != null) {
+                downloadController.pauseTask(taskId)
+            } else {
+                pauseDownloadUseCase(taskId)
+            }
         }
     }
 
     fun resumeTask(taskId: DownloadTaskId) {
         viewModelScope.launch {
-            resumeDownloadUseCase(taskId)
+            if (downloadController != null) {
+                downloadController.resumeTask(taskId)
+            } else {
+                resumeDownloadUseCase(taskId)
+            }
         }
     }
 
     fun cancelTask(taskId: DownloadTaskId) {
         viewModelScope.launch {
-            cancelDownloadUseCase(taskId)
+            if (downloadController != null) {
+                downloadController.cancelTask(taskId)
+            } else {
+                cancelDownloadUseCase(taskId)
+            }
         }
     }
 
     fun pauseAll() {
         viewModelScope.launch {
-            _uiState.value.rawTasks.filter { it.state.isActive }.forEach {
-                pauseDownloadUseCase(it.id)
+            if (downloadController != null) {
+                downloadController.pauseAll()
+            } else {
+                _uiState.value.rawTasks.filter { it.state.isActive }.forEach {
+                    pauseDownloadUseCase(it.id)
+                }
             }
         }
     }
 
     fun resumeAll() {
         viewModelScope.launch {
-            _uiState.value.rawTasks.filter { it.state == DownloadStateUi.Paused }.forEach {
-                resumeDownloadUseCase(it.id)
+            if (downloadController != null) {
+                downloadController.resumeAll()
+            } else {
+                _uiState.value.rawTasks.filter { it.state == DownloadStateUi.Paused }.forEach {
+                    resumeDownloadUseCase(it.id)
+                }
             }
         }
     }
 
     fun clearCompleted() {
         viewModelScope.launch {
-            _uiState.value.rawTasks.filter { it.state == DownloadStateUi.Completed }.forEach {
-                downloadRepository.deleteTask(it.id)
+            if (downloadController != null) {
+                downloadController.clearCompleted()
+            } else {
+                _uiState.value.rawTasks.filter { it.state == DownloadStateUi.Completed }.forEach {
+                    downloadRepository.deleteTask(it.id)
+                }
             }
         }
+    }
+
+    fun setMaxConcurrency(limit: Int) {
+        downloadController?.setMaxConcurrency(limit)
     }
 
     fun queueFromLink(link: String, title: String? = null) {

@@ -418,42 +418,81 @@ fun EpisodeBatchSelectionSheet(
 
                     val context = LocalContext.current
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedButton(
-                            onClick = {
-                                val allMagnets = selectedReleases.mapNotNull {
-                                    if (!it.magnetUri.isNullOrBlank()) it.magnetUri else "https://nyaa.si/download/${it.id}.torrent"
-                                }.joinToString("\n")
-                                if (allMagnets.isNotBlank()) {
-                                    TorrentClientBridge.copyToClipboard(context, allMagnets, toastMessage = "Copied $selectedCount link(s)")
-                                }
-                            },
-                            enabled = selectedCount > 0,
-                            shape = RoundedCornerShape(AppShapes.sm),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text("Copy Magnets", fontSize = 11.sp)
-                        }
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedButton(
+                                onClick = {
+                                    val items = selectedReleases.map {
+                                        it.title to "https://nyaa.si/download/${it.id}.torrent"
+                                    }
+                                    val safeTitle = groupedAnime.title.replace(Regex("""[\\/:*?"<>|]"""), "_").trim()
+                                    TorrentClientBridge.batchDownloadTorrentFiles(
+                                        context = context,
+                                        items = items,
+                                        destinationSubFolder = "$safeTitle/Season_${groupedAnime.seasonNumber}"
+                                    )
+                                },
+                                enabled = selectedCount > 0,
+                                shape = RoundedCornerShape(AppShapes.sm),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Save .torrents ($selectedCount)", fontSize = 11.sp)
+                            }
 
-                        Button(
-                            onClick = {
-                                if (selectedReleases.isNotEmpty()) {
-                                    onQueueBatchDownload(selectedReleases)
-                                }
-                            },
-                            enabled = selectedCount > 0,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = PrimaryIndigo,
-                                disabledContainerColor = DarkCardBorder
-                            ),
-                            shape = RoundedCornerShape(AppShapes.sm)
-                        ) {
-                            Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "Queue ($selectedCount)",
-                                style = AppTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                            )
+                            OutlinedButton(
+                                onClick = {
+                                    val magnetItems = selectedReleases.mapNotNull { rel ->
+                                        val uri = rel.magnetUri?.takeIf { it.isNotBlank() }
+                                            ?: "https://nyaa.si/download/${rel.id}.torrent"
+                                        rel.title to uri
+                                    }
+                                    TorrentClientBridge.exportBatchMagnetsToTextFile(
+                                        context = context,
+                                        batchTitle = "${groupedAnime.title}_S${groupedAnime.seasonNumber}",
+                                        items = magnetItems
+                                    )
+                                    val allMagnets = magnetItems.map { it.second }.joinToString("\n")
+                                    TorrentClientBridge.copyToClipboard(
+                                        context,
+                                        allMagnets,
+                                        toastMessage = "Copied $selectedCount links & exported file for 1DM"
+                                    )
+                                },
+                                enabled = selectedCount > 0,
+                                shape = RoundedCornerShape(AppShapes.sm),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("1DM / Export", fontSize = 11.sp)
+                            }
+
+                            Button(
+                                onClick = {
+                                    if (selectedReleases.isNotEmpty()) {
+                                        onQueueBatchDownload(selectedReleases)
+                                    }
+                                },
+                                enabled = selectedCount > 0,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = PrimaryIndigo,
+                                    disabledContainerColor = DarkCardBorder
+                                ),
+                                shape = RoundedCornerShape(AppShapes.sm),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = "Queue ($selectedCount)",
+                                    style = AppTypography.body.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                )
+                            }
                         }
                     }
                 }

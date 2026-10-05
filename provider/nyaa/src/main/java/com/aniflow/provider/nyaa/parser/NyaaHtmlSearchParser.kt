@@ -12,8 +12,12 @@ import org.jsoup.nodes.Element
  * Extracts tabular release metadata from Nyaa's search response.
  */
 class NyaaHtmlSearchParser(
-    private val baseUrl: String = "https://nyaa.si"
+    private val baseUrlProvider: () -> String = { "https://nyaa.si" }
 ) {
+    constructor(baseUrl: String) : this({ baseUrl })
+
+    private val baseUrl: String
+        get() = baseUrlProvider().trimEnd('/')
 
     companion object {
         const val VERSION = "1.0.0"

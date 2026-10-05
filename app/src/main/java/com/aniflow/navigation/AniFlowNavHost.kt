@@ -201,7 +201,10 @@ fun AniFlowApp(
                                 isCovered = true
                             )
                         }
-                    }
+                    },
+                    magnetUri = (rel?.source as? com.aniflow.domain.model.aggregate.release.ReleaseSource.Torrent)?.magnetUri?.rawValue,
+                    torrentUrl = (rel?.source as? com.aniflow.domain.model.aggregate.release.ReleaseSource.Torrent)?.torrentUrl?.rawValue
+                        ?: "https://nyaa.si/download/$releaseId.torrent"
                 )
                 com.aniflow.feature.release.BatchDetailScreen(
                     uiState = batchState,

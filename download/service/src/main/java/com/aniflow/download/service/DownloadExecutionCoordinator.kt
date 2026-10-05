@@ -55,7 +55,7 @@ class DownloadExecutionCoordinator(
     private val libraryRepository: LibraryRepository,
     private val notificationManager: DownloadNotificationManager = DownloadNotificationManager(context),
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-) {
+) : com.aniflow.domain.usecase.DownloadController {
     private val mutex = Mutex()
     private val activeJobs = ConcurrentHashMap<String, Job>()
     private val activeHandles = ConcurrentHashMap<String, DownloadHandle>()

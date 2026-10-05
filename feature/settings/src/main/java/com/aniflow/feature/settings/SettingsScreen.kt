@@ -88,7 +88,8 @@ data class SettingsUiState(
     val defaultAudioLanguage: String = "Japanese",
     val defaultSubtitleLanguage: String = "English",
     val lowStorageThresholdGb: Int = 5,
-    val searchHistoryRetentionDays: Int = 30
+    val searchHistoryRetentionDays: Int = 30,
+    val nyaaMirror: String = "https://nyaa.si/"
 )
 
 class SettingsViewModel(
@@ -114,11 +115,23 @@ class SettingsViewModel(
                 _uiState.value = _uiState.value.copy(downloadDirectory = it)
             }
         }
+        viewModelScope.launch {
+            settingsRepository.observeNyaaMirror().collect {
+                _uiState.value = _uiState.value.copy(nyaaMirror = it)
+            }
+        }
     }
 
     fun setMaxConcurrentDownloads(count: Int) {
         viewModelScope.launch {
             settingsRepository?.setMaxConcurrentDownloads(count)
+        }
+    }
+
+    fun setNyaaMirror(mirror: String) {
+        _uiState.value = _uiState.value.copy(nyaaMirror = mirror)
+        viewModelScope.launch {
+            settingsRepository?.setNyaaMirror(mirror)
         }
     }
 
@@ -320,6 +333,52 @@ fun SettingsScreen(
                                         colors = SwitchDefaults.colors(checkedThumbColor = PrimaryIndigo)
                                     )
                                 }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 5. Nyaa Provider & Mirror Domain (Censorship / ISP Block Bypass)
+            item {
+                Column {
+                    AniSectionHeader(
+                        title = "Nyaa Provider & Mirrors",
+                        subtitle = "Bypass ISP blocks and select active domain"
+                    )
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                        shape = AppShapes.medium,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column {
+                            AniSettingRow(
+                                title = "Active Nyaa Mirror",
+                                description = "Switch domain if nyaa.si is blocked in your country",
+                                currentValue = when (state.nyaaMirror) {
+                                    "https://nyaa.si/" -> "Nyaa.si (Official)"
+                                    "https://nyaa.land/" -> "Nyaa.land (Fast Mirror)"
+                                    "https://nyaa.net/" -> "Nyaa.net (Alternative)"
+                                    "https://nyaa.iss.one/" -> "Nyaa.iss.one (Cloudflare/Proxy)"
+                                    else -> state.nyaaMirror
+                                },
+                                icon = Icons.Default.Tune,
+                                onClick = {
+                                    val nextMirror = when (state.nyaaMirror) {
+                                        "https://nyaa.si/" -> "https://nyaa.land/"
+                                        "https://nyaa.land/" -> "https://nyaa.net/"
+                                        "https://nyaa.net/" -> "https://nyaa.iss.one/"
+                                        else -> "https://nyaa.si/"
+                                    }
+                                    viewModel.setNyaaMirror(nextMirror)
+                                }
+                            )
+                            AniSettingRow(
+                                title = "Anti-Censorship DNS (DoH)",
+                                description = "Cloudflare (1.1.1.1) and Google DoH are active automatically",
+                                currentValue = "Active",
+                                icon = Icons.Default.PrivacyTip
                             )
                         }
                     }

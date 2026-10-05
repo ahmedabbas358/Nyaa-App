@@ -176,4 +176,6 @@ interface SettingsRepository {
     fun observeMaxConcurrentDownloads(): Flow<Int>
     fun observeDownloadDirectory(): Flow<String>
     suspend fun setMaxConcurrentDownloads(count: Int)
+    fun observeNyaaMirror(): Flow<String> = kotlinx.coroutines.flow.flowOf("https://nyaa.si/")
+    suspend fun setNyaaMirror(url: String) {}
 }

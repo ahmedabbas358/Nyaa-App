@@ -57,6 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aniflow.core.ui.theme.AppSemanticColors
 import com.aniflow.core.ui.theme.AppShapes
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import com.aniflow.core.ui.util.TorrentClientBridge
 import com.aniflow.core.ui.theme.AppSpacing
 import com.aniflow.core.ui.theme.AppTypography
 import com.aniflow.core.ui.theme.DarkBackground
@@ -93,6 +96,7 @@ fun DownloadTaskCard(
     onRemoveHistory: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var showOverflowMenu by remember { mutableStateOf(false) }
 
     val accessibilityDesc = "${task.title}, ${task.state.displayName}, ${task.progressPercent} percent, ${task.speedFormatted}"
@@ -179,6 +183,45 @@ fun DownloadTaskCard(
                                 onClick()
                             }
                         )
+                        if (task.sourceUrlOrMagnet != null) {
+                            DropdownMenuItem(
+                                text = { Text("Open in 1DM / Torrent App") },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    val source = task.sourceUrlOrMagnet
+                                    val magnet = if (source.startsWith("magnet:")) source else null
+                                    val torrent = if (source.startsWith("http")) source else null
+                                    TorrentClientBridge.openInExternalTorrentClient(
+                                        context = context,
+                                        magnetUri = magnet,
+                                        torrentUrl = torrent,
+                                        title = task.title
+                                    )
+                                }
+                            )
+                            if (task.sourceUrlOrMagnet.startsWith("magnet:")) {
+                                DropdownMenuItem(
+                                    text = { Text("Copy Magnet Link") },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        TorrentClientBridge.copyBatchMagnets(context, listOf(task.sourceUrlOrMagnet))
+                                    }
+                                )
+                            }
+                            if (task.sourceUrlOrMagnet.contains(".torrent", ignoreCase = true) || task.sourceUrlOrMagnet.startsWith("http")) {
+                                DropdownMenuItem(
+                                    text = { Text("Save .torrent File") },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        TorrentClientBridge.downloadTorrentFile(
+                                            context = context,
+                                            torrentUrl = task.sourceUrlOrMagnet,
+                                            title = task.title
+                                        )
+                                    }
+                                )
+                            }
+                        }
                         if (task.state.isTerminal) {
                             DropdownMenuItem(
                                 text = { Text("Open File Location") },

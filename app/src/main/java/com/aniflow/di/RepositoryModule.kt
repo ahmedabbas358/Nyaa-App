@@ -149,11 +149,16 @@ object RepositoryModule {
         object : com.aniflow.domain.repository.SettingsRepository {
             private val maxConcurrent = kotlinx.coroutines.flow.MutableStateFlow(3)
             private val downloadDir = kotlinx.coroutines.flow.MutableStateFlow("Downloads/AniFlow")
+            private val nyaaMirror = kotlinx.coroutines.flow.MutableStateFlow("https://nyaa.si/")
 
             override fun observeMaxConcurrentDownloads(): kotlinx.coroutines.flow.Flow<Int> = maxConcurrent
             override fun observeDownloadDirectory(): kotlinx.coroutines.flow.Flow<String> = downloadDir
             override suspend fun setMaxConcurrentDownloads(count: Int) {
                 maxConcurrent.value = count
+            }
+            override fun observeNyaaMirror(): kotlinx.coroutines.flow.Flow<String> = nyaaMirror
+            override suspend fun setNyaaMirror(url: String) {
+                nyaaMirror.value = url
             }
         }
 }

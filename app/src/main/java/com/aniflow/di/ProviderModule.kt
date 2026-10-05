@@ -46,12 +46,12 @@ object ProviderModule {
     @Provides
     @Singleton
     fun provideNyaaHtmlSearchParser(config: NyaaProviderConfig): NyaaHtmlSearchParser =
-        NyaaHtmlSearchParser(config.baseUrl.rawValue)
+        NyaaHtmlSearchParser(baseUrlProvider = { config.baseUrl.rawValue })
 
     @Provides
     @Singleton
     fun provideNyaaHtmlDetailsParser(config: NyaaProviderConfig): NyaaHtmlDetailsParser =
-        NyaaHtmlDetailsParser(config.baseUrl.rawValue)
+        NyaaHtmlDetailsParser(baseUrlProvider = { config.baseUrl.rawValue })
 
     @Provides
     @Singleton

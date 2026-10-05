@@ -41,10 +41,18 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var getReleaseDetailsUseCase: com.aniflow.domain.usecase.GetReleaseDetailsUseCase
     @Inject lateinit var watchProgressRepository: com.aniflow.domain.library.repository.WatchProgressRepository
     @Inject lateinit var downloadExecutionCoordinator: com.aniflow.download.service.DownloadExecutionCoordinator
+    @Inject lateinit var nyaaProviderConfig: com.aniflow.provider.nyaa.config.NyaaProviderConfig
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Sync Nyaa mirror preference to active network config
+        androidx.lifecycle.lifecycleScope.launch {
+            settingsRepository.observeNyaaMirror().collect { mirrorUrl ->
+                nyaaProviderConfig.setMirror(mirrorUrl)
+            }
+        }
 
         // Start active download execution coordinator (Nyaa torrent + HTTP engines, concurrency slots, notifications)
         downloadExecutionCoordinator.start()
@@ -73,7 +81,8 @@ class MainActivity : ComponentActivity() {
             pauseDownloadUseCase = pauseDownloadUseCase,
             resumeDownloadUseCase = resumeDownloadUseCase,
             cancelDownloadUseCase = cancelDownloadUseCase,
-            queueDownloadUseCase = queueDownloadUseCase
+            queueDownloadUseCase = queueDownloadUseCase,
+            downloadController = downloadExecutionCoordinator
         )
         val libraryViewModel = LibraryViewModel(libraryRepository)
         val settingsViewModel = SettingsViewModel(settingsRepository)

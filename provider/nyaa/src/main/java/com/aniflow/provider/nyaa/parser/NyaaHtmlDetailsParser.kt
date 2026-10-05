@@ -8,8 +8,12 @@ import org.jsoup.Jsoup
  * Parses enriched details from Nyaa's release page `/view/{id}` (Sections 38, 39, 91).
  */
 class NyaaHtmlDetailsParser(
-    private val baseUrl: String = "https://nyaa.si"
+    private val baseUrlProvider: () -> String = { "https://nyaa.si" }
 ) {
+    constructor(baseUrl: String) : this({ baseUrl })
+
+    private val baseUrl: String
+        get() = baseUrlProvider().trimEnd('/')
 
     companion object {
         const val VERSION = "1.0.0"

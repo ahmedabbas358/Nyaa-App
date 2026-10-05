@@ -167,29 +167,55 @@ class QueueBatchDownloadsUseCase(
     }
 }
 
+interface DownloadController {
+    suspend fun pauseTask(taskId: DownloadTaskId)
+    suspend fun resumeTask(taskId: DownloadTaskId)
+    suspend fun cancelTask(taskId: DownloadTaskId)
+    suspend fun pauseAll()
+    suspend fun resumeAll()
+    suspend fun clearCompleted()
+    fun setMaxConcurrency(limit: Int)
+}
+
 class PauseDownloadUseCase(
-    private val downloadRepository: DownloadRepository
+    private val downloadRepository: DownloadRepository,
+    private val controller: DownloadController? = null
 ) {
     suspend operator fun invoke(taskId: DownloadTaskId) {
-        val task = downloadRepository.getTaskById(taskId) ?: return
-        downloadRepository.saveTask(task.copy(state = DownloadState.Paused, updatedAt = Instant.now()))
+        if (controller != null) {
+            controller.pauseTask(taskId)
+        } else {
+            val task = downloadRepository.getTaskById(taskId) ?: return
+            downloadRepository.saveTask(task.copy(state = DownloadState.Paused, updatedAt = Instant.now()))
+        }
     }
 }
 
 class ResumeDownloadUseCase(
-    private val downloadRepository: DownloadRepository
+    private val downloadRepository: DownloadRepository,
+    private val controller: DownloadController? = null
 ) {
     suspend operator fun invoke(taskId: DownloadTaskId) {
-        val task = downloadRepository.getTaskById(taskId) ?: return
-        downloadRepository.saveTask(task.copy(state = DownloadState.Downloading, updatedAt = Instant.now()))
+        if (controller != null) {
+            controller.resumeTask(taskId)
+        } else {
+            val task = downloadRepository.getTaskById(taskId) ?: return
+            downloadRepository.saveTask(task.copy(state = DownloadState.Downloading, updatedAt = Instant.now()))
+        }
     }
 }
 
 class CancelDownloadUseCase(
     private val downloadRepository: DownloadRepository,
-    private val storageManager: StorageManager? = null
+    private val storageManager: StorageManager? = null,
+    private val controller: DownloadController? = null
 ) {
     suspend operator fun invoke(taskId: DownloadTaskId) {
-        downloadRepository.deleteTask(taskId)
+        if (controller != null) {
+            controller.cancelTask(taskId)
+        } else {
+            downloadRepository.deleteTask(taskId)
+        }
     }
 }
+

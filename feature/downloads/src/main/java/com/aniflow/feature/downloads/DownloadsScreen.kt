@@ -28,12 +28,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import com.aniflow.core.ui.util.TorrentClientBridge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -208,6 +213,7 @@ fun DownloadsScreen(
                     SummaryDashboardCard(summary = summary)
 
                     // Multi-Select Action Bar
+                    val context = LocalContext.current
                     AnimatedVisibility(visible = isSelectionMode, enter = fadeIn(), exit = fadeOut()) {
                         BulkActionsBar(
                             selectedCount = selectedBulkTasks.size,
@@ -220,6 +226,36 @@ fun DownloadsScreen(
                             onCancelSelected = {
                                 selectedBulkTasks.forEach { taskId -> viewModel?.cancelTask(taskId) }
                                 selectedBulkTasks.clear()
+                            },
+                            onExport1DM = {
+                                val selectedModels = uiState.rawTasks.filter { selectedBulkTasks.contains(it.id) }
+                                val magnets = selectedModels.mapNotNull { it.sourceUrlOrMagnet?.takeIf { u -> u.startsWith("magnet:") } }
+                                if (magnets.isNotEmpty()) {
+                                    TorrentClientBridge.exportBatchMagnetsToTextFile(
+                                        context = context,
+                                        title = "AniFlow_Downloads_Batch",
+                                        magnets = magnets
+                                    )
+                                    TorrentClientBridge.copyBatchMagnets(context, magnets)
+                                } else {
+                                    Toast.makeText(context, "No magnet links found in selected items", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            onSaveTorrents = {
+                                val selectedModels = uiState.rawTasks.filter { selectedBulkTasks.contains(it.id) }
+                                val itemsToDownload = selectedModels.mapNotNull { model ->
+                                    val url = model.sourceUrlOrMagnet?.takeIf { u -> u.contains(".torrent", ignoreCase = true) || u.startsWith("http") }
+                                    if (url != null) model.title to url else null
+                                }
+                                if (itemsToDownload.isNotEmpty()) {
+                                    TorrentClientBridge.batchDownloadTorrentFiles(
+                                        context = context,
+                                        items = itemsToDownload,
+                                        subfolderName = "Downloads_Batch"
+                                    )
+                                } else {
+                                    Toast.makeText(context, "No .torrent URLs found in selected items", Toast.LENGTH_SHORT).show()
+                                }
                             },
                             onClearSelection = {
                                 selectedBulkTasks.clear()
@@ -379,6 +415,8 @@ private fun BulkActionsBar(
     onPauseSelected: () -> Unit,
     onResumeSelected: () -> Unit,
     onCancelSelected: () -> Unit,
+    onExport1DM: () -> Unit,
+    onSaveTorrents: () -> Unit,
     onClearSelection: () -> Unit
 ) {
     Surface(
@@ -399,6 +437,12 @@ private fun BulkActionsBar(
             Text("$selectedCount selected", style = AppTypography.body.copy(fontWeight = FontWeight.Bold), color = PrimaryIndigo)
 
             Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)) {
+                IconButton(onClick = onExport1DM, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Share, contentDescription = "Export for 1DM", tint = PrimaryIndigo)
+                }
+                IconButton(onClick = onSaveTorrents, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Download, contentDescription = "Save .torrent files", tint = PrimaryIndigo)
+                }
                 IconButton(onClick = onPauseSelected, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Default.Pause, contentDescription = "Pause", tint = TextPrimary)
                 }
