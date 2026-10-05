@@ -88,7 +88,6 @@ object TorrentClientBridge {
      * Dispatches magnet link to external BitTorrent client (e.g. 1DM, LibreTorrent, Flud).
      * If an external client exists, launches standard chooser; otherwise safely copies magnet and advises the user.
      */
-     */
     fun openInExternalTorrentClient(
         context: Context,
         magnetUri: String? = null,

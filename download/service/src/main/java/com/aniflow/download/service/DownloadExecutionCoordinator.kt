@@ -83,7 +83,7 @@ class DownloadExecutionCoordinator(
         }
     }
 
-    fun setMaxConcurrency(limit: Int) {
+    override fun setMaxConcurrency(limit: Int) {
         _maxConcurrency.value = limit.coerceIn(1, 10)
         triggerQueueProcessing()
     }
