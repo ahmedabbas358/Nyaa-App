@@ -300,6 +300,7 @@ object TorrentClientBridge {
     /**
      * Overload for exporting a simple list of magnet URI strings.
      */
+    @JvmName("exportBatchMagnetsSimpleList")
     fun exportBatchMagnetsToTextFile(
         context: Context,
         title: String,
